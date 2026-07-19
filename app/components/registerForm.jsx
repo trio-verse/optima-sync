@@ -3,11 +3,11 @@ import { router, useRouter } from "next/router";
 import { useState } from "react"
 import sendOtpToEmail from "../actions/registerUser";
 import { VerifyOtp } from "../actions/registerUser";
-import { AnimatePresence , motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import EmailStep from "./EmailStep";
 import OtpStep from "./OtpStep";
 
-export default function RegisterForm(){
+export default function RegisterForm() {
     const [loading, setLoding] = useState(false);
     const [email, setEmail] = useState("");
     const [success, setSuccsess] = useState("");
@@ -19,7 +19,7 @@ export default function RegisterForm(){
         e.preventDefault();
         setError("");
         setSuccsess("");
-        
+
         if (email.length === 0) {
             setError("Email address cannot be empty");
             return;
@@ -37,7 +37,7 @@ export default function RegisterForm(){
             if (result.success) {
                 setSuccsess("We have sent a verification code to your email!");
                 setStep("otp");
-                
+
             } else {
                 setError(result.message || "Failed to send code. Please try again.");
             }
@@ -50,18 +50,18 @@ export default function RegisterForm(){
 
 
     }
-    const slideAnimation={
-        initial:{opacity:0 , x:20},
-        animate:{opacity:1 , x:0},
-        exit:{opacity:0,x:-20},
-        transition:{duration:0.5 , ease:"easeInOut"}
+    const slideAnimation = {
+        initial: { opacity: 0, x: 20 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -20 },
+        transition: { duration: 0.5, ease: "easeInOut" }
     }
 
     const handleOtpSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setSuccsess("");
-        
+
         const otpCode = otp.join("");
         if (otpCode.length < 6) {
             setError("Please enter the full code");
@@ -93,10 +93,10 @@ export default function RegisterForm(){
                 <AnimatePresence mode="wait">
                     {step === "email" ? (
                         <motion.div key="email-step" {...slideAnimation} className="w-full">
-                            <EmailStep 
-                                email={email} 
-                                setEmail={setEmail} 
-                                handleEmailSubmit={handleEmailSubmit} 
+                            <EmailStep
+                                email={email}
+                                setEmail={setEmail}
+                                handleEmailSubmit={handleEmailSubmit}
                                 loading={loading}
                                 error={error}
                                 success={success}
@@ -104,10 +104,10 @@ export default function RegisterForm(){
                         </motion.div>
                     ) : (
                         <motion.div key="otp-step" {...slideAnimation} className="w-full">
-                            <OtpStep 
-                                otp={otp} 
-                                setOtp={setOtp} 
-                                handleOtpSubmit={handleOtpSubmit} 
+                            <OtpStep
+                                otp={otp}
+                                setOtp={setOtp}
+                                handleOtpSubmit={handleOtpSubmit}
                                 loading={loading}
                                 error={error}
                                 success={success}
