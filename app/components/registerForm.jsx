@@ -81,7 +81,7 @@ export default function RegisterForm(){
 
     return (
         <div aria-description="register-container" className="min-h-lvh flex justify-center items-center bg-gradient-to-tr from-slate-50 via-blue-50/30 to-zinc-100 p-4">
-            <div className="register-card w-full max-w-md bg-white/60 flex flex-col items-center justify-center rounded-2xl p-6">
+            <div aria-description="register-card" className=" w-full max-w-md bg-white/60 flex flex-col items-center justify-center rounded-2xl p-6">
                 <div className="text-center w-full mb-6">
                     <h1 className="text-zinc-900 font-extrabold text-3xl tracking-wide mb-2">
                         {step === "email" ? "Sign Up" : "Verify OTP"}
