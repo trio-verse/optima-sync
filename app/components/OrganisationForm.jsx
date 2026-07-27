@@ -16,7 +16,7 @@ export default function OrganisationForm({
     const [formData, setformData] = useState({
         name: initialValues?.name||"",
         email: initialValues?.email||"",
-        phone: initialValues?.phone||"",
+        phone: initialValues?.phone_number||"",
         orgCountryCode: initialValues?.orgCountryCode||"+963",
         address: initialValues?.address||"",
         description: initialValues?.description||"",
@@ -28,22 +28,7 @@ export default function OrganisationForm({
 
     const isInputDisabled = isEditing && !canEdit;
 
-    // useEffect(() => {
-    //     if (initialValues && Object.keys(initialValues).length > 0) {
-            
-    //         setformData({
-    //             name: initialValues.name || "",
-    //             email: initialValues.email || "",
-    //             phone: initialValues.phone || "",
-    //             orgCountryCode: initialValues.orgCountryCode || "+963",
-    //             address: initialValues.address || "",
-    //             description: initialValues.description || "",
-    //         });
-    //         if (initialValues.logo) {
-    //             setPreviewUrl(initialValues.logo);
-    //         }
-    //     }
-    // }, [initialValues]);
+
 
     const getPhonePlaceholder = () => {
         switch (formData.orgCountryCode) {
@@ -84,44 +69,54 @@ export default function OrganisationForm({
         }
     };
 
-    const validateForm = () => {
-        let errors = {};
+const validateForm = () => {
+    let errors = {};
 
-        if (!formData.name.trim()) {
-            errors.name = "Organization name is required.";
-        } else if (formData.name.trim().length < 2) {
-            errors.name = "Name must be at least 2 characters long.";
-        }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!formData.email.trim()) {
-            errors.email = "Email address is required.";
-        } else if (!emailRegex.test(formData.email.trim())) {
-            errors.email = "Please enter a valid email address.";
-        }
+    if (!formData.name.trim()) {
+        errors.name = "Organization name is required.";
+    } else if (formData.name.trim().length < 3) {
+        errors.name = "Name must be at least 3 characters long.";
+    }
 
-        const cleanPhone = formData.phone.replace(/[\s+]/g, "");
-        const phoneRegex = /^[0-9]+$/;
 
-        if (!formData.phone.trim()) {
-            errors.phone = "Phone number is required.";
-        } else if (!phoneRegex.test(cleanPhone)) {
-            errors.phone = "Phone number must contain only numbers.";
-        } else if (cleanPhone.length < 9 || cleanPhone.length > 12) {
-            errors.phone = "Please enter a valid phone number (between 9 and 12 digits).";
-        }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!formData.email.trim()) {
+        errors.email = "Email address is required.";
+    } else if (!emailRegex.test(formData.email.trim())) {
+        errors.email = "Please enter a valid email address (e.g., name@domain.com).";
+    }
 
-        if (!formData.address.trim()) {
-            errors.address = "Address is required.";
-        }
 
-        if (!formData.description.trim()) {
-            errors.description = "Description is required.";
-        }
+    const cleanPhone = formData.phone.replace(/[\s+]/g, "");
+    const phoneRegex = /^[0-9]+$/;
 
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
+    if (!formData.phone.trim()) {
+        errors.phone = "Phone number is required.";
+    } else if (!phoneRegex.test(cleanPhone)) {
+        errors.phone = "Phone number must contain only numbers.";
+    } else if (cleanPhone.length < 8 || cleanPhone.length > 13) {
+        errors.phone = "Phone number length must be between 8 and 13 digits.";
+    }
+
+
+    if (!formData.address.trim()) {
+        errors.address = "Address is required.";
+    } else if (formData.address.trim().length < 3) {
+        errors.address = "Please enter a valid address.";
+    }
+
+    if (!formData.description.trim()) {
+        errors.description = "Description is required.";
+    } else if (formData.description.trim().length < 10) {
+        errors.description = "Description should be at least 10 characters long.";
+    }
+
+    setFormErrors(errors);
+    
+
+    return Object.keys(errors).length === 0;
+};
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -129,7 +124,7 @@ export default function OrganisationForm({
             const finalPayload = {
                 name: formData.name.trim(),
                 email: formData.email.trim(),
-                phone: formatFullPhone(formData.phone, formData.orgCountryCode),
+                phone_number: formatFullPhone(formData.phone, formData.orgCountryCode),
                 address: formData.address.trim(),
                 description: formData.description.trim(),
             };
@@ -174,41 +169,6 @@ export default function OrganisationForm({
                     disabled={isInputDisabled}
                 />
 
-                {/* <div
-                    onClick={() => !isInputDisabled && fileInputRef.current?.click()}
-                    className={`relative w-28 h-28 rounded-full border-2 transition-all duration-300 shadow-sm mb-6 flex flex-col items-center justify-center overflow-hidden ${
-                        !isInputDisabled
-                            ? 'border-dashed border-zinc-300 hover:border-blue-500 cursor-pointer group bg-white' 
-                            : 'border-solid border-zinc-200 bg-zinc-100/70 cursor-not-allowed pointer-events-none'
-                    }`}
-                >
-                    {previewUrl ? (
-                        <>
-                            <Image
-                                src={previewUrl}
-                                alt="Logo Preview"
-                                fill
-                                unoptimized
-                                className="object-cover rounded-full"
-                            />
-                            {!isInputDisabled && (
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-semibold transition-opacity z-10 gap-1.5">
-                                    <Camera className="w-3.5 h-3.5" />
-                                    <span>Change</span>
-                                </div>
-)}
-                        </>
-                    ) : (
-                        <div className={`flex flex-col items-center gap-1 transition-colors ${
-                            !isInputDisabled ? 'text-zinc-400 group-hover:text-blue-500' : 'text-zinc-300'
-                        }`}>
-                            <ImagePlus className="w-6 h-6" />
-                            <span className="text-[10px] font-semibold">
-                                {!isInputDisabled ? "Upload Logo" : "No Logo"}
-                            </span>
-                        </div>
-                    )}
-                </div> */}
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full" noValidate>
 

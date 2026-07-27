@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import OrganisationForm from "../components/OrganisationForm";
 import { createOrganisationProfile ,uploadInitialLogo} from "../actions/createNewOrganisation";
-
+import Cookies from "js-cookie";
 export default function CreateOrganisationPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -18,17 +18,16 @@ export default function CreateOrganisationPage() {
 
         const result = await createOrganisationProfile(formDataPayload);
 
-        if (result.success) {
-            const newOrgId=result.data?.id
+        if (result?.success) {
+
             setSuccess("Organisation created successfully!");
-            if(newOrgId){
-                localStorage.setItem("organaisationId",newOrgId)
-            }
+
             setTimeout(() => {
-                router.push("/dashboard");
+                router.push("/upload-logo");
             }, 1500);
         } else {
-            setError(result.message);
+            console.error("BACKEND error",result.message)
+            //setError(result.message || "Failed to create organaisation.");
         }
         setLoading(false);
     };
@@ -40,7 +39,6 @@ export default function CreateOrganisationPage() {
 
             <OrganisationForm 
                 onSubmit={handleCreateOrganisation}
-                onImageUpload={(file)=>uploadInitialLogo(file)}
                 isEditing={false} 
                 loading={loading} 
             />

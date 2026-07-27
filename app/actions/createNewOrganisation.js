@@ -27,7 +27,7 @@ export async function createOrganisationProfile(formDataPayload) {
             cookieStore.set("organaisationId",newOrgId , {
                 path:"/",
                 maxAge: 60*60 *24*7,
-                saneSite:"lax"
+                sameSite:"lax"
             })
         }
 
@@ -37,6 +37,7 @@ export async function createOrganisationProfile(formDataPayload) {
             id:resdata.data.id
         };
     } catch (error) {
+        console.error("DEBUG Server Action Error",error)
         return {
             success: false,
             message: "An error occurred while connecting to the server.",
@@ -51,8 +52,14 @@ export async function uploadInitialLogo(imageFile) {
 
         const formData = new FormData();
         formData.append("logo", imageFile);
-
-        const response = await fetch("", {
+        const orgId=cookieStore.get("organaisationId")?.value;
+        if(!orgId){
+            return{
+                success:false,
+                message:"Organaisation ID not found"
+            }
+        }
+        const response = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/logo`, {
             method: "POST",
             headers:{
             Authorization: `Bearer ${token}`

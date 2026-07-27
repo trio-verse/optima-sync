@@ -3,9 +3,10 @@
 import OrganisationForm from "@/app/components/OrganisationForm";
 import { getOrganisationById } from "@/app/actions/getActions";
 import { updateOrganisationProfile ,updateOrganisationLogo } from "@/app/actions/editOrgActions";
-import { useState ,useEffect} from "react";
+import { useState ,useEffect,Suspense} from "react";
 import { useSearchParams } from "next/navigation";
-export default function EditProfilePage() {
+
+function EditProfileContent() {
     const searchParams=useSearchParams();
     const orgId=searchParams.get("id");
     const [initialData, setInitialData] = useState(null);
@@ -23,10 +24,10 @@ export default function EditProfilePage() {
     }
     useEffect(() => {
         async function fetchData() {
-            if(!orgId) return
             try{
             const result = await getOrganisationById(orgId);
-            if (result.success) {
+            if (result?.success) {
+                //هون جبت البيانات من API
                 setInitialData(result.data);
             }else{
                 console.error("backend error",result?.message)
@@ -48,10 +49,20 @@ export default function EditProfilePage() {
 
     return (
         <OrganisationForm 
+
+            key={initialData?.id}
             initialValues={data}
             onSubmit={handleUpdate}
             onImageUpload={(file) => updateOrganisationLogo(orgId, file)}
             isEditing={true}
         />
+    );
+}
+
+export default function EditProfilePage() {
+    return (
+        <Suspense fallback={<div>Loading page...</div>}>
+            <EditProfileContent />
+        </Suspense>
     );
 }

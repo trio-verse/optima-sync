@@ -71,6 +71,18 @@ export default  function DashboardLayout({ children }) {
                         >
                             📢 التسويق (Marketing)
                         </button>
+                        <Link href={`/dashboard//industries`}>
+                        <button 
+                            onClick={() => setActiveTab("industries")}
+                            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
+                                activeTab === "industries" 
+                                    ? "bg-zinc-900 text-white shadow-sm" 
+                                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
+                            }`}
+                        >
+                            🏢 الصناعات (industries)
+                        </button>                       
+                        </Link>
 
                         <button 
                             onClick={() => {
@@ -89,6 +101,7 @@ export default  function DashboardLayout({ children }) {
 
                         {isSettingsOpen && (
                             <div className="flex flex-col gap-1 pr-6 pl-2 transition-all duration-200">
+                                <div>
                                 <Link 
                                     href={orgId ? `/dashboard/settings/profile?id=${orgId}` : "/dashboard/settings/profile"}
                                     onClick={() => {
@@ -102,9 +115,30 @@ export default  function DashboardLayout({ children }) {
                                     }`}
                                 >
                                     <span>👤</span>
-                                    <span>Edit Profile</span>
+                                    <span>Edit Profile </span>
                                 </Link>
+                                </div>
+                                
+                                <div>
+                                <Link 
+                                    href={orgId ? `/dashboard/settings/edit-logo?id=${orgId}` : "/dashboard/settings/edit-logo"}
+                                    onClick={() => {
+                                        setActiveTab("Logo");
+                                        setIsSidebarOpen(false);
+                                    }} 
+                                    className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-right ${
+                                        activeTab === "Logo" 
+                                            ? "bg-blue-100 text-blue-700 font-bold" 
+                                            : "text-zinc-600 hover:bg-zinc-200 hover:text-blue-600"
+                                    }`}
+                                >
+                                    <span>🖼️</span>
+                                    <span>Edit Logo </span>
+                                </Link>
+                                </div>
+
                             </div>
+
                         )}
                     </nav>
                 </div>
