@@ -1,11 +1,11 @@
 "use client";
-import { useEffect ,useState} from "react";
+import { useEffect ,useState ,Suspense} from "react";
 import LogoUploader from "@/app/components/LogoUploader";
 import { updateOrganisationLogo } from "@/app/actions/editOrgActions";
 import { useSearchParams } from "next/navigation";
 import { getOrganisationLogo } from "@/app/actions/getActions";
 
-export default function EditProfilePage() {
+    function EditProfileContent() {
     const searchParams=useSearchParams();
     const [initialData,setInitialData]=useState(null);
     const [loading,setLoading]=useState(false);
@@ -47,12 +47,20 @@ export default function EditProfilePage() {
 
 
                 <LogoUploader 
+                currentLogo={initialData?.logo}
                     onUpload={handleLogoUpdate}
-
+                    
                     showSkip={false} 
                 />
             </div>
             
         </div>
     );
+}
+export default function EditProfilePag(){
+    return(
+        <Suspense fallback={<div>Loading page...</div>}>
+            <EditProfileContent />
+        </Suspense>
+    )
 }
