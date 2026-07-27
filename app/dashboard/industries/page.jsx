@@ -195,7 +195,7 @@ export default function IndustriesPage() {
                                         </span>
                                     </div>
 
-                                    {/* أزرار تعديل وحذف */}
+
                                     <div className="flex items-center gap-1.5 opacity-90 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             type="button"

@@ -60,7 +60,7 @@ export default function LogoUploader({
                 </div>
             )}
 
-            {/* Image Box / Avatar Selection */}
+
             <label className="relative w-32 h-32 rounded-full border-2 border-dashed border-zinc-300 hover:border-blue-500 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all bg-zinc-50 mb-6 group">
                 <input 
                     type="file" 
@@ -91,7 +91,7 @@ export default function LogoUploader({
                 )}
             </label>
 
-            {/* Action Buttons */}
+
             <div className="flex flex-col gap-2.5 w-full">
                 <button
                     type="button"

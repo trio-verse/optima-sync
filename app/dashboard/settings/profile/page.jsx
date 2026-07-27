@@ -27,7 +27,7 @@ function EditProfileContent() {
             try{
             const result = await getOrganisationById(orgId);
             if (result?.success) {
-                //هون جبت البيانات من API
+
                 setInitialData(result.data);
             }else{
                 console.error("backend error",result?.message)
