@@ -1,9 +1,9 @@
 import Image from "next/image";
-
+import SystemGateway from "./components/SystemGateway";
 export default function Home() {
   return (
-    <div>
-
-    </div>
+    <main>
+      <SystemGateway/>
+    </main>
   );
 }

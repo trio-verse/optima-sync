@@ -1,9 +1,9 @@
 "use client";
-import { router, useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useState } from "react"
 import sendOtpToEmail from "../actions/registerUser";
 import { VerifyOtp } from "../actions/registerUser";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, Reorder } from "framer-motion";
 import EmailStep from "./EmailStep";
 import OtpStep from "./OtpStep";
 
@@ -14,6 +14,8 @@ export default function RegisterForm() {
     const [error, setError] = useState("");
     const [step, setStep] = useState("email");
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+    const router = useRouter();
+
 
     const handleEmailSubmit = async (e) => {
         e.preventDefault();
@@ -34,6 +36,7 @@ export default function RegisterForm() {
         setLoding(true);
         try {
             const result = await sendOtpToEmail(email);
+
             if (result.success) {
                 setSuccsess("We have sent a verification code to your email!");
                 setStep("otp");
@@ -71,12 +74,33 @@ export default function RegisterForm() {
         setLoding(true);
         try {
             const result = await VerifyOtp(email, otpCode);
-            setSuccsess("Success! Authenticated.");
+
+            if (!result.success) {
+                setError(result.message || "Verifacation failed");
+                return;
+            }
+            if (result.token) {
+                document.cookie = `token=${result.token}; max-age=21600; path=/; SameSite=Lax`;
+            }
+            if (result.status === 200 ) {
+                setSuccsess("Success! Authenticated. Redirecting...");
+                router.push("/dashboard");
+
+            } else if (result.status === 201 ) {
+                setSuccsess("Email verified! Let's set up your profile...");
+                router.push(`/create-profile?email=${encodeURIComponent(email)}`);
+            }
         } catch (error) {
             setError("Verification failed. Please try again.")
         } finally {
             setLoding(false);
         }
+    }
+    const handleBackToSignup = () => {
+        setStep("email");
+        setOtp(["", "", "", "", "", ""]);
+        setError("");
+        setSuccsess("");
     }
 
     return (
@@ -111,6 +135,7 @@ export default function RegisterForm() {
                                 loading={loading}
                                 error={error}
                                 success={success}
+                                onBackToSignup={handleBackToSignup}
                             />
                         </motion.div>
                     )}
