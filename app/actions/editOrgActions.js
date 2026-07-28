@@ -57,7 +57,7 @@ export async function updateOrganisationLogo(organisationId, imageFile) {
             }
         }
         const formData = new FormData();
-        formData.append("logo", imageFile);
+        formData.append("logo_url", imageFile);
 
         const response = await fetch(`${targetOrgId}`, {
             method: "POST",
@@ -78,7 +78,7 @@ export async function updateOrganisationLogo(organisationId, imageFile) {
 
         return {
             success: true,
-            logo: resdata.data.logo,
+            logo_url: resdata.data.logo_url,
         };
         } catch (error) {
         return {

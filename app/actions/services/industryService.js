@@ -1,30 +1,138 @@
-export async function creatIndustry (name){
-    
-    const response =await fetch("",{
-        method:"POST",
-        headers:{
-            "Content-Type":"applecation/json",
+"use server";
+import { cookies } from "next/headers";
+export async function creatIndustry(newName) {
+    try {
+        const cookiesStore=await cookies();
+        const token=cookiesStore.get("token")?.value;
 
+        const response = await fetch("", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({name: newName})
+        })
+        const resdata = await response.json();
+        if (!response.ok) {
+            return {
+                success: false,
+                message: resdata.data.message
+            }
+        }
+
+            return {
+                success: true,
+                data: resdata.data,
+                id: resdata?.data.id
+            }
+        
+
+
+    } catch (error) {
+        console.error("DEBUG server Action Error ",error);
+        return{
+            success:false,
+            message:"An error occurred while connecting to the server"
+        }
+    }
+
+}
+export async function updateIndustry(id,newName){
+    const storCookies= await cookies();
+    const token=storCookies.get("token")?.value;
+    try{
+        const response =await fetch("",{
+            method:"PATCH",
+            headers:{
+            "Content-Type":"application/json",
+            Authorization: `Bearer ${token}`
+            },
+            body:JSON.stringify({name:newName})
+        });
+
+        const resdata=await response.json();
+        if(!response.ok){
+            return{
+                success:false,
+                message:resdata?.data.message
+            }
+        }
+    return{
+        success:true,
+        data:resdata.data
+    }
+    }catch(error){
+        console.error("DEBUG updateIndustry Error",error);
+        return{
+            success:false,
+            message:"An error while connecting the server"
+        }
+    }
+}
+
+export async function deleteIndustry(id){
+    try{
+    const cookieStore=await cookies();
+    const token=cookieStore.get("token")?.value;
+    const response=await fetch("",{
+        method:"DELETE",
+        headers:{
+            "Content-Type":"application/json",
+            Authorization: `Bearer ${token}`
         },
-        body:JSON.stringify(name)
     })
     const resdata=await response.json();
     if(!response.ok){
         return{
-            succsses:false,
-            message:resdata.data.message
+            success:false,
+            message:resdata?.data.message
         }
     }
-    const newOrgId = resdata?.data?.id;
-        if (newOrgId) {
+    return{
+        success:true,
+        data:resdata?.data
+    }
+    }catch(error){
+        console.error("DEBUG delete Industry Error",error);
+        return{
+            success:false,
+            message:"error while connecting to server"
+        }
+    }
 
-            cookieStore.set("organaisationId", String(newOrgId), {
-                path: "/",
-                maxAge: 60 * 60 * 24 * 7,
-                sameSite: "lax"
-            });
+
+}
+export async function getIndustry(){
+    try{
+        const cookieStore=await cookies();
+        const token=cookieStore.get("token")?.value;
+        const response=await fetch("",{
+            method:"GET",
+            headers:{
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+                
+                
+            },
+            cache:"no-store"
+        })
+        const resdata=await response.json();
+        if(!response.ok){
             return{
-                succsses:true
+                success:false,
+                message:resdata?.data.message
             }
-
-}}
+        }
+        return{
+            success:true,
+            data:resdata?.data
+        }
+    }catch(error){
+        console.error("DEBUG getIndustry Error",error)
+        return{
+            success:false,
+            message:"error while connicting the server"
+        }
+    }
+}

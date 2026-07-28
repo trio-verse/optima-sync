@@ -12,16 +12,8 @@ function EditProfileContent() {
     const [initialData, setInitialData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const data = {
-        "id": 8,
-        "name": "bfg",
-        "phone_number": "099876543211",
-        "email": "zbailey@example.net",
-        "address": "trdfghjk",
-        "description": "Quo omnis nostrum agyuggyu guhgyugyuut adipisci.",
-        "createdAt": "2026-07-26T13:11:24Z",
-        "updatedAt": "2026-07-26T13:11:24Z"
-    }
+
+
     useEffect(() => {
         async function fetchData() {
             try{
@@ -49,9 +41,8 @@ function EditProfileContent() {
 
     return (
         <OrganisationForm 
-
             key={initialData?.id}
-            initialValues={data}
+            initialValues={initialData?.data}
             onSubmit={handleUpdate}
             onImageUpload={(file) => updateOrganisationLogo(orgId, file)}
             isEditing={true}

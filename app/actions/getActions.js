@@ -6,7 +6,7 @@ export async function getOrganisationById(organisationId) {
         const cookieStore=await cookies();
         const token =cookieStore.get("token")?.value;
         const targetOrgId=organisationId || cookieStore.get("organaisationId")?.value;
-        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/${targetOrgId}`, {
+        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/architecto/${targetOrgId}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -56,12 +56,12 @@ export async function getOrganisationLogo(organisationId) {
         const resdata = await response.json();
 
         if (!response.ok) {
-            return { success: false, message: "Failed to fetch logo." };
+            return { success: false, mesAsage: "Failed to fetch logo." };
         }
 
         return {
             success: true,
-            logo: resdata?.data?.logo || resdata?.logo,
+            logo_url: resdata?.data?.logo_url || resdata?.logo_url,
         };
     } catch (error) {
         return { success: false, message: "An error occurred." };
