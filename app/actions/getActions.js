@@ -6,7 +6,7 @@ export async function getOrganisationById(organisationId) {
         const cookieStore=await cookies();
         const token =cookieStore.get("token")?.value;
         const targetOrgId=organisationId || cookieStore.get("organaisationId")?.value;
-        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/architecto/${targetOrgId}`, {
+        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/${targetOrgId}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

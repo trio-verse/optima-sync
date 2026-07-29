@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Check, X, Building2, Pencil, Trash2, Search, Loader2 } from "lucide-react";
 import { creatIndustry, updateIndustry, deleteIndustry, getIndustry } from "@/app/actions/services/industryService";
 
+
 export default function IndustriesPage() {
 
     const [industries, setIndustries] = useState([]);
@@ -14,15 +15,16 @@ export default function IndustriesPage() {
     const [editingId, setEditingId] = useState(null);
     const [editingName, setEditingName] = useState("");
     const [loading, setLoading] = useState(false);
-
+    const [newColor, setNewColor] = useState("#2563eb")
+    const [editingColor, setEditingColor] = useState("")
     useEffect(() => {
         async function fetchIndustry() {
             setLoading(true);
             const result = await getIndustry();
             if (result?.success) {
-                setIndustries(result.data || []);
-            }else{
-                console.error("Faild to load industries",result?.message)
+                setIndustries(result?.data || []);
+            } else {
+                console.error("Faild to load industries", result?.message)
             }
             setLoading(false);
         }
@@ -38,12 +40,16 @@ export default function IndustriesPage() {
         }
         setLoading(true);
 
-        const result = await creatIndustry(newName.trim());
+        const result = await creatIndustry(newName.trim(), newColor);
         if (result?.success) {
-            const createdItem = result.data || { id: result.id, name: newName.trim() };
+            const createdItem = result.data || {
+                id: result.id, name: newName.trim(),
+                color: newColor
+            };
 
             setIndustries((prev) => [createdItem, ...prev]);
             setNewName("");
+            setNewColor("#2563eb")
             setAddError("");
             setIsAdding(false);
         } else {
@@ -56,10 +62,10 @@ export default function IndustriesPage() {
     const handleSaveEdit = async (id) => {
         if (!editingName.trim()) return;
         setLoading(true);
-        const result = await updateIndustry(id, editingName.trim());
+        const result = await updateIndustry(id, editingName.trim(), editingColor);
         if (result?.success) {
             setIndustries((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, name: editingName.trim() } : item))
+                prev.map((item) => (item.id === id ? { ...item, name: editingName.trim(), color: editingColor } : item))
             );
             setEditingId(null);
             setEditingName("");
@@ -122,6 +128,13 @@ export default function IndustriesPage() {
                             New Industry
                         </span>
                         <div className="flex items-center gap-2.5">
+                            <input type="color"
+                                value={newColor}
+                                onChange={(e) => setNewColor(e.target.value)}
+                                disabled={loading}
+                                className="w-10 h-10 rounded-xl border border-zinc-300 p-1 cursor-pointer bg-white shrink-0 disabled:opacity-50"
+                                title="Choose industry color"
+                            />
                             <input
                                 type="text"
                                 value={newName}
@@ -192,6 +205,14 @@ export default function IndustriesPage() {
                                 {editingId === item.id ? (
                                     <div className="flex items-center gap-2 w-full">
                                         <input
+                                            type="color"
+                                            value={editingColor}
+                                            onChange={(e) => setEditingColor(e.target.value)}
+                                            disabled={loading}
+                                            className="w-9 h-9 rounded-lg border border-zinc-300 p-0.5 cursor-pointer bg-white shrink-0"
+                                        />
+
+                                        <input
                                             type="text"
                                             value={editingName}
                                             onChange={(e) => setEditingName(e.target.value)}
@@ -219,7 +240,8 @@ export default function IndustriesPage() {
                                 ) : (
                                     <>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0 border border-blue-100">
+                                            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0 border border-blue-100"
+                                                style={{ backgroundColor: item.color || "#2563eb" }}>
                                                 {item.name.charAt(0).toUpperCase()}
                                             </div>
                                             <span className="text-zinc-800 font-semibold text-sm">
@@ -234,6 +256,7 @@ export default function IndustriesPage() {
                                                 onClick={() => {
                                                     setEditingId(item.id);
                                                     setEditingName(item.name);
+                                                    setEditingColor(item.color || "#2563eb")
                                                 }}
                                                 className="p-2 text-zinc-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer disabled:opacity-40"
                                                 title="Edit"
