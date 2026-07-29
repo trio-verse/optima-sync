@@ -15,7 +15,7 @@ export async function updateOrganisationProfile(organisationId, formDataPayload)
                 message:"No Organaisation ID provided or found in cookies."
             }
         }
-        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/architecto${targetOrgId}`, {
+        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/${targetOrgId}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
