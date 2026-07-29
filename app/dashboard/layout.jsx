@@ -71,7 +71,7 @@ export default  function DashboardLayout({ children }) {
                         >
                             📢 التسويق (Marketing)
                         </button>
-                        <Link href={`/dashboard//industries`}>
+                        <Link href={`/dashboard/industries`}>
                         <button 
                             onClick={() => setActiveTab("industries")}
                             className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
@@ -84,6 +84,18 @@ export default  function DashboardLayout({ children }) {
                         </button>                       
                         </Link>
 
+                        <Link href={`/dashboard/cities`}>
+                        <button 
+                            onClick={() => setActiveTab("cities")}
+                            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
+                                activeTab === "cities" 
+                                    ? "bg-zinc-900 text-white shadow-sm" 
+                                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
+                            }`}
+                        >
+                        📍  المُدن  (cities)
+                        </button>                       
+                        </Link>
                         <button 
                             onClick={() => {
                                 setActiveTab("settings");

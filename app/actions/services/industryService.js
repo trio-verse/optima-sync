@@ -1,6 +1,7 @@
 "use server";
+
 import { cookies } from "next/headers";
-export async function creatIndustry(newName) {
+export async function creatIndustry(newName,newColor) {
     try {
         const cookiesStore=await cookies();
         const token=cookiesStore.get("token")?.value;
@@ -11,7 +12,7 @@ export async function creatIndustry(newName) {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify({name: newName})
+            body: JSON.stringify({name: newName , color: newColor})
         })
         const resdata = await response.json();
         if (!response.ok) {
@@ -38,7 +39,7 @@ export async function creatIndustry(newName) {
     }
 
 }
-export async function updateIndustry(id,newName){
+export async function updateIndustry(id,newName,newColor){
     const storCookies= await cookies();
     const token=storCookies.get("token")?.value;
     try{
@@ -48,7 +49,7 @@ export async function updateIndustry(id,newName){
             "Content-Type":"application/json",
             Authorization: `Bearer ${token}`
             },
-            body:JSON.stringify({name:newName})
+            body:JSON.stringify({name:newName,color:newColor})
         });
 
         const resdata=await response.json();
