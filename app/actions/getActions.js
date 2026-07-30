@@ -56,12 +56,12 @@ export async function getOrganisationLogo(organisationId) {
         const resdata = await response.json();
 
         if (!response.ok) {
-            return { success: false, message: "Failed to fetch logo." };
+            return { success: false, mesAsage: "Failed to fetch logo." };
         }
 
         return {
             success: true,
-            logo: resdata?.data?.logo || resdata?.logo,
+            logo_url: resdata?.data?.logo_url || resdata?.logo_url,
         };
     } catch (error) {
         return { success: false, message: "An error occurred." };

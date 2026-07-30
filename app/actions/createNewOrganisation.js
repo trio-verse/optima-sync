@@ -26,7 +26,7 @@ export async function createOrganisationProfile(formDataPayload) {
         if(newOrgId){
             cookieStore.set("organaisationId",newOrgId , {
                 path:"/",
-                maxAge: 60*60 *24*7,
+                maxAge: 60*60*24*7,
                 sameSite:"lax"
             })
         }
@@ -51,11 +51,11 @@ export async function uploadInitialLogo(imageFile) {
         const token=cookieStore.get("token")?.value;
 
         const formData = new FormData();
-        formData.append("logo", imageFile);
+        formData.append("logo_url", imageFile);
         const orgId=cookieStore.get("organaisationId")?.value;
         if(!orgId){
             return{
-                success:false,
+                success:false,  
                 message:"Organaisation ID not found"
             }
         }
@@ -78,7 +78,7 @@ export async function uploadInitialLogo(imageFile) {
 
         return {
             success: true,
-            logo: resdata.data.logo,
+            logo_url: resdata.data.logo_url,
         };
     } catch (error) {
         return {

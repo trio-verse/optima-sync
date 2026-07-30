@@ -1,5 +1,5 @@
-
-
+"use server";
+import { cookies } from "next/headers";
 export default async function SendEmailToBackend(email) {
 try {
         const response =await fetch("https://optima.trio-verse.com/api/v1/register-email", {
@@ -11,15 +11,16 @@ try {
                 email
             })
         })
-        const data = await response.json();
+        const resdata = await response.json();
         if (!response.ok) return {
             success: false,
             message: data.message
         }
+
         return {
             success: true,
             status:response.status,
-            message:data.message
+            message:resdata.data.message
         }
     } catch (error) {
         return {
@@ -47,11 +48,22 @@ export async function VerifyOtp(email, otpCode) {
             success: false,
             message: resdata.message || "Invalid OTP"
         }
+        const userToken=resdata?.data?.token;
+        if(userToken){
+            const cookieStor=await cookies();
+            cookieStor.set("token",userToken,{
+                path:"/",
+                httpOnly:true,
+                secure:true,
+                maxAge:60*60*24*7,
+                sameSite:"lax"
+            })
+        }
         return {
             success: true,
             status: response.status,
-            message: resdata.status,
-            token:resdata?.data.token || resdata.token
+            message: resdata?.message,
+
 
         }
     } catch (error) {

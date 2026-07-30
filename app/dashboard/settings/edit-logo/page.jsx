@@ -12,11 +12,15 @@ import { getOrganisationLogo } from "@/app/actions/getActions";
 
     const orgId=searchParams.get("id");
     const handleLogoUpdate = async (file) => {
-        return await updateOrganisationLogo(null, file); 
+        return await updateOrganisationLogo(orgId, file); 
     };
 
     useEffect(() => {
         async function fetchData() {
+            if(!orgId){
+                setLoading(false)
+                return;
+            }
             try {
                 const result = await getOrganisationLogo(orgId);
                 if (result?.success) {
@@ -47,7 +51,7 @@ import { getOrganisationLogo } from "@/app/actions/getActions";
 
 
                 <LogoUploader 
-                currentLogo={initialData?.logo}
+                currentLogo={initialData?.logo_url}
                     onUpload={handleLogoUpdate}
                     
                     showSkip={false} 

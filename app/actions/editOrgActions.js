@@ -15,7 +15,7 @@ export async function updateOrganisationProfile(organisationId, formDataPayload)
                 message:"No Organaisation ID provided or found in cookies."
             }
         }
-        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/architecto${targetOrgId}`, {
+        const response = await fetch(`https://optima.trio-verse.com/api/v1/organizations/${targetOrgId}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
@@ -57,7 +57,7 @@ export async function updateOrganisationLogo(organisationId, imageFile) {
             }
         }
         const formData = new FormData();
-        formData.append("logo", imageFile);
+        formData.append("logo_url", imageFile);
 
         const response = await fetch(`${targetOrgId}`, {
             method: "POST",
@@ -78,7 +78,7 @@ export async function updateOrganisationLogo(organisationId, imageFile) {
 
         return {
             success: true,
-            logo: resdata.data.logo,
+            logo_url: resdata.data.logo_url,
         };
         } catch (error) {
         return {
