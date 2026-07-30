@@ -96,6 +96,20 @@ export default  function DashboardLayout({ children }) {
                         📍  المُدن  (cities)
                         </button>                       
                         </Link>
+
+                        <Link href={`/dashboard/channels`}>
+                        <button 
+                            onClick={() => setActiveTab("channels")}
+                            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
+                                activeTab === "channels" 
+                                    ? "bg-zinc-900 text-white shadow-sm" 
+                                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
+                            }`}
+                        >
+                        💬 القنوات (Channels)
+                        </button>                       
+                        </Link>
+
                         <button 
                             onClick={() => {
                                 setActiveTab("settings");
