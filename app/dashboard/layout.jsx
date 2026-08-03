@@ -11,7 +11,7 @@ export default  function DashboardLayout({ children }) {
     const [orgName, setOrgName] = useState("optima sync");
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
+    const [isSalesOpen,setIsSalesOpen]=useState(false);
 
     const [activeTab, setActiveTab] = useState("sales");
 
@@ -49,17 +49,97 @@ export default  function DashboardLayout({ children }) {
                     </div>
                     
                     <nav className="flex flex-col gap-1.5">
-
                         <button 
-                            onClick={() => setActiveTab("sales")}
+                            onClick={() => {setActiveTab("sales");
+                                setIsSalesOpen(!isSalesOpen);}
+                            }
                             className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
                                 activeTab === "sales" 
                                     ? "bg-zinc-900 text-white shadow-sm" 
                                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                             }`}
                         >
-                            📊 المبيعات (Sales)
+                            📊 Sales 
                         </button>
+                        {isSalesOpen &&(
+                            <div className="flex flex-col gap-1 pr-6 pl-2 transition-all duration-200">
+                                <div>
+                                <Link 
+                                    href={`/dashboard/product`}
+                                    onClick={() => {
+                                        setActiveTab("profile");
+                                        setIsSidebarOpen(false);
+                                    }} 
+                                    className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-right ${
+                                        activeTab === "profile" 
+                                            ? "bg-blue-100 text-blue-700 font-bold" 
+                                            : "text-zinc-600 hover:bg-zinc-200 hover:text-blue-600"
+                                    }`}
+                                >
+                                    <span></span>
+                                    <span> 🛍️ Products</span>
+                                </Link>
+                                </div>
+                                <div className="flex flex-col gap-1 pr-6 pl-2 transition-all duration-200">
+
+                                <Link 
+                                    href={`/dashboard/industries`}
+                                    onClick={() => {
+                                        setActiveTab("industries");
+                                        setIsSidebarOpen(false);
+                                    }} 
+                                    className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-right ${
+                                        activeTab === "industries" 
+                                            ? "bg-blue-100 text-blue-700 font-bold" 
+                                            : "text-zinc-600 hover:bg-zinc-200 hover:text-blue-600"
+                                    }`}
+                                >
+                                    <span></span>
+                                    <span> 🏢 industries</span>
+                                </Link>
+                                </div>
+
+                                <div className="flex flex-col gap-1 pr-6 pl-2 transition-all duration-200">
+
+                                <Link 
+                                    href={`/dashboard/cities`}
+                                    onClick={() => {
+                                        setActiveTab("cities");
+                                        setIsSidebarOpen(false);
+                                    }} 
+                                    className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-right ${
+                                        activeTab === "cities" 
+                                            ? "bg-blue-100 text-blue-700 font-bold" 
+                                            : "text-zinc-600 hover:bg-zinc-200 hover:text-blue-600"
+                                    }`}
+                                >
+                                    <span></span>
+                                    <span> 📍 cities</span>
+                                </Link>
+                                </div>
+
+                                <div className="flex flex-col gap-1 pr-6 pl-2 transition-all duration-200">
+
+                                <Link 
+                                    href={`/dashboard/channels`}
+                                    onClick={() => {
+                                        setActiveTab("channels");
+                                        setIsSidebarOpen(false);
+                                    }} 
+                                    className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-right ${
+                                        activeTab === "channels" 
+                                            ? "bg-blue-100 text-blue-700 font-bold" 
+                                            : "text-zinc-600 hover:bg-zinc-200 hover:text-blue-600"
+                                    }`}
+                                >
+                                    <span></span>
+                                    <span> 💬 Channels</span>
+                                </Link>
+                                </div>
+
+                            </div>
+                        )}
+
 
                         <button 
                             onClick={() => setActiveTab("marketing")}
@@ -69,46 +149,9 @@ export default  function DashboardLayout({ children }) {
                                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                             }`}
                         >
-                            📢 التسويق (Marketing)
+                            📢 Marketing
                         </button>
-                        <Link href={`/dashboard/industries`}>
-                        <button 
-                            onClick={() => setActiveTab("industries")}
-                            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
-                                activeTab === "industries" 
-                                    ? "bg-zinc-900 text-white shadow-sm" 
-                                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
-                            }`}
-                        >
-                            🏢 الصناعات (industries)
-                        </button>                       
-                        </Link>
 
-                        <Link href={`/dashboard/cities`}>
-                        <button 
-                            onClick={() => setActiveTab("cities")}
-                            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
-                                activeTab === "cities" 
-                                    ? "bg-zinc-900 text-white shadow-sm" 
-                                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
-                            }`}
-                        >
-                        📍  المُدن  (cities)
-                        </button>                       
-                        </Link>
-
-                        <Link href={`/dashboard/channels`}>
-                        <button 
-                            onClick={() => setActiveTab("channels")}
-                            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-right cursor-pointer ${
-                                activeTab === "channels" 
-                                    ? "bg-zinc-900 text-white shadow-sm" 
-                                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
-                            }`}
-                        >
-                        💬 القنوات (Channels)
-                        </button>                       
-                        </Link>
 
                         <button 
                             onClick={() => {
@@ -121,7 +164,7 @@ export default  function DashboardLayout({ children }) {
                                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                             }`}
                         >
-                            ⚙️ الإعدادات (Settings)
+                            ⚙️ Settings
                         </button>
                         
 
