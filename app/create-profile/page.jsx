@@ -28,6 +28,7 @@ export default function CreateOrganisationPage() {
         } else {
             console.error("BACKEND error",result.message)
             //setError(result.message || "Failed to create organaisation.");
+            console.log(result?.data)
         }
         setLoading(false);
     };
