@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
-import { Pencil, Camera, ImagePlus } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 export default function OrganisationForm({
   initialValues = {},
@@ -14,32 +13,59 @@ export default function OrganisationForm({
   const fileInputRef = useRef(null);
 
   const [formData, setformData] = useState({
-    name: initialValues?.name || "",
-    email: initialValues?.email || "",
-    phone: initialValues?.phone || "",
-    orgCountryCode: initialValues?.orgCountryCode || "+963",
-    address: initialValues?.address || "",
-    description: initialValues?.description || "",
+    name: "",
+    email: "",
+    phone: "",
+    orgCountryCode: "+963",
+    address: "",
+    description: "",
   });
 
   const [previewUrl, setPreviewUrl] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [canEdit, setCanEdit] = useState(false);
 
+  const supportedCountryCodes = ["+971", "+966", "+961", "+963", "+962"];
+
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      let extractedCode = "+963";
+      let rawPhone = initialValues.phone_number;
+
+      if (rawPhone) {
+        for (const code of supportedCountryCodes) {
+          if (rawPhone.startsWith(code)) {
+            extractedCode = code;
+            rawPhone = rawPhone.replace(code, "");
+            break;
+          }
+        }
+      }
+
+      setformData({
+        name: initialValues.name || "",
+        email: initialValues.email || "",
+        phone_number: rawPhone, 
+        orgCountryCode: extractedCode,
+        address: initialValues.address || "",
+        description: initialValues.description || "",
+      });
+
+      if (initialValues.logo || initialValues.image || initialValues.logo_url) {
+        setPreviewUrl(initialValues.logo || initialValues.image || initialValues.logo_url);
+      }
+    }
+  }, [initialValues]);
+
   const isInputDisabled = isEditing && !canEdit;
 
   const getPhonePlaceholder = () => {
     switch (formData.orgCountryCode) {
-      case "+971":
-        return "50 123 4567";
-      case "+966":
-        return "50 123 4567";
-      case "+961":
-        return "70 123 456";
-      case "+963":
-        return "99 123 4567";
-      default:
-        return "123 456 789";
+      case "+971": return "50 123 4567";
+      case "+966": return "50 123 4567";
+      case "+961": return "70 123 456";
+      case "+963": return "99 123 4567";
+      default: return "123 456 789";
     }
   };
 
@@ -85,62 +111,52 @@ export default function OrganisationForm({
     if (!formData.email.trim()) {
       errors.email = "Email address is required.";
     } else if (!emailRegex.test(formData.email.trim())) {
-      errors.email =
-        "Please enter a valid email address (e.g., name@domain.com).";
+      errors.email = "Please enter a valid email address.";
     }
 
-    const cleanPhone = formData.phone.replace(/[\s+]/g, "");
+    // 💡 حماية الكود من الإنهيار
+    const phoneVal = formData.phone_number || formData.phone || "";
+    const cleanPhone = phoneVal.replace(/[\s+]/g, "");
     const phoneRegex = /^[0-9]+$/;
 
-    if (!formData.phone.trim()) {
+    if (!phoneVal.trim()) {
       errors.phone = "Phone number is required.";
     } else if (!phoneRegex.test(cleanPhone)) {
       errors.phone = "Phone number must contain only numbers.";
-    } else if (cleanPhone.length < 8 || cleanPhone.length > 13) {
-      errors.phone = "Phone number length must be between 8 and 13 digits.";
+    } else if (cleanPhone.length < 6 || cleanPhone.length > 13) {
+      errors.phone = "Phone number length must be valid.";
     }
 
     if (!formData.address.trim()) {
       errors.address = "Address is required.";
-    } else if (formData.address.trim().length < 3) {
-      errors.address = "Please enter a valid address.";
     }
 
     if (!formData.description.trim()) {
       errors.description = "Description is required.";
-    } else if (formData.description.trim().length < 10) {
-      errors.description = "Description should be at least 10 characters long.";
     }
 
     setFormErrors(errors);
-
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      const finalPayload = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phone: formatFullPhone(formData.phone, formData.orgCountryCode),
-        address: formData.address.trim(),
-        description: formData.description.trim(),
+    const finalPayload = {
+        name: formData.name || "".trim(),
+        email: formData.email || "".trim(),
+        phone_number: formatFullPhone(formData.phone_number || formData.phone, formData.orgCountryCode) || "".trim(),
+        address: formData.address || "".trim(),
+        description: formData.description || "".trim(),
       };
       onSubmit(finalPayload);
     }
   };
 
   return (
-    <div
-      aria-description="Org-Container"
-      className="min-h-lvh flex justify-center items-center bg-gradient-to-tr from-slate-50 via-blue-50/30 to-zinc-100 p-6"
-    >
-      <div
-        aria-description="Org-Card"
-        className="w-full max-w-2xl bg-white/60 flex flex-col items-center justify-center rounded-2xl p-8 shadow-sm border border-white/40"
-      >
-        <div aria-description="Org-header" className="w-full mb-6">
+    <div className="min-h-lvh flex justify-center items-center bg-gradient-to-tr from-slate-50 via-blue-50/30 to-zinc-100 p-6">
+      <div className="w-full max-w-2xl bg-white/60 flex flex-col items-center justify-center rounded-2xl p-8 shadow-sm border border-white/40">
+        <div className="w-full mb-6">
           {isEditing && (
             <div className="flex justify-end w-full mb-2">
               <button
@@ -159,8 +175,7 @@ export default function OrganisationForm({
               {isEditing ? "Edit Organisation" : "Create Organisation"}
             </h1>
             <p className="text-zinc-500 text-xs px-4 leading-relaxed font-medium">
-              Set up your organisation workspace to start managing your team,
-              projects, and ERP operations.
+              Set up your organisation workspace to start managing your team, projects, and ERP operations.
             </p>
           </div>
         </div>
@@ -174,11 +189,7 @@ export default function OrganisationForm({
           disabled={isInputDisabled}
         />
 
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full"
-          noValidate
-        >
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full" noValidate>
           <div className="flex flex-col gap-1.5">
             <label className="text-zinc-700 font-semibold text-xs tracking-wide">
               Organisation Name:
@@ -190,13 +201,11 @@ export default function OrganisationForm({
               onChange={handleChange}
               disabled={isInputDisabled}
               placeholder="Optima Solutions"
-              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 transition-all shadow-sm text-sm ${formErrors.name ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"}`}
+              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 transition-all shadow-sm text-sm ${
+                formErrors.name ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"
+              }`}
             />
-            {formErrors.name && (
-              <span className="text-rose-500 text-[11px] font-medium">
-                {formErrors.name}
-              </span>
-            )}
+            {formErrors.name && <span className="text-rose-500 text-[11px] font-medium">{formErrors.name}</span>}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -210,13 +219,11 @@ export default function OrganisationForm({
               onChange={handleChange}
               disabled={isInputDisabled}
               placeholder="info@optima-sync.com"
-              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 transition-all shadow-sm text-sm ${formErrors.email ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"}`}
+              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 transition-all shadow-sm text-sm ${
+                formErrors.email ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"
+              }`}
             />
-            {formErrors.email && (
-              <span className="text-rose-500 text-[11px] font-medium">
-                {formErrors.email}
-              </span>
-            )}
+            {formErrors.email && <span className="text-rose-500 text-[11px] font-medium">{formErrors.email}</span>}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -227,7 +234,7 @@ export default function OrganisationForm({
               className={`flex items-center rounded-xl w-full border text-zinc-900 px-4 py-2.5 outline-none transition-all shadow-sm text-sm ${
                 isInputDisabled
                   ? "bg-zinc-100/70 border-zinc-200 cursor-not-allowed opacity-70"
-                  : "bg-white focus-within:border-blue-500 focus-within:ring-1"
+                  : "bg-white focus-within:border-blue-500"
               } ${formErrors.phone ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"}`}
             >
               <select
@@ -246,19 +253,15 @@ export default function OrganisationForm({
 
               <input
                 type="tel"
-                name="phone"
+                name="phone_number"
                 disabled={isInputDisabled}
-                value={formData.phone}
+                value={formData.phone_number ||  ""}
                 onChange={handleChange}
                 placeholder={getPhonePlaceholder()}
                 className="outline-none px-2 w-full bg-transparent disabled:text-zinc-500 disabled:cursor-not-allowed"
               />
             </div>
-            {formErrors.phone && (
-              <span className="text-rose-500 text-[11px] font-medium">
-                {formErrors.phone}
-              </span>
-            )}
+            {formErrors.phone && <span className="text-rose-500 text-[11px] font-medium">{formErrors.phone}</span>}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -268,17 +271,15 @@ export default function OrganisationForm({
             <input
               type="text"
               name="address"
-              placeholder="City , Country"
+              placeholder="City, Country"
               onChange={handleChange}
               disabled={isInputDisabled}
               value={formData.address}
-              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 transition-all shadow-sm text-sm ${formErrors.address ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"}`}
+              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 transition-all shadow-sm text-sm ${
+                formErrors.address ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"
+              }`}
             />
-            {formErrors.address && (
-              <span className="text-rose-500 text-[11px] font-medium">
-                {formErrors.address}
-              </span>
-            )}
+            {formErrors.address && <span className="text-rose-500 text-[11px] font-medium">{formErrors.address}</span>}
           </div>
 
           <div className="flex flex-col gap-1.5 md:col-span-2">
@@ -291,14 +292,12 @@ export default function OrganisationForm({
               value={formData.description}
               onChange={handleChange}
               disabled={isInputDisabled}
-              placeholder="Tell us more about your business fields, branches, or operations..."
-              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 transition-all shadow-sm text-sm resize-none ${formErrors.description ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"}`}
+              placeholder="Tell us more about your business fields..."
+              className={`disabled:bg-zinc-100/70 disabled:cursor-not-allowed disabled:text-zinc-500 bg-white border w-full text-zinc-900 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 transition-all shadow-sm text-sm resize-none ${
+                formErrors.description ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"
+              }`}
             />
-            {formErrors.description && (
-              <span className="text-rose-500 text-[11px] font-medium">
-                {formErrors.description}
-              </span>
-            )}
+            {formErrors.description && <span className="text-rose-500 text-[11px] font-medium">{formErrors.description}</span>}
           </div>
 
           <button
@@ -306,11 +305,7 @@ export default function OrganisationForm({
             disabled={loading || isInputDisabled}
             className="bg-blue-500 hover:bg-blue-700 font-bold w-full py-3 rounded-xl text-sm transition-all duration-300 text-white shadow-xl disabled:opacity-50 disabled:cursor-not-allowed md:col-span-2 mt-2"
           >
-            {loading
-              ? "Saving changes..."
-              : isEditing
-                ? "Save Changes"
-                : "Create & Get Started"}
+            {loading ? "Saving changes..." : isEditing ? "Save Changes" : "Create & Get Started"}
           </button>
         </form>
       </div>

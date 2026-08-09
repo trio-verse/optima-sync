@@ -24,9 +24,12 @@ import { getOrganisationLogo } from "@/app/actions/getActions";
             try {
                 const result = await getOrganisationLogo(orgId);
                 if (result?.success) {
-                    setInitialData(result.data);
+                    setInitialData({logo_url:result.logo_url});
+
+                    
                 } else {
                     console.error("Backend Error:", result?.message);
+
                 }
             } catch (error) {
                 console.error("Network error:", error);

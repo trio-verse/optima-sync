@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState ,useEffect} from "react";
 import Image from "next/image";
 import { Camera, ImagePlus, ArrowRight, Check } from "lucide-react";
 
@@ -15,7 +15,12 @@ export default function LogoUploader({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
-
+    
+    useEffect(() => {
+        if (currentLogo) {
+            setPreviewUrl(currentLogo);
+        }
+    }, [currentLogo]);
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {

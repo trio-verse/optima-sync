@@ -29,7 +29,6 @@ export default function UploadLogoPage() {
                     Add a photo to personalize your workspace.
                 </p>
 
-
                 <LogoUploader 
                     onUpload={handleUpload}
                     onSkip={handleSkip}
