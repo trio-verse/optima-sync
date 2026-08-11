@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getCity } from "../app/actions/services/cityService";
-import { getIndustry } from "../app/actions/services/industryService";
+import { getCity } from "../actions/services/cityService";
+import { getIndustry } from "../actions/services/industryService";
 
 export function useClientLookups() {
   const [cities, setCities] = useState([]);
