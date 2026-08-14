@@ -1,141 +1,159 @@
 "use server";
 
+import {cookies} from "next/headers";
+import {revalidatePath} from "next/cache";
+import {api} from "@/lib/api/client";
 
-let mockProducts = [
-    {
-        id: "1",
-        name: "iPhone 15 Pro",
-        price: 999,
-        description: "Latest Apple flagship smartphone",
-        category: "Electronics"
-    },
-    {
-        id: "2",
-        name: "MacBook Pro 16",
-        price: 2499,
-        description: "M3 Max processor, 32GB RAM",
-        category: "Laptops"
-    },
-    {
-        id: "3",
-        name: "Sony WH-1000XM5",
-        price: 399,
-        description: "Wireless Noise Canceling Headphones",
-        category: "Audio"
-    }
-];
-
-
-const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export async function getProducts() {
+/**
+ * جلب قائمة المنتجات
+ */
+export async function getProducts(orgId) {
     try {
-        await delay();
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        if (!token) return {
+            success: false,
+            message: "Unauthorized",
+            data: []
+        };
+
+
+        const resdata = await api.get("/products", {
+            token,
+            headers: { "X-Organization-ID": orgId },
+            cache: "no-store",
+        });
 
         return {
             success: true,
-            data: [...mockProducts]
+            data: resdata?.data || [],
         };
     } catch (error) {
-        console.error("DEBUG getProducts Error", error);
+        console.error("DEBUG getProducts Error:", error);
         return {
             success: false,
-            message: "Failed to fetch products (Mock Error)"
+            message: error.data?.message || error.message || "Failed to fetch products",
+            data: [],
         };
     }
 }
 
-export async function createProduct(productData) {
+/**
+ * إنشاء منتج جديد
+ */
+export async function createProduct(productData, orgId) {
     try {
-        await delay();
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
 
-        const newProduct = {
-            id: String(Date.now()), // توليد ID فريد
-            name: productData.name || "Untitled Product",
+        if (!token) return {
+            success: false,
+            message: "Unauthorized"
+        };
+
+        const payload = {
+            name: productData.name,
             price: productData.price ? Number(productData.price) : 0,
             description: productData.description || "",
-            category: productData.category || "General",
-            ...productData
         };
 
-        mockProducts.unshift(newProduct);
+
+        const resdata = await api.post("/products", payload, {
+            token,
+            headers: { "X-Organization-ID": orgId },
+        });
+
+        revalidatePath("/dashboard/products");
 
         return {
             success: true,
-            data: newProduct,
-            id: newProduct.id,
-            message: "Product created successfully"
+            data: resdata?.data,
+            message: resdata?.message || "Product created successfully",
         };
     } catch (error) {
-        console.error("DEBUG createProduct Error", error);
+        console.error("DEBUG createProduct Error:", error);
         return {
             success: false,
-            message: "Failed to create product (Mock Error)"
+            message: error.data?.message || error.message || "Failed to create product",
         };
     }
 }
 
-export async function updateProduct(id, productData) {
+/**
+ * تعديل منتج
+ */
+export async function updateProduct(id, productData, orgId) {
     try {
-        await delay();
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
 
-        const index = mockProducts.findIndex((item) => String(item.id) === String(id));
-
-        if (index === -1) {
-            return {
-                success: false,
-                message: "Product not found"
-            };
-        }
-
-        const updatedProduct = {
-            ...mockProducts[index],
-            ...productData,
-            id: mockProducts[index].id 
+        if (!token) return {
+            success: false,
+            message: "Unauthorized"
         };
 
-        mockProducts[index] = updatedProduct;
+        const payload = {
+            name: productData.name,
+            price: productData.price ? Number(productData.price) : 0,
+            description: productData.description || "",
+        };
+
+
+
+        const resdata = await api.put(`/products/${id}`, payload, {
+            token,
+            headers: { "X-Organization-ID": orgId },
+        });
+
+        revalidatePath("/dashboard/products");
 
         return {
             success: true,
-            data: updatedProduct,
-            message: "Product updated successfully"
+            data: resdata?.data,
+            message: resdata?.message || "Product updated successfully",
         };
     } catch (error) {
-        console.error("DEBUG updateProduct Error", error);
+        console.error("DEBUG updateProduct Error:", error);
         return {
             success: false,
-            message: "Failed to update product (Mock Error)"
+            message: error.data?.message || error.message || "Failed to update product",
         };
     }
 }
 
-export async function deleteProduct(id) {
+/**
+ * حذف منتج
+ */
+export async function deleteProduct(id, orgId) {
     try {
-        await delay();
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
 
-        const index = mockProducts.findIndex((item) => String(item.id) === String(id));
+        if (!token) return {
+            success: false,
+            message: "Unauthorized"
+        };
 
-        if (index === -1) {
-            return {
-                success: false,
-                message: "Product not found"
-            };
-        }
 
-        const deletedProduct = mockProducts[index];
-        mockProducts = mockProducts.filter((item) => String(item.id) !== String(id));
+
+        const resdata = await api.delete(`/products/${id}`, {
+            token,
+            headers: { "X-Organization-ID": orgId },
+        });
+
+        revalidatePath("/dashboard/products");
 
         return {
             success: true,
-            data: deletedProduct,
-            message: "Product deleted successfully"
+            data: resdata?.data,
+            message: resdata?.message || "Product deleted successfully",
         };
     } catch (error) {
-        console.error("DEBUG deleteProduct Error", error);
+        console.error("DEBUG deleteProduct Error:", error);
         return {
             success: false,
-            message: "Failed to delete product (Mock Error)"
+            message: error.data?.message || error.message || "Failed to delete product",
         };
     }
 }

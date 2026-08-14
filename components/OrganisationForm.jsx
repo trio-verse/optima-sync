@@ -15,7 +15,7 @@ export default function OrganisationForm({
   const [formData, setformData] = useState({
     name: "",
     email: "",
-    phone: "",
+    phone_number: "",
     orgCountryCode: "+963",
     address: "",
     description: "",
@@ -142,12 +142,14 @@ export default function OrganisationForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-    const finalPayload = {
-        name: formData.name || "".trim(),
-        email: formData.email || "".trim(),
-        phone_number: formatFullPhone(formData.phone_number || formData.phone, formData.orgCountryCode) || "".trim(),
-        address: formData.address || "".trim(),
-        description: formData.description || "".trim(),
+  const formattedPhone = formatFullPhone(formData.phone_number, formData.orgCountryCode);
+      const finalPayload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formattedPhone,
+        phone_number: formattedPhone,
+        address: formData.address.trim(),
+        description: formData.description.trim(),
       };
       onSubmit(finalPayload);
     }

@@ -1,28 +1,34 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState ,use} from "react";
 import LogoUploader from "@/components/LogoUploader";
 import { updateOrganisationLogo } from "@/actions/editOrgActions";
-import { useSearchParams } from "next/navigation";
+
 import { getOrganisationLogo } from "@/actions/getActions";
 
-function EditProfileContent() {
-  const searchParams = useSearchParams();
+export default function EditProfilePage({params}) {
+
   const [initialData, setInitialData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const orgId = searchParams.get("id");
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId ;
+
   const handleLogoUpdate = async (file) => {
     return await updateOrganisationLogo(orgId, file);
   };
 
   useEffect(() => {
+    if (!orgId) {
+
+      setLoading(false);
+      return;
+    }
     async function fetchData() {
-      if (!orgId) {
-        setLoading(false);
-        return;
-      }
+
       try {
+        setLoading(true);
         const result = await getOrganisationLogo(orgId);
+        console.log("FETCHED LOGO RESULT:", result);
         if (result?.success) {
           setInitialData({ logo_url: result.logo_url });
         } else {
@@ -49,18 +55,14 @@ function EditProfileContent() {
         </h3>
 
         <LogoUploader
+          key={initialData?.logo_url}
           currentLogo={initialData?.logo_url}
           onUpload={handleLogoUpdate}
           showSkip={false}
         />
+
       </div>
     </div>
   );
 }
-export default function EditProfilePag() {
-  return (
-    <Suspense fallback={<div>Loading page...</div>}>
-      <EditProfileContent />
-    </Suspense>
-  );
-}
+

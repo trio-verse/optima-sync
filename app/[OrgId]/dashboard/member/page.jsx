@@ -18,9 +18,9 @@ import {
   X,
   AlertCircle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect ,use} from "react";
 
-export default function MembersPage() {
+export default function MembersPage({params}) {
   const [members, setMembers] = useState([]);
   const [formData, setFormData] = useState({ email: "", role: "member" });
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,12 +32,16 @@ export default function MembersPage() {
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
   useEffect(() => {
+    if (!orgId) return;
     async function fetchMembers() {
       setLoading(true);
       setError("");
       try {
-        const result = await getMembers();
+        if (!orgId) return;
+        const result = await getMembers(orgId);
         if (result?.success) {
           setMembers(result?.data || []);
         } else {
@@ -54,7 +58,7 @@ export default function MembersPage() {
       }
     }
     fetchMembers();
-  }, []);
+  }, [orgId]);
 
   const validateForm = () => {
     setError("");
@@ -84,9 +88,14 @@ export default function MembersPage() {
     setLoading(true);
     setError("");
     try {
-      const result = await createMember(formData);
+      const result = await createMember(formData,orgId);
       if (result?.success) {
-        setMembers((prev) => [result.data, ...prev]);
+
+        const newMember = {
+        ...result.data,
+        email: formData.email, 
+      };
+        setMembers((prev) => [newMember, ...prev]);
         setFormData({ email: "", role: "member" });
         setError("");
       } else {
@@ -114,7 +123,7 @@ export default function MembersPage() {
     setError("");
 
     try {
-      const result = await updateMember(editingId, { role: editingRole });
+      const result = await updateMember(editingId, { role: editingRole },orgId);
 
       if (result?.success) {
         setMembers((prev) =>
@@ -142,7 +151,7 @@ export default function MembersPage() {
     setLoading(true);
     setError("");
     try {
-      const result = await deleteMember(id);
+      const result = await deleteMember(id,orgId);
       if (result?.success) {
         setMembers((prev) => prev.filter((m) => m.id !== id));
       } else {

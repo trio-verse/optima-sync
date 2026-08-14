@@ -3,20 +3,22 @@
 import { useRouter } from "next/navigation";
 import LogoUploader from "@/components/LogoUploader";
 import { uploadInitialLogo } from "@/actions/createNewOrganisation";
-
-export default function UploadLogoPage() {
+import { use } from "react";
+export default function UploadLogoPage({params}) {
   const router = useRouter();
-
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId ;
   const handleUpload = async (file) => {
-    const res = await uploadInitialLogo(file);
+
+    const res = await uploadInitialLogo(file,orgId);
     if (res?.success) {
-      router.push("/dashboard");
+      router.push(`/${orgId}/dashboard`);
     }
     return res;
   };
 
   const handleSkip = () => {
-    router.push("/dashboard");
+    router.push(`/${orgId}/dashboard`);
   };
 
   return (

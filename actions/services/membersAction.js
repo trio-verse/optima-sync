@@ -7,13 +7,11 @@ import { api } from "@/lib/api/client";
 /**
  * جلب أعضاء المنظمة
  */
-export async function getMembers() {
+export async function getMembers(orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized", data: [] };
@@ -27,9 +25,9 @@ export async function getMembers() {
       };
     }
 
-    const resdata = await api.get(`/organizations/${orgId}`, {
+    const resdata = await api.get(`/organizations/${orgId}/members`, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
 
@@ -53,13 +51,11 @@ export async function getMembers() {
 /**
  * إضافة عضو جديد
  */
-export async function createMember(formData) {
+export async function createMember(formData,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -76,14 +72,14 @@ export async function createMember(formData) {
 
     const resdata = await api.post(`/organizations/${orgId}/members`, payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/members");
 
     return {
       success: true,
-      data: resdata?.data || resdata,
+      data: resdata?.data ,
     };
   } catch (error) {
     console.error("DEBUG createMember Error:", error);
@@ -101,13 +97,11 @@ export async function createMember(formData) {
 /**
  * تحديث دور عضو
  */
-export async function updateMember(memberId, { role }) {
+export async function updateMember(memberId, { role },orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -120,14 +114,18 @@ export async function updateMember(memberId, { role }) {
     const resdata = await api.patch(
       `/organizations/${orgId}/members/${memberId}`,
       { role },
-      { token, orgId }
+      { 
+        token,
+        headers: { "X-Organization-ID": orgId } 
+      }
     );
 
     revalidatePath("/dashboard/members");
 
-    return {
-      success: true,
-      data: resdata?.data || resdata,
+  return {
+      success: resdata?.success ?? true,
+      message: resdata?.message || "Role updated successfully",
+      data: resdata?.data,
     };
   } catch (error) {
     console.error("DEBUG updateMember Error:", error);
@@ -145,13 +143,11 @@ export async function updateMember(memberId, { role }) {
 /**
  * حذف عضو
  */
-export async function deleteMember(memberId) {
+export async function deleteMember(memberId,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -163,7 +159,10 @@ export async function deleteMember(memberId) {
 
     const resdata = await api.delete(
       `/organizations/${orgId}/members/${memberId}`,
-      { token, orgId }
+      { 
+        token, 
+        headers: { "X-Organization-ID": orgId } 
+      }
     );
 
     revalidatePath("/dashboard/members");

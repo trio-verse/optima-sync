@@ -7,13 +7,11 @@ import { api } from "@/lib/api/client";
 /**
  * جلب قائمة القنوات (Channels)
  */
-export async function getChannels() {
+export async function getChannels(orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized", data: [] };
@@ -45,13 +43,11 @@ export async function getChannels() {
 /**
  * إنشاء قناة جديدة
  */
-export async function createChannel(newName, newColor) {
+export async function createChannel(newName, newColor,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -89,13 +85,11 @@ export async function createChannel(newName, newColor) {
 /**
  * تحديث بيانات قناة
  */
-export async function updateChannel(id, newName, newColor) {
+export async function updateChannel(id, newName, newColor,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -132,13 +126,11 @@ export async function updateChannel(id, newName, newColor) {
 /**
  * حذف قناة
  */
-export async function deleteChannel(id) {
+export async function deleteChannel(id,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };

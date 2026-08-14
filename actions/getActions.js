@@ -6,7 +6,7 @@ import { api } from "@/lib/api/client";
 /**
  * جلب تفاصيل المنظمة بواسطة الـ ID
  */
-export async function getOrganisationById(organisationId) {
+export async function getOrganisationById(orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -15,17 +15,8 @@ export async function getOrganisationById(organisationId) {
       return { success: false, message: "Unauthorized", data: null };
     }
 
-    const cookieOrgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+    const targetOrgId = orgId? String(orgId).trim() : null;
 
-    const rawId =
-      organisationId && organisationId !== "null" && organisationId !== "undefined"
-        ? organisationId
-        : cookieOrgId;
-
-    const targetOrgId = rawId ? String(rawId).trim() : null;
 
     if (!targetOrgId || targetOrgId === "null" || targetOrgId === "undefined") {
       return {
@@ -37,7 +28,9 @@ export async function getOrganisationById(organisationId) {
 
     const resdata = await api.get(`/organizations/${targetOrgId}`, {
       token,
-      orgId: targetOrgId,
+      headers: {
+        "x-organization-id": targetOrgId, 
+      },
       cache: "no-store",
     });
 
@@ -61,7 +54,7 @@ export async function getOrganisationById(organisationId) {
 /**
  * جلب شعار المنظمة (Organisation Logo)
  */
-export async function getOrganisationLogo(organisationId) {
+export async function getOrganisationLogo(orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -70,17 +63,9 @@ export async function getOrganisationLogo(organisationId) {
       return { success: false, message: "Unauthorized", logo_url: null };
     }
 
-    const cookieOrgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
 
-    const rawId =
-      organisationId && organisationId !== "null" && organisationId !== "undefined"
-        ? organisationId
-        : cookieOrgId;
 
-    const targetOrgId = rawId ? String(rawId).trim() : null;
+  const targetOrgId = orgId ? String(orgId).trim() : null;
 
     if (!targetOrgId || targetOrgId === "null" || targetOrgId === "undefined") {
       return {
@@ -92,11 +77,15 @@ export async function getOrganisationLogo(organisationId) {
 
     const resdata = await api.get(`/organizations/${targetOrgId}`, {
       token,
-      orgId: targetOrgId,
+      headers: {
+        "x-organization-id": targetOrgId, 
+      },
       cache: "no-store",
     });
+    // 👈 طباعة الاستجابة القادمة من API لمعاينة الحقول بالضبط
+    console.log("RAW BACKEND RESPONSE:", resdata);
 
-    const orgData = resdata?.data || resdata;
+    const orgData = resdata?.data?.data || resdata?.data;
     const rawLogo =
       orgData?.logo_url || orgData?.logo || orgData?.logo_path || null;
 

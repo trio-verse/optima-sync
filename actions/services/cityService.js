@@ -7,13 +7,11 @@ import { api } from "@/lib/api/client";
 /**
  * جلب قائمة المدن
  */
-export async function getCity() {
+export async function getCity(orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized", data: [] };
@@ -42,13 +40,11 @@ export async function getCity() {
 /**
  * إنشاء مدينة جديدة
  */
-export async function createCity(newName, newColor) {
+export async function createCity(newName, newColor,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -83,13 +79,11 @@ export async function createCity(newName, newColor) {
 /**
  * تحديث بيانات مدينة
  */
-export async function updateCity(id, newName, newColor) {
+export async function updateCity(id, newName, newColor,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -123,13 +117,10 @@ export async function updateCity(id, newName, newColor) {
 /**
  * حذف مدينة
  */
-export async function deleteCity(id) {
+export async function deleteCity(id,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
 
     if (!token) {
       return { success: false, message: "Unauthorized" };

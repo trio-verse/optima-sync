@@ -10,17 +10,23 @@ export async function sendEmailToBackend(email) {
   try {
     const resdata = await api.post("/register-email", { email });
 
+
+const result = {
+      status: resdata?.status,
+      data: resdata?.data,
+    };
+
     return {
       success: true,
-      status: 200,
+      status: Number(result.status),
       message:
-        resdata?.data?.message || resdata?.message || "OTP sent successfully",
+      result?.data?.message || resdata?.message || "OTP sent successfully",
     };
   } catch (error) {
     console.error("DEBUG sendEmailToBackend Error:", error);
     return {
       success: false,
-      status: error.status || 500,
+      status: Number(error.status || 500),
       message: error.data?.message || error.message || "Network error",
       errors: error.data?.errors || null,
     };
@@ -40,7 +46,12 @@ export async function verifyOtp(email, otpCode) {
       otp: otpCode,
     });
 
-    const userToken = resdata?.data?.token || resdata?.token;
+  const userToken = resdata?.data?.data?.token || resdata?.data?.token;
+
+  const result = {
+      status: resdata?.status,
+      data: resdata?.data,
+    };
 
     if (userToken) {
       const cookieStore = await cookies();
@@ -53,20 +64,28 @@ export async function verifyOtp(email, otpCode) {
       });
     }
 
+
+    console.log(result,"jjjjjjjjjjjjjj")
     return {
       success: true,
-      status: 200,
-      message: resdata?.message || "OTP verified successfully",
-      data: resdata?.data,
+      status: Number(result.status),
+      message: result?.data?.message || "OTP verified successfully",
+      data: result?.data,
     };
+    
   } catch (error) {
     console.error("DEBUG verifyOtp Error:", error);
+
+  const result = {
+      status: error.status || 500,
+      data: error.data || {},
+    };
     return {
       success: false,
-      status: error.status || 500,
+      status:Number(result.status),
       message:
-        error.data?.message || error.message || "Invalid OTP or network error",
-      errors: error.data?.errors || null,
+      result.data?.message || error.message || "Invalid OTP or network error",
+      errors: result.data?.errors || null,
     };
   }
 }

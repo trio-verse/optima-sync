@@ -17,20 +17,18 @@ export async function createOrganisationProfile(formDataPayload) {
       return { success: false, message: "Unauthorized" };
     }
 
-    const formattedPayload = {
+const formattedPayload = {
       name: String(formDataPayload.name || "").trim(),
       email: String(formDataPayload.email || "").trim(),
-      phone: String(formDataPayload.phone_number || "").trim(),
-      phone_number: String(formDataPayload.phone_number || "").trim(),
+      phone: String(formDataPayload.phone || formDataPayload.phone_number || "").trim(),
       address: String(formDataPayload.address || "").trim(),
       description: String(formDataPayload.description || "").trim(),
     };
-
     const resdata = await api.post("/organizations", formattedPayload, {
       token,
     });
 
-    const OrgId = resdata?.data?.id;
+    const OrgId = resdata?.data?.data?.id || resdata?.data?.id;
     if (!OrgId) {
       return {
         success: false,
@@ -39,10 +37,18 @@ export async function createOrganisationProfile(formDataPayload) {
     }
 
     revalidatePath("/dashboard");
+  return {
+      success: true,
+      message: "Organization created successfully",
+      orgId: OrgId,
+      redirectUrl: `/${OrgId}/upload-logo`,
+    };
 
-    targetRedirectUrl = `/${OrgId}/upload-logo`;
   } catch (error) {
     console.error("DEBUG createOrganisationProfile Error:", error);
+    if (error.response?.data) {
+      console.error("API Error Response Data:", error.response.data);
+    }
     return {
       success: false,
       message:
@@ -52,15 +58,13 @@ export async function createOrganisationProfile(formDataPayload) {
       errors: error.data?.errors || error.data?.data || null,
     };
   }
-  if (targetRedirectUrl) {
-    redirect(targetRedirectUrl);
-  }
+
 }
 
 /**
  * رفع شعار المنظمة (Initial Logo)
  */
-export async function uploadInitialLogo(imageFile) {
+export async function uploadInitialLogo(imageFile,orgId) {
   let targetRedirectUrl = null;
   try {
     const cookieStore = await cookies();
@@ -70,19 +74,24 @@ export async function uploadInitialLogo(imageFile) {
       return { success: false, message: "Unauthorized" };
     }
 
-    if (!orgId) {
+  const targetOrgId = orgId ? String(orgId).trim() : null;
+    if (!targetOrgId || targetOrgId === "null" || targetOrgId === "undefined") {
       return {
         success: false,
-        message: "Organization ID not found in cookies",
+        message: "No Organisation ID provided.",
+
       };
     }
+
 
     const formData = new FormData();
     formData.append("logo", imageFile);
 
     const resdata = await api.post(`/organizations/${orgId}/logo`, formData, {
       token,
-      orgId,
+        headers: {
+        "x-organization-id": targetOrgId, // إرسال الـ ID في الهيدر
+      },
     });
 
     revalidatePath("/dashboard");

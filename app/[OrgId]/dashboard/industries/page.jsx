@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect ,use} from "react";
 import {
   Plus,
   Check,
@@ -18,7 +18,7 @@ import {
   getIndustry,
 } from "@/actions/services/industryService";
 
-export default function IndustriesPage() {
+export default function IndustriesPage({params}) {
   const [industries, setIndustries] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
@@ -29,10 +29,16 @@ export default function IndustriesPage() {
   const [loading, setLoading] = useState(false);
   const [newColor, setNewColor] = useState("#2563eb");
   const [editingColor, setEditingColor] = useState("");
+
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId ;
+    
   useEffect(() => {
+    if (!orgId) return;
     async function fetchIndustry() {
+      
       setLoading(true);
-      const result = await getIndustry();
+      const result = await getIndustry(orgId);
       if (result?.success) {
         setIndustries(result?.data || []);
       } else {
@@ -41,7 +47,7 @@ export default function IndustriesPage() {
       setLoading(false);
     }
     fetchIndustry();
-  }, []);
+  }, [orgId]);
 
   const handleAddIndustry = async (e) => {
     e.preventDefault();
@@ -58,7 +64,7 @@ export default function IndustriesPage() {
       return;
     }
     setLoading(true);
-    const result = await creatIndustry(newName.trim(), newColor);
+    const result = await creatIndustry(newName.trim(), newColor,orgId);
     if (result?.success) {
       const createdItem = result.data || {
         id: result.id,
@@ -93,7 +99,7 @@ export default function IndustriesPage() {
       return;
     }
     setLoading(true);
-    const result = await updateIndustry(id, editingName.trim(), editingColor);
+    const result = await updateIndustry(id, editingName.trim(), editingColor,orgId);
     if (result?.success) {
       setIndustries((prev) =>
         prev.map((item) =>
@@ -112,7 +118,7 @@ export default function IndustriesPage() {
 
   const handleDelete = async (id) => {
     setLoading(true);
-    const resault = await deleteIndustry(id);
+    const resault = await deleteIndustry(id,orgId);
     if (resault?.success) {
       setIndustries((prev) => prev.filter((item) => item.id !== id));
     } else {

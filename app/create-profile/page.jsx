@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import OrganisationForm from "../../components/OrganisationForm";
+import OrganisationForm from "@/components/OrganisationForm";
 import {
   createOrganisationProfile,
-  uploadInitialLogo,
-} from "../../actions/createNewOrganisation";
-import Cookies from "js-cookie";
+} from "@/actions/createNewOrganisation";
+
 export default function CreateOrganisationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -20,17 +19,20 @@ export default function CreateOrganisationPage() {
     setSuccess("");
 
     const result = await createOrganisationProfile(formDataPayload);
-
-    if (result?.success) {
+  if (result?.success) {
       setSuccess("Organisation created successfully!");
 
+      // 👈 تعديل: استخدام التوجيه بالـ redirectUrl المرتجع من الـ Action
       setTimeout(() => {
-        router.push("/upload-logo");
-      }, 1500);
+        router.push(result.redirectUrl || "/upload-logo");
+      }, 1000);
     } else {
-      console.error("BACKEND error", result.message);
-      //setError(result.message || "Failed to create organaisation.");
-      console.log(result?.data);
+      console.error("BACKEND error", result?.message);
+      // 👈 تعديل: عرض تفاصيل الأخطاء في حال وجود Validation Errors
+      if (result?.errors) {
+        console.log("Validation details:", result.errors);
+      }
+      setError(result?.message || "Failed to create organisation.");
     }
     setLoading(false);
   };

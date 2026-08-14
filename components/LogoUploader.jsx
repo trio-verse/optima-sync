@@ -80,8 +80,10 @@ export default function LogoUploader({
                             src={previewUrl} 
                             alt="Logo Preview" 
                             fill 
+                            priority
+                            unoptimized
                             className="object-cover" 
-                            unoptimized 
+
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs gap-1 transition-opacity">
                             <Camera className="w-4 h-4" />

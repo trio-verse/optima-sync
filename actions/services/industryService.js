@@ -7,13 +7,11 @@ import { api } from "@/lib/api/client";
 /**
  * جلب قائمة المجالات (Industries)
  */
-export async function getIndustry() {
+export async function getIndustry(orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized", data: [] };
@@ -43,13 +41,11 @@ export async function getIndustry() {
 /**
  * إنشاء مجال جديد
  */
-export async function createIndustry(newName, newColor) {
+export async function createIndustry(newName, newColor,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -88,13 +84,11 @@ export const creatIndustry = createIndustry;
 /**
  * تحديث بيانات مجال
  */
-export async function updateIndustry(id, newName, newColor) {
+export async function updateIndustry(id, newName, newColor,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
+
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -129,13 +123,10 @@ export async function updateIndustry(id, newName, newColor) {
 /**
  * حذف مجال
  */
-export async function deleteIndustry(id) {
+export async function deleteIndustry(id,orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
 
     if (!token) {
       return { success: false, message: "Unauthorized" };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect ,use} from "react";
 import {
   Package,
   Plus,
@@ -23,7 +23,7 @@ import {
   deleteProduct,
 } from "@/actions/services/productsService";
 
-export default function ProductsPage() {
+export default function ProductsPage({params}) {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,10 +40,14 @@ export default function ProductsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState(null);
 
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId || resolvedParams?.orgId;
   useEffect(() => {
+    if (!orgId) return;
     async function fetchProductsData() {
+      
       setLoading(true);
-      const result = await getProducts();
+      const result = await getProducts(orgId );
       if (result?.success) {
         setProducts(result?.data || []);
       } else {
@@ -52,7 +56,7 @@ export default function ProductsPage() {
       setLoading(false);
     }
     fetchProductsData();
-  }, []);
+  }, [orgId]);
 
   const handleOpenModal = (product = null) => {
     setErrorMsg("");
@@ -97,7 +101,7 @@ export default function ProductsPage() {
     setLoading(true);
     setErrorMsg("");
 
-    const result = await createProduct(formData);
+    const result = await createProduct(formData,orgId);
     if (result?.success) {
       const newItem = result.data || { id: result.id, ...formData };
       setProducts((prev) => [newItem, ...prev]);
@@ -118,7 +122,7 @@ export default function ProductsPage() {
     setLoading(true);
     setErrorMsg("");
 
-    const result = await updateProduct(editingId, formData);
+    const result = await updateProduct(editingId, formData,orgId);
     if (result?.success) {
       setProducts((prev) =>
         prev.map((item) =>
@@ -136,7 +140,7 @@ export default function ProductsPage() {
     if (!deletingProduct) return;
 
     setLoading(true);
-    const result = await deleteProduct(deletingProduct.id);
+    const result = await deleteProduct(deletingProduct.id,orgId );
     if (result?.success) {
       setProducts((prev) =>
         prev.filter((item) => item.id !== deletingProduct.id),
@@ -148,9 +152,12 @@ export default function ProductsPage() {
     setLoading(false);
   };
 
-  const filteredProducts = products.filter((item) =>
-    item.name?.toLowerCase().includes(search.toLowerCase()),
-  );
+const filteredProducts = products.filter((item) => {
+    const query = search.toLowerCase();
+    const nameMatch = item.name?.toLowerCase().includes(query);
+    const descMatch = item.description?.toLowerCase().includes(query);
+    return nameMatch || descMatch;
+  });
 
   const totalProducts = products.length;
   const avgPrice =

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect ,use} from "react";
 import {
   Plus,
   Check,
@@ -18,7 +18,9 @@ import {
   getChannels,
 } from "@/actions/services/channelService";
 
-export default function ChannelsPage() {
+export default function ChannelsPage({ params }) {
+
+
   const [channels, setChannels] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
@@ -31,11 +33,14 @@ export default function ChannelsPage() {
   const [editingColor, setEditingColor] = useState("");
 
   const [loading, setLoading] = useState(false);
-
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId ;
   useEffect(() => {
+    if (!orgId) return;
     async function fetchChannelsData() {
+
       setLoading(true);
-      const result = await getChannels();
+      const result = await getChannels(orgId);
       if (result?.success) {
         setChannels(result?.data || []);
       } else {
@@ -44,7 +49,7 @@ export default function ChannelsPage() {
       setLoading(false);
     }
     fetchChannelsData();
-  }, []);
+  }, [orgId]);
 
   const handleAddChannel = async (e) => {
     e.preventDefault();
@@ -64,7 +69,7 @@ export default function ChannelsPage() {
     }
 
     setLoading(true);
-    const result = await createChannel(newName.trim(), newColor);
+    const result = await createChannel(newName.trim(), newColor,orgId);
 
     if (result?.success) {
       const createdItem = result.data || {
@@ -103,7 +108,7 @@ export default function ChannelsPage() {
     }
 
     setLoading(true);
-    const result = await updateChannel(id, editingName.trim(), editingColor);
+    const result = await updateChannel(id, editingName.trim(), editingColor,orgId);
 
     if (result?.success) {
       setChannels((prev) =>
@@ -124,7 +129,7 @@ export default function ChannelsPage() {
 
   const handleDelete = async (id) => {
     setLoading(true);
-    const result = await deleteChannel(id);
+    const result = await deleteChannel(id,orgId);
 
     if (result?.success) {
       setChannels((prev) => prev.filter((item) => item.id !== id));

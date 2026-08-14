@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect ,use} from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import Cookies from "js-cookie";
 import LogOutButton from "../../../actions/auth";
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout({ children , params}) {
   const router = useRouter();
   const pathname = usePathname();
   const [orgName, setOrgName] = useState("optima sync");
@@ -16,29 +16,24 @@ export default function DashboardLayout({ children }) {
 
   const [activeTab, setActiveTab] = useState("sales");
 
-  const [orgId, setOrgId] = useState(null);
 
-  useEffect(() => {
-    const currentOrgId =
-      Cookies.get("organaizationId") || Cookies.get("organizationId");
-    if (currentOrgId) {
-      setOrgId(currentOrgId);
-    }
-  }, []);
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
 
+  const basePath = `/${orgId}/dashboard` ;
   useEffect(() => {
-    if (pathname.includes("/dashboard/clients")) {
+    if (pathname.includes("/clients")) {
       setActiveTab("clients");
-    } else if (pathname.includes("/dashboard/industries")) {
+    } else if (pathname.includes("/industries" )) {
       setActiveTab("industries");
-    } else if (pathname.includes("/dashboard/cities")) {
+    } else if (pathname.includes("/cities")) {
       setActiveTab("cities");
-    } else if (pathname.includes("/dashboard/channels")) {
+    } else if (pathname.includes("/channels")) {
       setActiveTab("channels");
-    } else if (pathname.includes("/dashboard/settings")) {
+    } else if (pathname.includes("/settings")) {
       setActiveTab("settings");
       setIsSettingsOpen(true);
-    } else if (pathname.includes("/dashboard/member")) {
+    } else if (pathname.includes("/member")) {
       setActiveTab("member");
     }
   }, [pathname]);
@@ -90,7 +85,7 @@ export default function DashboardLayout({ children }) {
             </button>
 
             <Link
-              href="/dashboard/member"
+              href={`${basePath}/member`}
               onClick={() => setIsSidebarOpen(false)}
             >
               <button
@@ -101,7 +96,7 @@ export default function DashboardLayout({ children }) {
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
               >
-                member
+                👥 الأعضاء (Member)
               </button>
             </Link>
 
@@ -120,7 +115,7 @@ export default function DashboardLayout({ children }) {
             </button>
 
             <Link
-              href="/dashboard/clients"
+              href={`${basePath}/clients`}
               onClick={() => setIsSidebarOpen(false)}
             >
               <button
@@ -136,7 +131,7 @@ export default function DashboardLayout({ children }) {
             </Link>
 
             <Link
-              href="/dashboard/industries"
+              href={`${basePath}/industries`}
               onClick={() => setIsSidebarOpen(false)}
             >
               <button
@@ -152,7 +147,7 @@ export default function DashboardLayout({ children }) {
             </Link>
 
             <Link
-              href="/dashboard/cities"
+              href={`${basePath}/cities`}
               onClick={() => setIsSidebarOpen(false)}
             >
               <button
@@ -168,7 +163,7 @@ export default function DashboardLayout({ children }) {
             </Link>
 
             <Link
-              href="/dashboard/channels"
+              href={`${basePath}/channels`}
               onClick={() => setIsSidebarOpen(false)}
             >
               <button
@@ -201,11 +196,7 @@ export default function DashboardLayout({ children }) {
               <div className="flex flex-col gap-1 pr-6 pl-2 transition-all duration-200">
                 <div>
                   <Link
-                    href={
-                      orgId
-                        ? `/dashboard/settings/profile?id=${orgId}`
-                        : "/dashboard/settings/profile"
-                    }
+                  href={`${basePath}/settings/profile`}
                     onClick={() => {
                       setActiveTab("profile");
                       setIsSidebarOpen(false);
@@ -223,11 +214,7 @@ export default function DashboardLayout({ children }) {
 
                 <div>
                   <Link
-                    href={
-                      orgId
-                        ? `/dashboard/settings/edit-logo?id=${orgId}`
-                        : "/dashboard/settings/edit-logo"
-                    }
+                  href={`${basePath}/settings/edit-logo`}
                     onClick={() => {
                       setActiveTab("Logo");
                       setIsSidebarOpen(false);

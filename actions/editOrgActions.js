@@ -7,7 +7,7 @@ import { api } from "@/lib/api/client";
 /**
  * تحديث معلومات بروفايل المنظمة
  */
-export async function updateOrganisationProfile(organisationId, formDataPayload) {
+export async function updateOrganisationProfile(orgId, formDataPayload) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -19,17 +19,8 @@ export async function updateOrganisationProfile(organisationId, formDataPayload)
       };
     }
 
-    const cookieOrgId =
-      cookieStore.get("organaizationId")?.value ||
-      cookieStore.get("organizationId")?.value;
 
-    const rawOrgId =
-      organisationId && organisationId !== "null" && organisationId !== "undefined"
-        ? organisationId
-        : cookieOrgId;
-
-    const targetOrgId = rawOrgId ? String(rawOrgId).trim() : null;
-
+  const targetOrgId = orgId ? String(orgId).trim() : null;
     if (!targetOrgId || targetOrgId === "null" || targetOrgId === "undefined") {
       return {
         success: false,
@@ -48,6 +39,9 @@ export async function updateOrganisationProfile(organisationId, formDataPayload)
 
     const resdata = await api.patch(`/organizations/${targetOrgId}`, payloadToSend, {
       token,
+      headers: {
+        "x-organization-id": targetOrgId, // إرسال الـ ID في الهيدر
+      },
     });
 
     revalidatePath("/dashboard/settings/profile");
@@ -73,7 +67,7 @@ export async function updateOrganisationProfile(organisationId, formDataPayload)
 /**
  * تحديث شعار المنظمة (Logo Update)
  */
-export async function updateOrganisationLogo(organisationId, imageFile) {
+export async function updateOrganisationLogo(orgId, imageFile) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -85,16 +79,9 @@ export async function updateOrganisationLogo(organisationId, imageFile) {
       };
     }
 
-    const cookieOrgId =
-      cookieStore.get("organaizationId")?.value ||
-      cookieStore.get("organizationId")?.value;
 
-    const rawOrgId =
-      organisationId && organisationId !== "null" && organisationId !== "undefined"
-        ? organisationId
-        : cookieOrgId;
 
-    const targetOrgId = rawOrgId ? String(rawOrgId).trim() : null;
+const targetOrgId = orgId? String(orgId).trim() : null;
 
     if (!targetOrgId || targetOrgId === "null" || targetOrgId === "undefined") {
       return {
@@ -108,7 +95,9 @@ export async function updateOrganisationLogo(organisationId, imageFile) {
 
     const resdata = await api.post(`/organizations/${targetOrgId}/logo`, formData, {
       token,
-      orgId: targetOrgId,
+      headers: {
+        "x-organization-id": targetOrgId,
+      },
     });
 
     revalidatePath("/dashboard/settings/profile");

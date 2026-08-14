@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect ,use} from "react";
 import {
   Plus,
   Check,
@@ -20,7 +20,8 @@ import {
   getCity,
 } from "@/actions/services/cityService";
 
-export default function CitiesPage() {
+export default function CitiesPage({params}) {
+
   const [cities, setCities] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
@@ -33,11 +34,17 @@ export default function CitiesPage() {
   const [editingColor, setEditingColor] = useState("");
 
   const [loading, setLoading] = useState(false);
+  
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId ;
+
 
   useEffect(() => {
+    if (!orgId) return;
     async function fetchCities() {
+
       setLoading(true);
-      const result = await getCity();
+      const result = await getCity(orgId);
       if (result?.success) {
         setCities(result?.data || []);
       } else {
@@ -46,7 +53,7 @@ export default function CitiesPage() {
       setLoading(false);
     }
     fetchCities();
-  }, []);
+  }, [orgId]);
 
   const handleAddCity = async (e) => {
     e.preventDefault();
@@ -67,7 +74,7 @@ export default function CitiesPage() {
 
     setLoading(true);
 
-    const result = await createCity(newName.trim(), newColor);
+    const result = await createCity(newName.trim(), newColor,orgId);
     if (result?.success) {
       const createdItem = result.data || {
         id: result.id || Date.now().toString(),
@@ -103,7 +110,7 @@ export default function CitiesPage() {
     }
 
     setLoading(true);
-    const result = await updateCity(id, editingName.trim(), editingColor);
+    const result = await updateCity(id, editingName.trim(), editingColor,orgId);
     if (result?.success) {
       setCities((prev) =>
         prev.map((item) =>
@@ -123,7 +130,7 @@ export default function CitiesPage() {
 
   const handleDelete = async (id) => {
     setLoading(true);
-    const result = await deleteCity(id);
+    const result = await deleteCity(id,orgId);
     if (result?.success) {
       setCities((prev) => prev.filter((item) => item.id !== id));
     } else {

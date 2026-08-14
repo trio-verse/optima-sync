@@ -1,11 +1,12 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import sendOtpToEmail from "../actions/registerUser";
-import { VerifyOtp } from "../actions/registerUser";
+import sendOtpToEmail from "@/actions/registerUser";
+import { VerifyOtp } from "@/actions/registerUser";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
 import EmailStep from "./EmailStep";
 import OtpStep from "./OtpStep";
+
 
 export default function RegisterForm() {
   const [loading, setLoding] = useState(false);
@@ -77,15 +78,21 @@ export default function RegisterForm() {
       if (result.token) {
         document.cookie = `token=${result.token}; max-age=21600; path=/; SameSite=Lax`;
       }
-      if (result.status === 200) {
+      const statusCode = Number(result.status);
+      if (statusCode === 200) {
+        console.log("Existing Org Data:", result?.data);
         setSuccsess("Success! Authenticated. Redirecting...");
-        router.push("/dashboard");
-      } else if (result.status === 201) {
+        
+      } else if (statusCode === 201) {
+        console.log("New User Data:", result?.data);
         setSuccsess("Email verified! Let's set up your profile...");
-        router.push(`/create-profile?email=${encodeURIComponent(email)}`);
+        router.push(`/create-profile?email=${encodeURIComponent(email)}`)
+
+        
       }
     } catch (error) {
       setError("Verification failed. Please try again.");
+      console.error("OTP Error Catch:", error);
     } finally {
       setLoding(false);
     }

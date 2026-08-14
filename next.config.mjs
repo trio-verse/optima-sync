@@ -8,6 +8,16 @@ const nextConfig = {
       bodySizeLimit:'10mb'
     }
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'optima.trio-verse.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 
 };
 

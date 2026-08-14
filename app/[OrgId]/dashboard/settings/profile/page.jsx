@@ -6,29 +6,33 @@ import {
   updateOrganisationProfile,
   updateOrganisationLogo,
 } from "@/actions/editOrgActions";
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect,use} from "react";
 
-function EditProfileContent() {
-  const searchParams = useSearchParams();
-  const orgId = searchParams.get("id");
+export default function EditProfilePage({params}) {
+
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
 
   const [initialData, setInitialData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
     async function fetchData() {
       try {
+        setLoading(true);
         const result = await getOrganisationById(orgId);
-        if (result?.success) {
-          const payload = result?.data;
+        if (result?.success && result?.data) {
+          const payload = result.data.data || result.data;
           const sanitizedData = {
             ...payload,
             name: payload?.name || "",
             email: payload?.email || "",
-            phone: payload?.phone_number || payload?.phone || "",
-            phone: payload?.phone_number || payload?.phone || "",
+            phone_number: payload?.phone_number || payload?.phone || "",
             address: payload?.address || "",
             description: payload?.description || "",
           };
@@ -113,18 +117,4 @@ function EditProfileContent() {
   );
 }
 
-export default function EditProfilePage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <div className="text-center text-zinc-600 font-medium">
-            Loading page...
-          </div>
-        </div>
-      }
-    >
-      <EditProfileContent />
-    </Suspense>
-  );
-}
+
