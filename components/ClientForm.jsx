@@ -12,8 +12,8 @@ const CLIENT_TYPES = [
   { value: "agency", label: "وكالة" },
 ];
 
-export default function ClientForm({ initialData = null, onSubmit, isSubmitting }) {
-  const { cities, industries, loadingLookups } = useClientLookups();
+export default function ClientForm({ initialData = null, onSubmit, isSubmitting ,orgId }) {
+  const { cities, industries, loadingLookups } = useClientLookups(orgId );
 
   const [formData, setFormData] = useState({
     name: initialData?.name || "",

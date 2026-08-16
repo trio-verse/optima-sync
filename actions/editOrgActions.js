@@ -48,7 +48,7 @@ export async function updateOrganisationProfile(orgId, formDataPayload) {
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG updateOrganisationProfile Error:", error);
@@ -99,12 +99,12 @@ const targetOrgId = orgId? String(orgId).trim() : null;
         "x-organization-id": targetOrgId,
       },
     });
-
+  console.log("UPDATE LOGO RESPONSE:", JSON.stringify(resdata, null, 2));
     revalidatePath("/dashboard/settings/profile");
 
     return {
       success: true,
-      logo_url: resdata?.data?.logo_url || resdata?.logo_url,
+      logo_url: resdata?.data?.data?.logo_url,
       data: resdata?.data,
     };
   } catch (error) {

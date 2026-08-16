@@ -1,25 +1,27 @@
 // app/clients/create/page.jsx
 "use client";
 
-import { useState } from "react";
+import { useState ,use} from "react";
 import { useRouter } from "next/navigation";
 import ClientForm from "@/components/ClientForm";
 import { createClient } from "@/actions/clientActions";
 
-export default function CreateClientPage() {
+export default function CreateClientPage({params}) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const resolvedParams = params ? use(params) : null;            
+  const orgId = resolvedParams?.OrgId;      
 
   const handleCreate = async (formDataPayload) => {
     setIsSubmitting(true);
     setErrorMsg("");
 
     try {
-      const res = await createClient(formDataPayload);
+      const res = await createClient(formDataPayload,orgId);
 
       if (res?.success) {
-        router.push("/dashboard/clients");
+      router.push(`/${orgId}/dashboard/clients`); 
         // router.refresh();
       } else {
         setErrorMsg(res?.message || "حدث خطأ أثناء إضافة العميل");
@@ -39,7 +41,7 @@ export default function CreateClientPage() {
           {errorMsg}
         </div>
       )}
-      <ClientForm onSubmit={handleCreate} isSubmitting={isSubmitting} />
+      <ClientForm onSubmit={handleCreate} isSubmitting={isSubmitting} orgId={orgId}  />
     </div>
   );
 }

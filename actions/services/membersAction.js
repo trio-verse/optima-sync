@@ -25,18 +25,19 @@ export async function getMembers(orgId) {
       };
     }
 
-    const resdata = await api.get(`/organizations/${orgId}/members`, {
+    const resdata = await api.get(`/organizations/${orgId}`, {
       token,
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
-
+    const orgData = resdata?.data?.data || resdata?.data;
     return {
       success: true,
-      data: resdata?.data?.members || [],
+      data: orgData?.members || [],
     };
   } catch (error) {
-    console.error("DEBUG getMembers Error:", error);
+    console.error("DEBUG getMembers Error:", error.cause);
+    console.error("DEBUG getMembers Error",error.message)
     return {
       success: false,
       message:
@@ -69,7 +70,7 @@ export async function createMember(formData,orgId) {
       email: formData.email,
       role: formData.role,
     };
-
+    console.log("CREATE MEMBER - orgId:", orgId, "payload:", payload);
     const resdata = await api.post(`/organizations/${orgId}/members`, payload, {
       token,
       headers: { "X-Organization-ID": orgId },
@@ -79,10 +80,12 @@ export async function createMember(formData,orgId) {
 
     return {
       success: true,
-      data: resdata?.data ,
+      data: resdata?.data?.data ,
     };
   } catch (error) {
-    console.error("DEBUG createMember Error:", error);
+    console.error("DEBUG createMember Error:", error.cause);
+    console.error("DEBUG createMember Error:", error.message)
+    console.error("DEBUG createMember FULL DATA:", JSON.stringify(error.data, null, 2)); // 👈 ضيفي هاد السطر
     return {
       success: false,
       message:
@@ -125,10 +128,10 @@ export async function updateMember(memberId, { role },orgId) {
   return {
       success: resdata?.success ?? true,
       message: resdata?.message || "Role updated successfully",
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
-    console.error("DEBUG updateMember Error:", error);
+    console.error("DEBUG updateMember Error:", error.cause);
     return {
       success: false,
       message:
@@ -169,7 +172,7 @@ export async function deleteMember(memberId,orgId) {
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG deleteMember Error:", error);

@@ -36,10 +36,11 @@ export async function getOrganisationById(orgId) {
 
     return {
       success: true,
-      data: resdata?.data || null,
+      data: resdata?.data?.data || null,
     };
   } catch (error) {
-    console.error("DEBUG getOrganisationById Error:", error);
+    console.error("DEBUG getOrganisationById Error:", error.cause);
+    console.error("DEBUG getOrganisationById Error:", error.message);
     return {
       success: false,
       message:

@@ -8,6 +8,7 @@ import { updateClient, getClients } from "@/actions/clientActions";
 export default function ClientProfilePage({ params: paramsPromise }) {
   const params = use(paramsPromise);
   const clientId = params.id;
+  const orgId = params.OrgId;   
   const router = useRouter();
 
   const [clientData, setClientData] = useState(null);
@@ -19,7 +20,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
   useEffect(() => {
     async function fetchClient() {
       setLoading(true);
-      const res = await getClients();
+      const res = await getClients({},orgId);
       if (res.success) {
         const found = res.data.find((c) => String(c.id) === String(clientId));
         setClientData(found || null);
@@ -27,13 +28,13 @@ export default function ClientProfilePage({ params: paramsPromise }) {
       setLoading(false);
     }
     fetchClient();
-  }, [clientId]);
+  }, [clientId,orgId]);
 
   const handleUpdate = async (formDataPayload) => {
     setIsSubmitting(true);
     setErrorMsg("");
 
-    const res = await updateClient(clientId, formDataPayload);
+    const res = await updateClient(clientId, formDataPayload,orgId);
 
     if (res.success) {
       setClientData(res.data || { ...clientData, ...formDataPayload });

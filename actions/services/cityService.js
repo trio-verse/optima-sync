@@ -19,13 +19,13 @@ export async function getCity(orgId) {
 
     const resdata = await api.get("/cities", {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
 
     return {
       success: true,
-      data: resdata?.data || [],
+      data: resdata?.data?.data || [],
     };
   } catch (error) {
     console.error("DEBUG getCity Error:", error);
@@ -57,15 +57,15 @@ export async function createCity(newName, newColor,orgId) {
 
     const resdata = await api.post("/cities", payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
-      id: resdata?.data?.id,
+      data: resdata?.data?.data,
+      id: resdata?.data?.data.id,
     };
   } catch (error) {
     console.error("DEBUG createCity Error:", error);
@@ -96,14 +96,14 @@ export async function updateCity(id, newName, newColor,orgId) {
 
     const resdata = await api.patch(`/cities/${id}`, payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG updateCity Error:", error);
@@ -128,14 +128,14 @@ export async function deleteCity(id,orgId) {
 
     const resdata = await api.delete(`/cities/${id}`, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG deleteCity Error:", error);

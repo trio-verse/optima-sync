@@ -82,11 +82,12 @@ export default function RegisterForm() {
       if (statusCode === 200) {
         console.log("Existing Org Data:", result?.data);
         setSuccsess("Success! Authenticated. Redirecting...");
+        router.push("/organizations"); 
         
       } else if (statusCode === 201) {
         console.log("New User Data:", result?.data);
         setSuccsess("Email verified! Let's set up your profile...");
-        router.push(`/create-profile?email=${encodeURIComponent(email)}`)
+        router.push("/organizations"); 
 
         
       }

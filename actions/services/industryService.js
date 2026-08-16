@@ -19,13 +19,13 @@ export async function getIndustry(orgId) {
 
     const resdata = await api.get("/industries", {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
 
     return {
       success: true,
-      data: resdata?.data || [],
+      data: resdata?.data?.data || [],
     };
   } catch (error) {
     console.error("DEBUG getIndustry Error:", error);
@@ -58,15 +58,15 @@ export async function createIndustry(newName, newColor,orgId) {
 
     const resdata = await api.post("/industries", payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
-      id: resdata?.data?.id,
+      data: resdata?.data?.data,
+      id: resdata?.data?.data.id,
     };
   } catch (error) {
     console.error("DEBUG createIndustry Error:", error);
@@ -101,14 +101,14 @@ export async function updateIndustry(id, newName, newColor,orgId) {
 
     const resdata = await api.patch(`/industries/${id}`, payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG updateIndustry Error:", error);
@@ -134,14 +134,14 @@ export async function deleteIndustry(id,orgId) {
 
     const resdata = await api.delete(`/industries/${id}`, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG deleteIndustry Error:", error);

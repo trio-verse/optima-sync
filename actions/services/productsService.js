@@ -27,7 +27,7 @@ export async function getProducts(orgId) {
 
         return {
             success: true,
-            data: resdata?.data || [],
+            data: resdata?.data?.data || [],
         };
     } catch (error) {
         console.error("DEBUG getProducts Error:", error);
@@ -68,8 +68,8 @@ export async function createProduct(productData, orgId) {
 
         return {
             success: true,
-            data: resdata?.data,
-            message: resdata?.message || "Product created successfully",
+            data: resdata?.data?.data,
+            message: resdata?.data?.message || "Product created successfully",
         };
     } catch (error) {
         console.error("DEBUG createProduct Error:", error);
@@ -110,8 +110,8 @@ export async function updateProduct(id, productData, orgId) {
 
         return {
             success: true,
-            data: resdata?.data,
-            message: resdata?.message || "Product updated successfully",
+            data: resdata?.data?.data,
+            message: resdata?.data?.message || "Product updated successfully",
         };
     } catch (error) {
         console.error("DEBUG updateProduct Error:", error);
@@ -146,8 +146,8 @@ export async function deleteProduct(id, orgId) {
 
         return {
             success: true,
-            data: resdata?.data,
-            message: resdata?.message || "Product deleted successfully",
+            data: resdata?.data?.data,
+            message: resdata?.data?.message || "Product deleted successfully",
         };
     } catch (error) {
         console.error("DEBUG deleteProduct Error:", error);

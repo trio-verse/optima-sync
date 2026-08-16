@@ -19,13 +19,13 @@ export async function getChannels(orgId) {
 
     const resdata = await api.get("/channels", {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
 
     return {
       success: true,
-      data: resdata?.data || [],
+      data: resdata?.data?.data || [],
     };
   } catch (error) {
     console.error("DEBUG getChannels Error:", error);
@@ -60,15 +60,15 @@ export async function createChannel(newName, newColor,orgId) {
 
     const resdata = await api.post("/channels", payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
-      id: resdata?.data?.id,
+      data: resdata?.data?.data,
+      id: resdata?.data?.data.id,
     };
   } catch (error) {
     console.error("DEBUG createChannel Error:", error);
@@ -102,14 +102,14 @@ export async function updateChannel(id, newName, newColor,orgId) {
 
     const resdata = await api.patch(`/channels/${id}`, payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG updateChannel Error:", error);
@@ -138,14 +138,14 @@ export async function deleteChannel(id,orgId) {
 
     const resdata = await api.delete(`/channels/${id}`, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
 
     return {
       success: true,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG deleteChannel Error:", error);

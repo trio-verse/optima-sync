@@ -7,15 +7,10 @@ import { api } from "@/lib/api/client";
 /**
  * جلب قائمة العملاء مع التصفية والترقيم (Pagination)
  */
-export async function getClients(options = {}) {
+export async function getClients(options = {}, orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
-    const orgId =
-      options.organization_id ||
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
 
     if (!token) {
       return { success: false, message: "Unauthorized", data: [] };
@@ -54,7 +49,7 @@ export async function getClients(options = {}) {
 
     const resdata = await api.get("/clients", {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
       params,
       next: { revalidate: 60 },
     });
@@ -62,7 +57,7 @@ export async function getClients(options = {}) {
     return {
       success: true,
       message: "Clients data fetched successfully.",
-      data: resdata?.data || [],
+      data: resdata?.data?.data || [],
       meta: resdata?.data?.meta || resdata?.meta || {},
     };
   } catch (error) {
@@ -81,26 +76,27 @@ export async function getClients(options = {}) {
 /**
  * إنشاء عميل جديد
  */
-export async function createClient(formDataPayload) {
+export async function createClient(formDataPayload, orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
     }
 
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+
     const payload = {
       ...formDataPayload,
-      organization_id: orgId ? Number(orgId) : undefined,
+      organization_id: Number(orgId),
     };
 
     const resdata = await api.post("/clients", payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
@@ -108,7 +104,7 @@ export async function createClient(formDataPayload) {
     return {
       success: true,
       message: resdata?.message || "The client was created successfully",
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG createClient Error:", error);
@@ -126,26 +122,27 @@ export async function createClient(formDataPayload) {
 /**
  * تحديث بيانات عميل
  */
-export async function updateClient(id, formDataPayload) {
+export async function updateClient(id, formDataPayload, orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
     }
 
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+
     const payload = {
       ...formDataPayload,
-      organization_id: orgId ? Number(orgId) : undefined,
+      organization_id: Number(orgId),
     };
 
     const resdata = await api.patch(`/clients/${id}`, payload, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");
@@ -153,7 +150,7 @@ export async function updateClient(id, formDataPayload) {
     return {
       success: true,
       message: resdata?.message || "Client updated successfully",
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
   } catch (error) {
     console.error("DEBUG updateClient Error:", error);
@@ -171,21 +168,22 @@ export async function updateClient(id, formDataPayload) {
 /**
  * حذف عميل
  */
-export async function deleteClient(id) {
+export async function deleteClient(id, orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    const orgId =
-      cookieStore.get("organizationId")?.value ||
-      cookieStore.get("organaisationId")?.value;
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
     }
 
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+
     const resdata = await api.delete(`/clients/${id}`, {
       token,
-      orgId,
+      headers: { "X-Organization-ID": orgId },
     });
 
     revalidatePath("/dashboard/clients");

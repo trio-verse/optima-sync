@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback ,use} from "react";
 import Link from "next/link";
 import { getClients } from "@/actions/clientActions";
 import { useClientLookups } from "@/hooks/useClientLookups";
 
-export default function ClientsListPage() {
-  const { cities, industries } = useClientLookups();
+export default function ClientsListPage({params}) {
+    const resolvedParams = params ? use(params) : null;            
+  const orgId = resolvedParams?.OrgId;  
+
+  const { cities, industries } = useClientLookups(orgId);
 
   const [clients, setClients] = useState([]);
   const [meta, setMeta] = useState({});
@@ -21,15 +24,17 @@ export default function ClientsListPage() {
     page: 1,
   });
 
+
+
   const fetchClientsData = useCallback(async () => {
     setLoading(true);
-    const res = await getClients(filters);
+    const res = await getClients(filters,orgId);
     if (res.success) {
       setClients(res.data);
       setMeta(res.meta);
     }
     setLoading(false);
-  }, [filters]);
+  }, [filters,orgId]);
 
   useEffect(() => {
     fetchClientsData();
@@ -46,7 +51,7 @@ export default function ClientsListPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">إدارة العملاء</h1>
         <Link
-          href="/dashboard/clients/create"
+          href={`/${orgId}/dashboard/clients/create`}   
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md shrink-0"
         >
           <span>+</span> إضافة عميل جديد
@@ -154,7 +159,7 @@ export default function ClientsListPage() {
 
                     <td className="p-3.5 text-left pl-5">
                       <Link
-                        href={`/dashboard/clients/${client.id}`}
+                        href={`/${orgId}/dashboard/clients/${client.id}`}
                         title="عرض تفاصيل العميل"
                         className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                       >

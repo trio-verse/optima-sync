@@ -34,6 +34,7 @@ export default function MembersPage({params}) {
 
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId;
+
   useEffect(() => {
     if (!orgId) return;
     async function fetchMembers() {

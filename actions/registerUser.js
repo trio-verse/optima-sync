@@ -50,7 +50,7 @@ export async function verifyOtp(email, otpCode) {
 
   const result = {
       status: resdata?.status,
-      data: resdata?.data,
+      data: resdata?.data?.data,
     };
 
     if (userToken) {
@@ -70,7 +70,7 @@ export async function verifyOtp(email, otpCode) {
       success: true,
       status: Number(result.status),
       message: result?.data?.message || "OTP verified successfully",
-      data: result?.data,
+      data: result?.data?.data,
     };
     
   } catch (error) {

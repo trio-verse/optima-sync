@@ -93,7 +93,7 @@ export async function uploadInitialLogo(imageFile,orgId) {
         "x-organization-id": targetOrgId, // إرسال الـ ID في الهيدر
       },
     });
-
+  console.log("UPLOAD LOGO RESPONSE:", JSON.stringify(resdata, null, 2));
     revalidatePath("/dashboard");
     targetRedirectUrl = `/${orgId}/dashboard`;
   } catch (error) {
