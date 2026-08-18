@@ -24,7 +24,7 @@ export async function getProducts(orgId) {
             headers: { "X-Organization-ID": orgId },
             cache: "no-store",
         });
-
+         console.log(resdata);
         return {
             success: true,
             data: resdata?.data?.data || [],
