@@ -4,9 +4,41 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api/client";
 
-/**
- * جلب قائمة العملاء مع التصفية والترقيم (Pagination)
- */
+function sanitizeClientPayload(raw) {
+  const payload = {};
+
+  const stringFields = [
+    "name",
+    "email",
+    "phone",
+    "whatsapp",
+    "address",
+    "notes",
+    "client_type",
+    "type",
+  ];
+  stringFields.forEach((key) => {
+    if (raw[key] !== undefined && raw[key] !== null) {
+      payload[key] = String(raw[key]).trim();
+    }
+  });
+
+  const numericFields = ["city_id", "industry_id", "organization_id"];
+  numericFields.forEach((key) => {
+    const val = raw[key];
+    if (
+      val !== undefined &&
+      val !== null &&
+      val !== "" &&
+      !isNaN(Number(val))
+    ) {
+      payload[key] = Number(val);
+    }
+  });
+
+  return payload;
+}
+
 export async function getClients(options = {}, orgId) {
   try {
     const cookieStore = await cookies();
@@ -51,9 +83,9 @@ export async function getClients(options = {}, orgId) {
       token,
       headers: { "X-Organization-ID": orgId },
       params,
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
-
+    console.log(resdata);
     return {
       success: true,
       message: "Clients data fetched successfully.",
@@ -88,9 +120,9 @@ export async function createClient(formDataPayload, orgId) {
     if (!orgId) {
       return { success: false, message: "Organization ID is missing." };
     }
-
+    const cleanedPayload = sanitizeClientPayload(formDataPayload);
     const payload = {
-      ...formDataPayload,
+      ...cleanedPayload,
       organization_id: Number(orgId),
     };
 
@@ -98,8 +130,8 @@ export async function createClient(formDataPayload, orgId) {
       token,
       headers: { "X-Organization-ID": orgId },
     });
-
-    revalidatePath("/dashboard/clients");
+    //console.log( "fffffffffffffffffff" , resdata);
+    revalidatePath(`/${orgId}/dashboard/clients`);
 
     return {
       success: true,
@@ -145,7 +177,7 @@ export async function updateClient(id, formDataPayload, orgId) {
       headers: { "X-Organization-ID": orgId },
     });
 
-    revalidatePath("/dashboard/clients");
+    revalidatePath(`/${orgId}/dashboard/clients`);
 
     return {
       success: true,
@@ -186,7 +218,7 @@ export async function deleteClient(id, orgId) {
       headers: { "X-Organization-ID": orgId },
     });
 
-    revalidatePath("/dashboard/clients");
+    revalidatePath(`/${orgId}/dashboard/clients`);
 
     return {
       success: true,

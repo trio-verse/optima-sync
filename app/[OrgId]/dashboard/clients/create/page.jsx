@@ -1,12 +1,12 @@
 // app/clients/create/page.jsx
 "use client";
 
-import { useState ,use} from "react";
+import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import ClientForm from "@/components/ClientForm";
 import { createClient } from "@/actions/clientActions";
 
-export default function CreateClientPage({params}) {
+export default function CreateClientPage({ params }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -18,18 +18,18 @@ export default function CreateClientPage({params}) {
     setErrorMsg("");
 
     try {
-      const res = await createClient(formDataPayload,orgId);
+      const res = await createClient(formDataPayload, orgId);
 
       if (res?.success) {
-      router.push(`/${orgId}/dashboard/clients`); 
+        router.push(`/${orgId}/dashboard/clients`); 
         // router.refresh();
       } else {
-        setErrorMsg(res?.message || "حدث خطأ أثناء إضافة العميل");
+        setErrorMsg(res?.message || "An error occurred while adding the client");
         setIsSubmitting(false);
       }
     } catch (err) {
       console.error("Submission error:", err);
-      setErrorMsg("حدث خطأ غير متوقع أثناء الاتصال بالخادم.");
+      setErrorMsg("An unexpected error occurred while connecting to the server.");
       setIsSubmitting(false);
     }
   };
