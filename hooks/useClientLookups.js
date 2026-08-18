@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getCity } from "../app/actions/services/cityService";
-import { getIndustry } from "../app/actions/services/industryService";
+import { getCity } from "../actions/services/cityService";
+import { getIndustry } from "../actions/services/industryService";
 
-export function useClientLookups() {
+export function useClientLookups(orgId) {
   const [cities, setCities] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+     if (!orgId) return; 
     async function loadData() {
       setLoading(true);
       const [cityRes, industryRes] = await Promise.all([
-        getCity(),
-        getIndustry(),
+        getCity(orgId),
+        getIndustry(orgId),
       ]);
 
       if (cityRes?.success && Array.isArray(cityRes.data)) {
@@ -29,7 +30,7 @@ export function useClientLookups() {
     }
 
     loadData();
-  }, []);
+  }, [orgId]);
 
   return { cities, industries, loadingLookups: loading };
 }
