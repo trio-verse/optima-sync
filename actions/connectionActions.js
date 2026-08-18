@@ -151,6 +151,8 @@ export async function updateConnection(connection_id, payload, orgId, clientId) 
   }
 }
 
+
+
 export async function deleteConnection(connection_id, orgId, clientId) {
   try {
     if (!connection_id || !orgId) {
@@ -182,4 +184,5 @@ export async function deleteConnection(connection_id, orgId, clientId) {
       message: error.data?.message || error.message || "Delete failed",
     };
   }
-}
+}  
+

@@ -16,6 +16,7 @@ import {
   User,
   Image,
   LogOut,
+  Package
 } from "lucide-react";
 import LogOutButton from "../../../actions/auth";
 
@@ -55,6 +56,9 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("member");
     } else if (pathname.includes("/sales")) {
       setActiveTab("sales");
+    }
+    else if (pathname.includes("/product")) {
+      setActiveTab("product");
     }
   }, [pathname]);
 
@@ -125,6 +129,23 @@ export default function DashboardLayout({ children, params }) {
               >
                 <Users className="w-4 h-4" />
                 <span>Member</span>
+              </button>
+            </Link>
+
+              <Link
+              href={`${basePath}/product`}
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <button
+                onClick={() => setActiveTab("product")}
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                  activeTab === "product"
+                    ? "bg-zinc-900 text-white shadow-sm"
+                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
+                }`}
+              >
+                <Package className="w-4 h-4" />
+                <span>product</span>
               </button>
             </Link>
 
