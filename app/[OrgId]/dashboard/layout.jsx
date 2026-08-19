@@ -59,7 +59,10 @@ export default function DashboardLayout({ children, params }) {
     }
     else if (pathname.includes("/product")) {
       setActiveTab("product");
+    }else if (pathname.includes("/marketing")) {
+      setActiveTab("marketing");
     }
+    
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -148,11 +151,12 @@ export default function DashboardLayout({ children, params }) {
                 <span>product</span>
               </button>
             </Link>
-
+              <Link 
+              href={`${basePath}/marketing`}
+              onClick={() => setIsSidebarOpen(false)}>
             <button
               onClick={() => {
                 setActiveTab("marketing");
-                setIsSidebarOpen(false);
               }}
               className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
                 activeTab === "marketing"
@@ -163,6 +167,8 @@ export default function DashboardLayout({ children, params }) {
               <Megaphone className="w-4 h-4" />
               <span>Marketing</span>
             </button>
+              </Link>
+
 
             <Link
               href={`${basePath}/clients`}
