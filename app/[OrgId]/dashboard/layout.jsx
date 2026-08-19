@@ -55,6 +55,8 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("member");
     } else if (pathname.includes("/sales")) {
       setActiveTab("sales");
+    }else if (pathname.includes("/marketing")) {
+      setActiveTab("marketing");
     }
   }, [pathname]);
 
@@ -128,20 +130,25 @@ export default function DashboardLayout({ children, params }) {
               </button>
             </Link>
 
-            <button
-              onClick={() => {
-                setActiveTab("marketing");
-                setIsSidebarOpen(false);
-              }}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
-                activeTab === "marketing"
-                  ? "bg-zinc-900 text-white shadow-sm"
-                  : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
-              }`}
+            <Link
+              href={`${basePath}/marketing`}
+              onClick={() => setIsSidebarOpen(false)}
             >
-              <Megaphone className="w-4 h-4" />
-              <span>Marketing</span>
-            </button>
+              <button
+                onClick={() => {
+                  setActiveTab("marketing");
+                  setIsSidebarOpen(false);
+                }}
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                  activeTab === "marketing"
+                    ? "bg-zinc-900 text-white shadow-sm"
+                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
+                }`}
+              >
+                <Megaphone className="w-4 h-4" />
+                <span>Marketing</span>
+              </button>
+            </Link>
 
             <Link
               href={`${basePath}/clients`}

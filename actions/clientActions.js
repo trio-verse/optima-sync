@@ -14,7 +14,6 @@ function sanitizeClientPayload(raw) {
     "whatsapp",
     "address",
     "notes",
-    "client_type",
     "type",
   ];
   stringFields.forEach((key) => {
