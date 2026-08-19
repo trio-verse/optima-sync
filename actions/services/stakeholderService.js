@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api/client";
 
 /**
- * جلب قائمة أصحاب المصلحة الخاصين بعميل معين
+ * Fetch stakeholders for a given client
  */
 export async function getStakeholders(orgId, clientId) {
   try {
@@ -23,6 +23,7 @@ export async function getStakeholders(orgId, clientId) {
         data: [],
       };
     }
+
     const endpoint = clientId 
       ? `/clients/${clientId}/stakeholders` 
       : `/stakeholders`;
@@ -33,7 +34,6 @@ export async function getStakeholders(orgId, clientId) {
       cache: "no-store",
     });
 
-    // جرب جلب البيانات سواء كانت في resdata.data.data أو resdata.data مباشرة
     const list = resdata?.data?.data || resdata?.data || [];
 
     return {
@@ -51,8 +51,7 @@ export async function getStakeholders(orgId, clientId) {
 }
 
 /**
- * إنشاء صاحب مصلحة جديد لعميل معين
- * تم التعديل لتقبل (clientId, data, orgId) لتطابق استدعاء المكون
+ * Create a new stakeholder for a client
  */
 export async function createStakeholder(clientId, { name, phone, role }, orgId) {
   try {
@@ -95,7 +94,7 @@ export async function createStakeholder(clientId, { name, phone, role }, orgId) 
 }
 
 /**
- * تحديث بيانات صاحب مصلحة
+ * Update existing stakeholder information
  */
 export async function updateStakeholder({ stakeholderId, name, phone, role, clientId, orgId }) {
   try {
@@ -142,7 +141,7 @@ export async function updateStakeholder({ stakeholderId, name, phone, role, clie
 }
 
 /**
- * حذف صاحب مصلحة
+ * Delete a stakeholder
  */
 export async function deleteStakeholder(orgId, clientId, stakeholderId) {
   try {

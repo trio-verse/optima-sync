@@ -14,14 +14,34 @@ function sanitizeClientPayload(raw) {
     "whatsapp",
     "address",
     "notes",
-    "client_type",
-    "type",
+    "website",
+    "facebook",
+    "instagram",
   ];
   stringFields.forEach((key) => {
-    if (raw[key] !== undefined && raw[key] !== null) {
+    if (
+      raw[key] !== undefined &&
+      raw[key] !== null &&
+      String(raw[key]).trim() !== ""
+    ) {
       payload[key] = String(raw[key]).trim();
     }
   });
+
+  // الفورم بيرسل الحقل باسم "type"، بس الـ backend بينتظره باسم "client_type"
+  if (
+    raw.client_type !== undefined &&
+    raw.client_type !== null &&
+    String(raw.client_type).trim() !== ""
+  ) {
+    payload.client_type = String(raw.client_type).trim();
+  } else if (
+    raw.type !== undefined &&
+    raw.type !== null &&
+    String(raw.type).trim() !== ""
+  ) {
+    payload.client_type = String(raw.type).trim();
+  }
 
   const numericFields = ["city_id", "industry_id", "organization_id"];
   numericFields.forEach((key) => {
@@ -140,6 +160,8 @@ export async function createClient(formDataPayload, orgId) {
     };
   } catch (error) {
     console.error("DEBUG createClient Error:", error);
+    console.error("DEBUG createClient Error data:", error.data);
+    console.error("DEBUG createClient Error message:", error.message);
     return {
       success: false,
       message:
@@ -167,8 +189,9 @@ export async function updateClient(id, formDataPayload, orgId) {
       return { success: false, message: "Organization ID is missing." };
     }
 
+    const cleanedPayload = sanitizeClientPayload(formDataPayload);
     const payload = {
-      ...formDataPayload,
+      ...cleanedPayload,
       organization_id: Number(orgId),
     };
 
