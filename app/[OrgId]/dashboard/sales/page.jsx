@@ -80,6 +80,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   }, [orgId]);
 
   useEffect(() => {
+    if(!orgId) return
     fetchAllConnectionsData();
   }, [fetchAllConnectionsData]);
 

@@ -16,6 +16,7 @@ import {
   User,
   Image,
   LogOut,
+  Package
 } from "lucide-react";
 import LogOutButton from "../../../actions/auth";
 
@@ -57,6 +58,9 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("sales");
     }else if (pathname.includes("/marketing")) {
       setActiveTab("marketing");
+    }
+    else if (pathname.includes("/product")) {
+      setActiveTab("product");
     }
   }, [pathname]);
 

@@ -12,7 +12,6 @@ export async function getMembers(orgId) {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
-
     if (!token) {
       return { success: false, message: "Unauthorized", data: [] };
     }
@@ -37,7 +36,7 @@ export async function getMembers(orgId) {
     };
   } catch (error) {
     console.error("DEBUG getMembers Error:", error.cause);
-    console.error("DEBUG getMembers Error",error.message)
+    console.error("DEBUG getMembers Error", error.message);
     return {
       success: false,
       message:
@@ -52,11 +51,10 @@ export async function getMembers(orgId) {
 /**
  * إضافة عضو جديد
  */
-export async function createMember(formData,orgId) {
+export async function createMember(formData, orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -80,12 +78,12 @@ export async function createMember(formData,orgId) {
 
     return {
       success: true,
-      data: resdata?.data?.data ,
+      data: resdata?.data?.data || resdata?.data,
     };
   } catch (error) {
     console.error("DEBUG createMember Error:", error.cause);
-    console.error("DEBUG createMember Error:", error.message)
-    console.error("DEBUG createMember FULL DATA:", JSON.stringify(error.data, null, 2)); // 👈 ضيفي هاد السطر
+    console.error("DEBUG createMember Error:", error.message);
+    console.error("DEBUG createMember FULL DATA:", JSON.stringify(error.data, null, 2));
     return {
       success: false,
       message:
@@ -100,11 +98,10 @@ export async function createMember(formData,orgId) {
 /**
  * تحديث دور عضو
  */
-export async function updateMember(memberId, { role },orgId) {
+export async function updateMember(memberId, { role }, orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -112,6 +109,10 @@ export async function updateMember(memberId, { role },orgId) {
 
     if (!orgId) {
       return { success: false, message: "Organization ID is missing" };
+    }
+
+    if (!memberId) {
+      return { success: false, message: "Member ID is missing" };
     }
 
     const resdata = await api.patch(
@@ -125,13 +126,13 @@ export async function updateMember(memberId, { role },orgId) {
 
     revalidatePath("/dashboard/members");
 
-  return {
+    return {
       success: resdata?.success ?? true,
       message: resdata?.message || "Role updated successfully",
-      data: resdata?.data?.data,
+      data: resdata?.data?.data || resdata?.data,
     };
   } catch (error) {
-    console.error("DEBUG updateMember Error:", error.cause);
+    console.error("DEBUG updateMember Error:", error.cause || error);
     return {
       success: false,
       message:
@@ -146,11 +147,10 @@ export async function updateMember(memberId, { role },orgId) {
 /**
  * حذف عضو
  */
-export async function deleteMember(memberId,orgId) {
+export async function deleteMember(memberId, orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
@@ -158,6 +158,10 @@ export async function deleteMember(memberId,orgId) {
 
     if (!orgId) {
       return { success: false, message: "Organization ID is missing" };
+    }
+
+    if (!memberId) {
+      return { success: false, message: "Member ID is missing" };
     }
 
     const resdata = await api.delete(
@@ -172,7 +176,7 @@ export async function deleteMember(memberId,orgId) {
 
     return {
       success: true,
-      data: resdata?.data?.data,
+      data: resdata?.data?.data || resdata?.data,
     };
   } catch (error) {
     console.error("DEBUG deleteMember Error:", error);
