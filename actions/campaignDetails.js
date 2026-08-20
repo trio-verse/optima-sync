@@ -103,6 +103,29 @@ console.log(payload)
     return { success: false, error: error.data?.message || "Failed to update content" };
   }
 }
+export async function getCampaignContents(campaignId,orgId) {
+  try {
+      const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+    const res = await api.get(`/campaigns/${campaignId}/contents`, {
+      token,
+         headers: { "X-Organization-ID": orgId },
+
+      cache: "no-store",
+    });
+    return { success: true, data: res.data?.data || res.data || [] };
+  } catch (error) {
+    return { success: false, error: error.data?.message || "Failed to fetch contents" };
+  }
+}
 
 /**
  * Confirm Content Cost (Policy Gated)
