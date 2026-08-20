@@ -1,28 +1,73 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { deleteCampaign } from "@/actions/campaigns";
 import CampaignModal from "./CampaignModal";
-import { Eye, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
-export default function CampaignsTable({ initialCampaigns, orgId }) {
+export default function CampaignsTable({ initialCampaigns = [], orgId }) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("cpl");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState(null);
 
-  const filteredCampaigns = initialCampaigns
+  // حساب الحقول تلقائياً في حال لم تكن محسوبة من الباك إند
+  const processedCampaigns = initialCampaigns.map((campaign) => {
+    const budget = Number(campaign.expected_budget || campaign.budget || 0);
+    const spent = Number(campaign.current_spent || campaign.spent || 0);
+    const connectionsCount = Array.isArray(campaign.connections)
+      ? campaign.connections.length
+      : Number(campaign.connections_count || 0);
+
+    const cpl =
+      campaign.cpl !== undefined && campaign.cpl !== null
+        ? Number(campaign.cpl)
+        : connectionsCount > 0
+        ? spent / connectionsCount
+        : 0;
+
+    const roi = campaign.roi !== undefined ? campaign.roi : null;
+
+    return {
+      ...campaign,
+      computedBudget: budget,
+      computedSpent: spent,
+      computedConnectionsCount: connectionsCount,
+      computedCpl: cpl,
+      computedRoi: roi,
+    };
+  });
+
+  const filteredCampaigns = processedCampaigns
     .filter((item) => statusFilter === "all" || item.status === statusFilter)
     .sort((a, b) => {
-      if (sortBy === "cpl") return (a.cpl || 0) - (b.cpl || 0);
-      if (sortBy === "roi") return (b.roi || 0) - (a.roi || 0);
+      if (sortBy === "cpl") return a.computedCpl - b.computedCpl;
+      if (sortBy === "roi") return (b.computedRoi || 0) - (a.computedRoi || 0);
       return 0;
     });
 
-  const handleDelete = async (id) => {
+  const handleOpenCreate = () => {
+    setEditingCampaign(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (campaign, e) => {
+    e.stopPropagation(); // إيقاف الانتقال لصفحة التفاصيل عند النقر على التعديل
+    setEditingCampaign(campaign);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation(); // إيقاف الانتقال لصفحة التفاصيل عند النقر على الحذف
     if (confirm("Are you sure you want to delete this campaign?")) {
-      await deleteCampaign(id);
+      await deleteCampaign(id, orgId);
     }
+  };
+
+  const handleRowClick = (campaignId) => {
+    router.push(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
   };
 
   return (
@@ -38,8 +83,8 @@ export default function CampaignsTable({ initialCampaigns, orgId }) {
           </p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          onClick={handleOpenCreate}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
         >
           + New Campaign
         </button>
@@ -61,7 +106,7 @@ export default function CampaignsTable({ initialCampaigns, orgId }) {
               >
                 {status}
               </button>
-            ),
+            )
           )}
         </div>
 
@@ -94,14 +139,13 @@ export default function CampaignsTable({ initialCampaigns, orgId }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filteredCampaigns.map((campaign) => (
-              <tr key={campaign.id} className="hover:bg-gray-50">
+              <tr
+                key={campaign.id}
+                onClick={() => handleRowClick(campaign.id)}
+                className="hover:bg-gray-50/80 cursor-pointer transition"
+              >
                 <td className="px-6 py-4 font-medium text-gray-900">
-                  <Link
-                    href={`/campaigns/${campaign.id}`}
-                    className="hover:underline"
-                  >
-                    {campaign.name}
-                  </Link>
+                  {campaign.name}
                 </td>
                 <td className="px-6 py-4">
                   <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 capitalize">
@@ -109,16 +153,16 @@ export default function CampaignsTable({ initialCampaigns, orgId }) {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  ${campaign.current_spent || 0} / ${campaign.budget}
+                  ${campaign.computedSpent} / ${campaign.computedBudget}
                 </td>
-                <td className="px-6 py-4">{campaign.connections_count || 0}</td>
+                <td className="px-6 py-4">{campaign.computedConnectionsCount}</td>
                 <td className="px-6 py-4 font-semibold text-gray-800">
-                  ${campaign.cpl ? campaign.cpl.toFixed(2) : "0.00"}
+                  ${campaign.computedCpl.toFixed(2)}
                 </td>
                 <td className="px-6 py-4">
-                  {campaign.roi !== undefined && campaign.roi !== null ? (
+                  {campaign.computedRoi !== null ? (
                     <span className="font-semibold text-green-600">
-                      +{campaign.roi}%
+                      +{campaign.computedRoi}%
                     </span>
                   ) : (
                     <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
@@ -126,16 +170,16 @@ export default function CampaignsTable({ initialCampaigns, orgId }) {
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-right space-x-2">
-                  <Link
-                    href={`/${orgId}/dashboard/marketing/campaigns/${campaign.id}`}
-                    className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition"
-                    title="View Details"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Link>
+                <td className="px-6 py-4 text-right space-x-1">
                   <button
-                    onClick={() => handleDelete(campaign.id)}
+                    onClick={(e) => handleOpenEdit(campaign, e)}
+                    className="rounded-lg p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                    title="Edit Campaign"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(campaign.id, e)}
                     className="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
                     title="Delete Campaign"
                   >
@@ -157,8 +201,12 @@ export default function CampaignsTable({ initialCampaigns, orgId }) {
 
       <CampaignModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingCampaign(null);
+        }}
         orgId={orgId}
+        campaignToEdit={editingCampaign}
       />
     </div>
   );

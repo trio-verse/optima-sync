@@ -1,37 +1,35 @@
-// marketing/campaign/[id]/page.jsx
-import {
-  getCampaignById,
-  getCampaignContents,
-  updateCampaign,
-} from "@/actions/campaigns";
-import { updateContent ,createContent} from "@/actions/campaignDetails";
-import CampaignProgressTracker from "@/components/campaigns/[id]/CampaignProgressTracker";
+// app/[OrgId]/dashboard/marketing/campaigns/[id]/page.jsx
+import { getCampaignAnalytics, getCampaignContents, updateContent } from "@/actions/campaignDetails";
 import ContentKanban from "@/components/campaigns/[id]/ContentKanban";
 import CampaignModal from "@/components/campaigns/CampaignModal";
 
 export default async function CampaignDetailsPage({ params }) {
   const resolvedParams = await params;
-  const id = resolvedParams?.id;
+  const campaignId = resolvedParams?.id;
+  const orgId = resolvedParams?.OrgId;
 
-  const [detailsRes, contentsRes] = await Promise.all([
-    getCampaignById(id),
-    getCampaignContents(id),
+  const [analyticsRes, contentsRes] = await Promise.all([
+    getCampaignAnalytics(campaignId, orgId),
+    getCampaignContents(campaignId, orgId),
   ]);
 
-  const campaign = detailsRes.success ? detailsRes.data : {};
-  const contents = contentsRes.success ? contentsRes.data : [];
+  const rawData = analyticsRes.data || {};
+  const campaign = rawData.campaign || {};
+  const analytics = rawData.analytics || {};
+  const contents = contentsRes.data || [];
+  const formatCurrency = (val) =>
+    val !== null && val !== undefined ? `$${Number(val).toLocaleString()}` : "N/A";
 
-  const expectedBudget = Number(campaign.expected_budget || 0);
-  const currentSpent = Number(campaign.current_spent || 0);
-
-  const spentPercentage = Math.min(
-    100,
-    Math.round((currentSpent / (expectedBudget || 1)) * 100)
-  );
+  
+  const budgetUtilization = analytics.budget_utilization || 0;
+  const contentProgress =
+    analytics.expected_content_count > 0
+      ? Math.round((analytics.current_content_count / analytics.expected_content_count) * 100)
+      : 0;
 
   async function handleLogContent(contentId, newCount) {
     "use server";
-    await updateContent(contentId, { published_count: newCount }, id);
+    await updateContent(contentId, { published_count: newCount }, campaignId);
   }
 
   const formatDate = (dateString) => {
@@ -45,125 +43,144 @@ export default async function CampaignDetailsPage({ params }) {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      {/* Campaign Overview Header */}
+      {/* 1. Top Header Card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">
-                {campaign.name || "Unnamed Campaign"}
+                {campaign.name || `Campaign #${campaignId}`}
               </h1>
               <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600 capitalize">
                 {campaign.status || "draft"}
               </span>
-              {campaign.is_overdue && (
-                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">
-                  Overdue
-                </span>
-              )}
             </div>
-            <p className="text-sm text-gray-500">
-              {campaign.description || "No description provided."}
+            <p className="text-sm text-gray-500 mt-1">
+              {campaign.description || "No description provided for this campaign."}
             </p>
           </div>
 
-          {/* Unified Edit Modal Button */}
-          <CampaignModal campaign={campaign} orgId={orgId} />
-        </div>
-
-        {/* Detailed Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-xs text-gray-500">Target Audience</p>
-            <p className="text-sm font-semibold text-gray-800">
-              {campaign.target || "N/A"}
-            </p>
-          </div>
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-xs text-gray-500">Est. Content Count</p>
-            <p className="text-sm font-semibold text-gray-800">
-              {campaign.estimated_content_count || 0}
-            </p>
-          </div>
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-xs text-gray-500">Content Progress</p>
-            <p className="text-sm font-semibold text-gray-800">
-              {campaign.content_progress || 0}%
-            </p>
-          </div>
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-xs text-gray-500">Days Remaining</p>
-            <p className="text-sm font-semibold text-gray-800">
-              {campaign.days_remaining || 0} Days
-            </p>
+          <div className="flex items-center gap-3">
+            <CampaignModal campaign={campaign} orgId={orgId} />
           </div>
         </div>
 
-        {/* Timeline Details */}
-        <div className="flex flex-wrap items-center gap-6 text-xs text-gray-500 pt-2">
+        {/* Campaign Meta Details */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-100 text-xs text-gray-600">
           <div>
-            <span>Start Date: </span>
-            <strong className="text-gray-700">{formatDate(campaign.start_date)}</strong>
+            <span className="block text-gray-400">Target Audience</span>
+            <strong className="text-gray-800 text-sm">{campaign.target || "N/A"}</strong>
           </div>
           <div>
-            <span>End Date: </span>
-            <strong className="text-gray-700">{formatDate(campaign.end_date)}</strong>
+            <span className="block text-gray-400">Start Date</span>
+            <strong className="text-gray-800 text-sm">{formatDate(campaign.start_date)}</strong>
           </div>
           <div>
-            <span>Duration: </span>
-            <strong className="text-gray-700">{campaign.duration || "N/A"}</strong>
+            <span className="block text-gray-400">End Date</span>
+            <strong className="text-gray-800 text-sm">{formatDate(campaign.end_date)}</strong>
+          </div>
+          <div>
+            <span className="block text-gray-400">Last Updated</span>
+            <strong className="text-gray-800 text-sm">{formatDate(campaign.updatedAt)}</strong>
           </div>
         </div>
-
-        {/* Budget Progress Bar */}
-        <div className="space-y-2 pt-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              Spent: <strong>${currentSpent}</strong>
-            </span>
-            <span className="text-gray-600">
-              Formatted Budget: <strong>{campaign.formatted_budget || `$${expectedBudget}`}</strong>
-            </span>
-          </div>
-          <div className="w-full rounded-full bg-gray-100 h-3 overflow-hidden">
-            <div
-              className="bg-blue-600 h-full transition-all duration-300"
-              style={{ width: `${spentPercentage}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Connected Channels / Connections */}
-        {campaign.connections && campaign.connections.length > 0 && (
-          <div className="flex items-center gap-2 text-xs text-gray-500 pt-2 border-t border-gray-100">
-            <span>Connections:</span>
-            {campaign.connections.map((conn, idx) => (
-              <span
-                key={idx}
-                className="rounded bg-gray-100 px-2 py-1 font-medium text-gray-700"
-              >
-                {conn}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Content Kanban Board */}
+
+
+      {/* 3. Analytics KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Budget Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Budget Overview
+          </p>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-gray-900">
+              {formatCurrency(analytics.current_spent)}
+            </span>
+            <span className="text-xs text-gray-500">
+              of {formatCurrency(analytics.expected_budget)}
+            </span>
+          </div>
+          <div className="space-y-1">
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full transition-all duration-300"
+                style={{ width: `${Math.min(100, budgetUtilization)}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 text-right">{budgetUtilization}% Utilized</p>
+          </div>
+        </div>
+
+        {/* Content Progress Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Content Progress
+          </p>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-gray-900">
+              {analytics.current_content_count || 0}
+            </span>
+            <span className="text-xs text-gray-500">
+              / {analytics.expected_content_count || 0} Items
+            </span>
+          </div>
+          <div className="space-y-1">
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-emerald-500 h-full transition-all duration-300"
+                style={{ width: `${Math.min(100, contentProgress)}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 text-right">{contentProgress}% Completed</p>
+          </div>
+        </div>
+
+        {/* Revenue & ROI Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Revenue & ROI
+          </p>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-gray-900">
+              {formatCurrency(analytics.total_revenue)}
+            </span>
+            <span className="text-xs font-semibold text-emerald-600">
+              ROI: {analytics.roi !== null ? `${analytics.roi}%` : "N/A"}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500">
+            Cost Per Lead (CPL): <strong>{formatCurrency(analytics.cpl)}</strong>
+          </p>
+        </div>
+
+        {/* Conversions Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Conversions
+          </p>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-gray-900">
+              {analytics.win_count || 0} Wins
+            </span>
+            <span className="text-xs text-gray-500">
+              Win Rate: {analytics.win_rate || 0}%
+            </span>
+          </div>
+          <p className="text-xs text-gray-500">
+            Active Connections: <strong>{analytics.connections_count || 0}</strong>
+          </p>
+        </div>
+      </div>
+
+      {/* 4. Content Kanban Board (Now at the bottom) */}
       <ContentKanban
         orgId={orgId}
-        campaignId={id}
-        initialContents={contents}
-        campaignChannels={campaign.connections || []}
-      />
-
-      {/* Campaign Progress Tracker */}
-      <CampaignProgressTracker
-        initialPublishedCount={campaign.published_content_count || 0}
-        targetCount={campaign.estimated_content_count || 0}
-        spentBudget={currentSpent}
-        totalBudget={expectedBudget}
-        onLogContent={handleLogContent}
+        campaignId={campaignId}
+        initialContents={contents||[]}
+        campaignChannels={[]}
       />
     </div>
   );

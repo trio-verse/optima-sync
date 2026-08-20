@@ -144,7 +144,7 @@ export async function updateCampaign(id, formData, orgId) {
       target: formData.get("target"),
     };
 
-    const resdata = await api.put(`/campaigns/${id}`, payload, {
+    const resdata = await api.patch(`/campaigns/${id}`, payload, {
       token,
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",

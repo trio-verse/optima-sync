@@ -17,6 +17,7 @@ function sanitizeClientPayload(raw) {
     "website",
     "facebook",
     "instagram",
+    "type",
   ];
   stringFields.forEach((key) => {
     if (

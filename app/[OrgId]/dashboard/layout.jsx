@@ -135,6 +135,7 @@ export default function DashboardLayout({ children, params }) {
               </button>
             </Link>
 
+
               <Link
               href={`${basePath}/product`}
               onClick={() => setIsSidebarOpen(false)}
@@ -151,23 +152,26 @@ export default function DashboardLayout({ children, params }) {
                 <span>product</span>
               </button>
             </Link>
-              <Link 
+  
+                <Link
               href={`${basePath}/marketing`}
               onClick={() => setIsSidebarOpen(false)}>
-            <button
-              onClick={() => {
-                setActiveTab("marketing");
-              }}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
-                activeTab === "marketing"
-                  ? "bg-zinc-900 text-white shadow-sm"
-                  : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
-              }`}
-            >
-              <Megaphone className="w-4 h-4" />
-              <span>Marketing</span>
-            </button>
-              </Link>
+              <button
+                onClick={() => {
+                  setActiveTab("marketing");
+                  setIsSidebarOpen(false);
+                }}
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                  activeTab === "marketing"
+                    ? "bg-zinc-900 text-white shadow-sm"
+                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
+                }`}
+              >
+                <Megaphone className="w-4 h-4" />
+                <span>Marketing</span>
+              </button>
+            </Link>
+
 
 
             <Link

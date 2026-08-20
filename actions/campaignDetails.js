@@ -21,7 +21,17 @@ async function getAuthContext() {
 
 export async function createContent(campaignId, formData) {
   try {
-    const { token, headers } = await getAuthContext();
+
+     const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
     const payload = {
       title: formData.get("title"),
       type: formData.get("type"),
@@ -33,58 +43,115 @@ export async function createContent(campaignId, formData) {
       script: formData.get("script"),
     };
 
-    const res = await api.post(`/campaigns/${campaignId}/contents`, payload, {
+    const resdata = await api.post(`/campaigns/${campaignId}/contents`, payload, {
       token,
-      headers,
+        headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
-
-    revalidatePath(`/marketing/campaign/${campaignId}`);
-    return {
+    revalidatePath(`/campaigns/${campaignId}`);
+      return {
       success: true,
-      message: res?.message || "The content was created successfully",
-      data: res?.data?.data,
+      message: resdata?.message || "The content was created successfully",
+      data: resdata?.data?.data,
     };
   } catch (error) {
-    return {
-      success: false,
-      error: error.data?.message || "Failed to create content",
-    };
+    console.log(error);
+    return { success: false, error: error.data?.message || "Failed to create content" };
   }
 }
 
-export async function updateContent(contentId, formData, campaignId) {
+/**
+ * Update full content or status
+ */
+export async function updateContent(contentId, orgId ,formData, campaignId) {
   try {
-    const { token, headers } = await getAuthContext();
+      const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
 
-    const payload =
-      formData instanceof FormData
-        ? {
-            title: formData.get("title"),
-            type: formData.get("type"),
-            channel_id: formData.get("channel_id"),
-            cost: parseFloat(formData.get("cost")) || 0,
-            status: formData.get("status"),
-            published_at: formData.get("published_at") || null,
-            description: formData.get("description"),
-            script: formData.get("script"),
-          }
-        : formData;
+    if (!token) {
+      return { success: false, message: "Unauthorized" };
+    }
 
-    const res = await api.put(`/contents/${contentId}`, payload, {
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+    
+    // دعم إرسال FormData أو Object عادي
+    const payload = formData instanceof FormData ? {
+      title: formData.get("title"),
+      type: formData.get("type"),
+      channel_id: formData.get("channel_id"),
+      cost: parseFloat(formData.get("cost")) || 0,
+      status: formData.get("status"),
+      published_at: formData.get("published_at") || null,
+      description: formData.get("description"),
+      script: formData.get("script"),
+    } : formData;
+console.log(payload)
+    const res = await api.patch(`/campaigns/${campaignId}/contents/${contentId}`, payload, {
       token,
-      headers,
+         headers: { "X-Organization-ID": orgId },
+
       cache: "no-store",
     });
 
     if (campaignId) {
-      revalidatePath(`/marketing/campaign/${campaignId}`);
+      revalidatePath(`/campaigns/${campaignId}`);
     }
-    return { success: true, data: res.data };
+    return { success: true, data: res?.data?.data, };
+  } catch (error) {
+    return { success: false, error: error.data?.message || "Failed to update content" };
+  }
+}
+
+/**
+ * Confirm Content Cost (Policy Gated)
+ */
+export async function confirmContentCost(contentId, campaignId) {
+  try {
+    const { token, headers } = await getAuthContext();
+    await api.patch(
+      `/contents/${contentId}/confirm-cost`,
+      {},
+      { token, headers, cache: "no-store" }
+    );
+    revalidatePath(`/campaigns/${campaignId}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.data?.message || "Unauthorized or failed to confirm cost" };
+  }
+}  
+
+export async function getCampaignAnalytics(campaignId,orgId){
+   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+
+    const resdata = await api.get(`/campaigns/${campaignId}/analytics`, {
+      token,
+      headers: { "X-Organization-ID": orgId },
+      cache: "no-store",
+    });
+    const extractedData =resdata?.data?.campaign 
+      ? resdata.data 
+      : (resdata?.data?.data || resdata?.data || null);
+    return {
+      success: true,
+      message: "campaign analytics fetched successfully.",
+      data:extractedData||null,
+    };
   } catch (error) {
     return {
       success: false,
-      error: error.data?.message || "Failed to update content",
+      message: error.data?.message||error.message||"An error occurred while fetching campaign analytics.",
     };
   }
 }
