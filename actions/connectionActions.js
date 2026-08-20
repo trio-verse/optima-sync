@@ -56,7 +56,7 @@ export async function getConnections(clientId, orgId) {
 
     return {
       success: true,
-      data: resdata?.data?.data || [],
+      data: resdata?.data?.data.data || [],
       meta: resdata?.data?.meta || {},
     };
   } catch (error) {

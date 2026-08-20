@@ -14,9 +14,7 @@ function sanitizeClientPayload(raw) {
     "whatsapp",
     "address",
     "notes",
-    "website",
-    "facebook",
-    "instagram",
+    "type",
   ];
   stringFields.forEach((key) => {
     if (
