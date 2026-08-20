@@ -1,3 +1,4 @@
+// actions/campaignDetails.js
 "use server";
 
 import { api } from "@/lib/api/client";
@@ -11,68 +12,14 @@ async function getAuthContext() {
 
   return {
     token,
-    headers: { "X-Organization-ID": orgId },
+    orgId,
+    headers: {
+      "X-Organization-ID": orgId || "",
+    },
   };
 }
 
-/**
- * Fetch campaign analytics & overview
- */
-export async function getCampaignById(id) {
-  try {
-      const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-
-    if (!token) {
-      return { success: false, message: "Unauthorized" };
-    }
-
-    if (!orgId) {
-      return { success: false, message: "Organization ID is missing." };
-    }
-    const res = await api.get(`/campaigns/${id}`, {
-      token,
-          headers: { "X-Organization-ID": orgId },
-
-      cache: "no-store",
-    });
-    return { success: true, data: res.data?.data || res.data };
-  } catch (error) {
-    return { success: false, error: error.data?.message || "Failed to fetch campaign details" };
-  }
-}
-
-/**
- * Fetch contents list for campaign
- */
-export async function getCampaignContents(campaignId,orgId) {
-  try {
-      const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-
-    if (!token) {
-      return { success: false, message: "Unauthorized" };
-    }
-
-    if (!orgId) {
-      return { success: false, message: "Organization ID is missing." };
-    }
-    const res = await api.get(`/campaigns/${campaignId}/contents`, {
-      token,
-         headers: { "X-Organization-ID": orgId },
-
-      cache: "no-store",
-    });
-    return { success: true, data: res.data?.data || res.data || [] };
-  } catch (error) {
-    return { success: false, error: error.data?.message || "Failed to fetch contents" };
-  }
-}
-
-/**
- * Create content for campaign
- */
-export async function createContent(campaignId ,orgId ,formData ) {
+export async function createContent(campaignId, formData) {
   try {
 
      const cookieStore = await cookies();
@@ -156,6 +103,29 @@ console.log(payload)
     return { success: false, error: error.data?.message || "Failed to update content" };
   }
 }
+export async function getCampaignContents(campaignId,orgId) {
+  try {
+      const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+    const res = await api.get(`/campaigns/${campaignId}/contents`, {
+      token,
+         headers: { "X-Organization-ID": orgId },
+
+      cache: "no-store",
+    });
+    return { success: true, data: res.data?.data || res.data || [] };
+  } catch (error) {
+    return { success: false, error: error.data?.message || "Failed to fetch contents" };
+  }
+}
 
 /**
  * Confirm Content Cost (Policy Gated)
@@ -208,4 +178,3 @@ export async function getCampaignAnalytics(campaignId,orgId){
     };
   }
 }
- 

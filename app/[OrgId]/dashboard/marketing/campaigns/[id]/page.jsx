@@ -20,15 +20,7 @@ export default async function CampaignDetailsPage({ params }) {
   const formatCurrency = (val) =>
     val !== null && val !== undefined ? `$${Number(val).toLocaleString()}` : "N/A";
 
-  const formatDate = (dateStr) =>
-    dateStr
-      ? new Date(dateStr).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "Not set";
-
+  
   const budgetUtilization = analytics.budget_utilization || 0;
   const contentProgress =
     analytics.expected_content_count > 0
@@ -39,6 +31,15 @@ export default async function CampaignDetailsPage({ params }) {
     "use server";
     await updateContent(contentId, { published_count: newCount }, campaignId);
   }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">

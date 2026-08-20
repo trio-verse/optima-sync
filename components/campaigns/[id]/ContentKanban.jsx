@@ -1,5 +1,5 @@
 "use client";
-
+//components/campaign/[id]/ContentKanban
 import { useState } from "react";
 import { updateContent, confirmContentCost } from "@/actions/campaignDetails";
 import ContentForm from "./ContentForm";

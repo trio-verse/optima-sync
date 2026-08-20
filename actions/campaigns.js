@@ -206,3 +206,126 @@ export async function deleteCampaign(id, orgId) {
     };
   }
 }
+
+/**
+ * Fetch marketing analytics overview (org-level)
+ */
+/**
+ * Fetch marketing analytics overview (org-level)
+ * GET /marketing/analytics
+ */
+export async function getMarketingAnalytics(orgId) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
+
+    const resdata = await api.get("/marketing/analytics", {
+      token,
+      headers: { "X-Organization-ID": orgId },
+      cache: "no-store",
+    });
+
+    return {
+      success: true,
+      message: "Marketing analytics fetched successfully.",
+      data: resdata?.data?.data || null,
+    };
+  } catch (error) {
+    console.error("DEBUG getMarketingAnalytics Error:", error);
+    return {
+      success: false,
+      message:
+        error.data?.message ||
+        error.message ||
+        "An error occurred while fetching marketing analytics.",
+      data: null,
+    };
+  }
+}
+
+export async function getEffectiveCampaigns(orgId) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized",
+        data: [],
+      };
+    }
+
+    const response = await api.get(
+      "/marketing/analytics/effective-campaigns",
+      {
+        token,
+        headers: { "X-Organization-ID": orgId },
+        cache: "no-store",
+      }
+    );
+
+    return {
+      success: true,
+      data: Array.isArray(response?.data)
+        ? response.data
+        : response?.data?.data || [],
+      message: response?.data?.message || "Success",
+    };
+  } catch (error) {
+    console.error(" getEffectiveCampaigns Error:", error);
+    return {
+      success: false,
+      message:
+        error?.data?.message ||
+        error?.message ||
+        "Failed to fetch effective campaigns",
+      data: [],
+    };
+  }
+}
+
+export async function getAllCampaigns(orgId) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized",
+        data: [],
+      };
+    }
+
+    const response = await api.get("/campaigns", {
+      token,
+      headers: { "X-Organization-ID": orgId },
+      cache: "no-store",
+    });
+
+    return {
+      success: true,
+      data: response?.data?.data || [],
+      message: response?.data?.message || "Success",
+    };
+  } catch (error) {
+    console.error(" getAllCampaigns Error:", error);
+    return {
+      success: false,
+      message:
+        error?.data?.message ||
+        error?.message ||
+        "Failed to fetch all campaigns",
+      data: [],
+    };
+  }
+}
