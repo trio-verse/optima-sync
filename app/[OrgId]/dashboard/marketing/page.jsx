@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo , use} from "react";
 import Link from "next/link";
 import {
   DollarSign,
@@ -33,7 +33,9 @@ const INITIAL_CAMPAIGNS = [
   { id: "5", name: "Influencer Outreach", status: "paused", spent: 3000, connections: 95, revenue: 0, hasWonDeals: false },
 ];
 
-export default function MarketingAnalyticsDashboard({ orgId = "107" }) {
+export default function MarketingAnalyticsDashboard({ params  }) {
+  const resolvedParams = use(params);
+  const orgId = resolvedParams.OrgId || resolvedParams.orgId;
   const [campaigns, setCampaigns] = useState(INITIAL_CAMPAIGNS);
   const [sortBy, setSortBy] = useState("roi");
 
