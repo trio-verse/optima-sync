@@ -1,3 +1,4 @@
+// marketing/campaign/page.jsx
 import { getCampaigns } from "@/actions/campaigns";
 import CampaignsTable from "@/components/campaigns/CampaignsTable";
 
