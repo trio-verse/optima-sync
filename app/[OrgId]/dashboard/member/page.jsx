@@ -12,13 +12,12 @@ import {
   UserCheck,
   ShieldCheck,
   Search,
-  Trash2,
   Mail,
   Pencil,
   X,
   AlertCircle,
 } from "lucide-react";
-import { useState, useEffect ,use} from "react";
+import { useState, useEffect, use } from "react";
 
 export default function MembersPage({params}) {
   const [members, setMembers] = useState([]);
@@ -89,19 +88,24 @@ export default function MembersPage({params}) {
     setLoading(true);
     setError("");
     try {
-      const result = await createMember(formData,orgId);
+      const result = await createMember(formData, orgId);
       if (result?.success) {
-
+        // The API returns the member data directly, but we need to add email
         const newMember = {
-        ...result.data,
-        email: formData.email, 
-      };
+          ...result.data,
+          email: formData.email,
+          user: {
+            id: result.data?.user_id,
+            email: formData.email,
+            name: formData.email.split("@")[0],
+          }
+        };
         setMembers((prev) => [newMember, ...prev]);
         setFormData({ email: "", role: "member" });
         setError("");
       } else {
         console.error("Create member backend error:", result?.message);
-        setError("Failed to add new member. Please try again.");
+        setError(result?.message || "Failed to add new member. Please try again.");
       }
     } catch (err) {
       console.error("Create member error details:", err);
@@ -124,7 +128,7 @@ export default function MembersPage({params}) {
     setError("");
 
     try {
-      const result = await updateMember(editingId, { role: editingRole },orgId);
+      const result = await updateMember(editingId, { role: editingRole }, orgId);
 
       if (result?.success) {
         setMembers((prev) =>
@@ -136,7 +140,7 @@ export default function MembersPage({params}) {
         setEditingId(null);
       } else {
         console.error("Update member backend error:", result?.message);
-        setError("Failed to update member role. Please try again.");
+        setError(result?.message || "Failed to update member role. Please try again.");
       }
     } catch (err) {
       console.error("Update member error details:", err);
@@ -152,12 +156,12 @@ export default function MembersPage({params}) {
     setLoading(true);
     setError("");
     try {
-      const result = await deleteMember(id,orgId);
+      const result = await deleteMember(id, orgId);
       if (result?.success) {
         setMembers((prev) => prev.filter((m) => m.id !== id));
       } else {
         console.error("Delete member backend error:", result?.message);
-        setError("Failed to delete member. Please try again.");
+        setError(result?.message || "Failed to delete member. Please try again.");
       }
     } catch (err) {
       console.error("Delete member error details:", err);
@@ -169,12 +173,27 @@ export default function MembersPage({params}) {
 
   const getNameFromEmail = (email) => {
     if (!email) return "";
+    // Try to get name from user object first, then from email
     return email.split("@")[0];
   };
 
+  const getMemberEmail = (member) => {
+    // The email might be directly on the member or in the user object
+    return member.email || member.user?.email || "";
+  };
+
+  const getMemberName = (member) => {
+    // Try to get name from user object first
+    const nameFromUser = member.user?.name;
+    if (nameFromUser) return nameFromUser;
+    // Fallback to email
+    const email = getMemberEmail(member);
+    return email ? email.split("@")[0] : "Unknown";
+  };
+
   const filteredMembers = members.filter((member) => {
-    const name = getNameFromEmail(member.email).toLowerCase();
-    const email = (member.email || "").toLowerCase();
+    const name = getMemberName(member).toLowerCase();
+    const email = getMemberEmail(member).toLowerCase();
     const role = (member.role || "").toLowerCase();
     const search = searchTerm.toLowerCase();
     return (
@@ -355,7 +374,8 @@ export default function MembersPage({params}) {
               <tbody className="divide-y divide-slate-100 text-sm">
                 {filteredMembers.length > 0 ? (
                   filteredMembers.map((member) => {
-                    const memberName = getNameFromEmail(member.email);
+                    const memberName = getMemberName(member);
+                    const memberEmail = getMemberEmail(member);
 
                     return (
                       <tr
@@ -374,7 +394,7 @@ export default function MembersPage({params}) {
                         <td className="py-4 px-6 text-slate-600">
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-slate-400" />
-                            <span>{member.email}</span>
+                            <span>{memberEmail}</span>
                           </div>
                         </td>
 
@@ -393,13 +413,6 @@ export default function MembersPage({params}) {
                             title="Edit Role"
                           >
                             <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMember(member.id)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                            title="Delete Member"
-                          >
-                            <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>

@@ -39,7 +39,7 @@ const CONTENT_TYPES = [
   { value: "ad_copy", label: "Ad Copy" },
 ];
 
-export default function ContentForm({ campaignId, orgId, editingContent = null,onSave }) {
+export default function ContentForm({ campaignId, orgId, editingContent = null }) {
   const router = useRouter();
   const [channels, setChannels] = useState([]);
   const [loadingLists, setLoadingLists] = useState(false);
@@ -145,15 +145,13 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
     payload.append("script", formData.script);
 
     try {
-      console.log(isEditing+"----"+editingContent.id)
       const result = isEditing
-        ? await updateContent(editingContent.id,orgId, payload, campaignId)
-        : await createContent(campaignId,orgId, payload);
+        ? await updateContent(editingContent.id, payload, campaignId)
+        : await createContent(campaignId, payload);
 
       if (result?.success) {
         router.push(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
         router.refresh();
-        onSave();
       } else {
         setGlobalError(result?.error || result?.message || "An error occurred while saving");
       }

@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState ,use} from "react";
 import { useRouter } from "next/navigation";
 import OrganisationForm from "@/components/OrganisationForm";
 import {
   createOrganisationProfile,
 } from "@/actions/createNewOrganisation";
 
-export default function CreateOrganisationPage() {
+
+export default function CreateOrganisationPage({params}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
+    const resolvedParams = params ? use(params) : null;
+    const orgId = resolvedParams?.OrgId ;
   const handleCreateOrganisation = async (formDataPayload) => {
     setLoading(true);
     setError("");
@@ -24,7 +26,7 @@ export default function CreateOrganisationPage() {
 
       // 👈 تعديل: استخدام التوجيه بالـ redirectUrl المرتجع من الـ Action
       setTimeout(() => {
-        router.push(result.redirectUrl || "/upload-logo");
+        router.push(result.redirectUrl || `{orgId}/upload-logo`);
       }, 1000);
     } else {
       console.error("BACKEND error", result?.message);

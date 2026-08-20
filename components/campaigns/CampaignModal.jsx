@@ -1,28 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createCampaign, updateCampaign } from "@/actions/campaigns";
+import { useState } from "react";
+import { createCampaign } from "@/actions/campaigns";
 
 const AVAILABLE_STATUS = ["active", "draft", "paused", "completed", "cancelled"];
 
-export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit = null }) {
+export default function CampaignModal({ isOpen, onClose, orgId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("draft");
-
-  const isEditing = Boolean(campaignToEdit);
-
-  // تحديث حالة Status والـ Error عند فتح المودال أو تغيير الحملة المراد تعديلها
-  useEffect(() => {
-    if (isOpen) {
-      setError(null);
-      if (campaignToEdit) {
-        setSelectedStatus(campaignToEdit.status || "draft");
-      } else {
-        setSelectedStatus("draft");
-      }
-    }
-  }, [isOpen, campaignToEdit]);
 
   if (!isOpen) return null;
 
@@ -31,40 +17,25 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
     setLoading(true);
     setError(null);
 
+    // التأكد من استخراج البيانات مباشرة من عناصر النموذج
     const formData = new FormData(e.currentTarget);
     formData.set("status", selectedStatus);
 
-    let result;
-    if (isEditing) {
-      // استدعاء الأكشن الخاص بالتعديل في حال وجود campaignToEdit
-      result = await updateCampaign(campaignToEdit.id, formData, orgId);
-    } else {
-      // استدعاء الأكشن الخاص بالإنشاء
-      result = await createCampaign(formData, orgId);
-    }
-
+    const result = await createCampaign(formData, orgId);
     setLoading(false);
 
-    if (result?.success) {
+    if (result.success) {
       onClose();
     } else {
-      setError(result?.error || result?.message || "An unexpected error occurred");
+      setError(result.error || result.message || "An unexpected error occurred");
     }
-  };
-
-  // تنسيق التاريخ لصيغة YYYY-MM-DD لتناسب مدخلات input type="date"
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toISOString().split("T")[0];
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between border-b pb-3">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {isEditing ? "Edit Campaign" : "Create New Campaign"}
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900">Create New Campaign</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
         </div>
 
@@ -80,7 +51,6 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
             <input
               type="text"
               name="name"
-              defaultValue={campaignToEdit?.name || ""}
               required
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="e.g. Summer Growth Campaign"
@@ -92,7 +62,6 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
             <input
               type="text"
               name="description"
-              defaultValue={campaignToEdit?.description || ""}
               required
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="Describe Your Campaign...."
@@ -104,8 +73,7 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
             <input
               type="number"
               name="estimated_content_count"
-             
-              defaultValue={campaignToEdit?.estimated_content_count || ""}
+              step="1"
               required
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="80"
@@ -117,7 +85,7 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
             <input
               type="number"
               name="expected_budget"
-              defaultValue={campaignToEdit?.expected_budget || campaignToEdit?.budget || ""}
+              step="10"
               required
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="5000"
@@ -150,7 +118,6 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
               <input
                 type="date"
                 name="start_date"
-                defaultValue={formatDateForInput(campaignToEdit?.start_date)}
                 required
                 className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               />
@@ -160,7 +127,6 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
               <input
                 type="date"
                 name="end_date"
-                defaultValue={formatDateForInput(campaignToEdit?.end_date)}
                 required
                 className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               />
@@ -172,7 +138,6 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
             <input
               type="text"
               name="target"
-              defaultValue={campaignToEdit?.target || ""}
               required
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="Enter Your Expected Target"
@@ -192,13 +157,7 @@ export default function CampaignModal({ isOpen, onClose, orgId, campaignToEdit =
               disabled={loading}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading
-                ? isEditing
-                  ? "Updating..."
-                  : "Creating..."
-                : isEditing
-                ? "Update Campaign"
-                : "Create Campaign"}
+              {loading ? "Saving..." : "Create Campaign"}
             </button>
           </div>
         </form>
