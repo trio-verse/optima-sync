@@ -11,6 +11,8 @@ import {
   Tag,
   Package,
   AlertTriangle,
+  DollarSign,
+  Megaphone,
 } from "lucide-react";
 import {
   createConnection,
@@ -18,7 +20,9 @@ import {
 } from "@/actions/connectionActions";
 import { getProducts } from "@/actions/services/productsService";
 import { getChannels } from "@/actions/services/channelService";
-
+import { getMembers } from "@/actions/services/membersAction";
+import { getCampaigns } from "@/actions/campaigns";
+import { getConnections } from "@/actions/connectionActions";
 /* ── STAGES (Lowercase) ── */
 const STAGES = {
   lead: { label: "Lead", color: "bg-amber-100 text-amber-700" },
@@ -51,6 +55,9 @@ export default function ConnectionModal({
 }) {
   const [products, setProducts] = useState([]);
   const [channels, setChannels] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [dealValue, setDealValue] = useState([]);
   const [loadingLists, setLoadingLists] = useState(true);
 
   const [formData, setFormData] = useState({
@@ -58,6 +65,8 @@ export default function ConnectionModal({
     stage: "",
     channelId: "",
     assigneeId: "",
+    campaignId: "",
+    dealValue: "",
     initiatedBy: "",
   });
 
@@ -79,9 +88,12 @@ export default function ConnectionModal({
     async function fetchLists() {
       setLoadingLists(true);
       try {
-        const [prodRes, chanRes] = await Promise.all([
+        const [prodRes, chanRes, memRes, campRes, dealRes] = await Promise.all([
           getProducts(orgId),
           getChannels(orgId),
+          getMembers(orgId),
+          getCampaigns(orgId),
+          getConnections(clientId, orgId),
         ]);
 
         if (prodRes?.success) {
@@ -94,6 +106,22 @@ export default function ConnectionModal({
           setChannels(chanRes.data || []);
         } else {
           console.error(" getChannels failed:", chanRes?.message);
+        }
+        if (memRes?.success) {
+          setMembers(memRes.data || []);
+          // console.log(members)
+        } else {
+          console.error(" getMembers failed:", memRes?.message);
+        }
+        if (campRes?.success) {
+          setCampaigns(campRes.data || []);
+        } else {
+          console.error(" getCampaigns failed:", campRes?.message);
+        }
+        if (dealRes?.success) {
+          setDealValue(dealRes.data.deal_value || []);
+        } else {
+          console.error(" getDealValue failed:", dealRes?.message);
         }
       } catch (err) {
         console.error(" Exception loading lists:", err);
@@ -115,6 +143,11 @@ export default function ConnectionModal({
         ),
         assigneeId:
           editingConnection.assignee_id || editingConnection.assigneeId || "",
+        campaignId: String(
+          editingConnection.campaign_id || editingConnection.campaignId || "",
+        ),
+        dealValue:
+          editingConnection.deal_value || editingConnection.dealValue || "",
         initiatedBy:
           editingConnection.initiated_by || editingConnection.initiatedBy || "",
       });
@@ -124,6 +157,8 @@ export default function ConnectionModal({
         stage: "",
         channelId: "",
         assigneeId: "",
+        campaignId: "",
+        dealValue: "",
         initiatedBy: "",
       });
     }
@@ -134,7 +169,20 @@ export default function ConnectionModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // إذا تم تغيير المنتج، جلب قيمته وتحديث dealValue
+      if (name === "productId") {
+        const selectedProd = products.find(
+          (p) => String(p.id) === String(value),
+        );
+        updated.dealValue = selectedProd?.price || selectedProd?.value || "";
+      }
+
+      return updated;
+    });
+
     if (errors[name]) {
       setErrors((prev) => {
         const n = { ...prev };
@@ -181,6 +229,7 @@ export default function ConnectionModal({
             product_id: "productId",
             stage: "stage",
             channel_id: "channelId",
+            campaign_id: "campaignId",
             assignee_id: "assigneeId",
             initiated_by: "initiatedBy",
           };
@@ -288,6 +337,25 @@ export default function ConnectionModal({
             )}
           </div>
 
+          {/* Deal Value (يظهر فقط عندما تكون الحالة won أو win) */}
+          {(formData.stage === "won" || formData.stage === "win") && (
+            <div className="flex flex-col gap-1.5 animate-in fade-in duration-150">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+                Deal Value
+              </label>
+              <input
+                type="number"
+                name="dealValue"
+                value={formData.dealValue}
+                readOnly
+                onChange={handleChange}
+                placeholder="Product price"
+                className="border border-slate-200 bg-slate-50 text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none cursor-not-allowed select-none font-semibold"
+              />
+            </div>
+          )}
+
           {/* Channel */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -315,20 +383,54 @@ export default function ConnectionModal({
             )}
           </div>
 
+          {/* Campaign */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+              <Megaphone className="w-3.5 h-3.5 text-slate-400" />
+              Campaign
+            </label>
+            <select
+              name="campaignId"
+              value={formData.campaignId}
+              onChange={handleChange}
+              disabled={loadingLists}
+              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
+            >
+              <option value="">Select campaign...</option>
+              {campaigns.map((camp) => (
+                <option key={camp.id} value={camp.id}>
+                  {camp.name || camp.title || `Campaign #${camp.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Assignee */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
               <User className="w-3.5 h-3.5 text-slate-400" />
               Assignee
             </label>
-            <input
-              type="text"
+            <select
               name="assigneeId"
               value={formData.assigneeId}
               onChange={handleChange}
-              placeholder="Assignee ID (optional)"
-              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-            />
+              disabled={loadingLists}
+              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
+            >
+              <option value="" className="bg-white text-slate-800">
+                Select assignee...
+              </option>
+              {members.map((m) => (
+                <option
+                  key={m.id}
+                  value={m.id}
+                  className="bg-white text-slate-800"
+                >
+                  {m.user.name || m.user.full_name || m.user.email}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Initiated By */}
@@ -337,24 +439,14 @@ export default function ConnectionModal({
               <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400" />
               Initiated By
             </label>
-            <div className="flex gap-3">
-              {INITIATED_BY_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border rounded-xl cursor-pointer text-sm font-medium transition-all ${formData.initiatedBy === opt.value ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                >
-                  <input
-                    type="radio"
-                    name="initiatedBy"
-                    value={opt.value}
-                    checked={formData.initiatedBy === opt.value}
-                    onChange={handleChange}
-                    className="sr-only"
-                  />
-                  {opt.label}
-                </label>
-              ))}
-            </div>
+            <input
+              type="text"
+              name="initiatedBy"
+              value={formData.initiatedBy || ""}
+              onChange={handleChange}
+              placeholder="Enter who initiated this..."
+              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
+            />
           </div>
 
           {/* Global Error */}

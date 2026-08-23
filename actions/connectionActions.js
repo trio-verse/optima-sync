@@ -56,7 +56,7 @@ export async function getConnections(clientId, orgId) {
 
     return {
       success: true,
-      data: resdata?.data?.data.data || [],
+      data: resdata?.data?.data || [],
       meta: resdata?.data?.meta || {},
     };
   } catch (error) {
@@ -83,6 +83,9 @@ export async function createConnection(clientId, payload, orgId) {
       product_id: payload.productId,
       stage: payload.stage,
       channel_id: payload.channelId,
+      ...((payload.campaignId || payload.campaign_id) && { 
+        campaign_id: payload.campaignId || payload.campaign_id 
+      }),
       ...(payload.assigneeId && { assignee_id: payload.assigneeId }),
       ...(payload.initiatedBy && { initiated_by: payload.initiatedBy }),
     };
@@ -91,6 +94,9 @@ export async function createConnection(clientId, payload, orgId) {
       token,
       headers: { "X-Organization-ID": orgId },
     });
+   if (payload.campaignId || payload.campaign_id) {
+      revalidatePath(`/${orgId}/dashboard/campaigns/${payload.campaignId || payload.campaign_id}`);
+    }
     revalidatePath(`/${orgId}/dashboard/clients/${clientId}`);
 
     return {

@@ -24,8 +24,8 @@ export default function DashboardLayout({ children, params }) {
   const router = useRouter();
   const pathname = usePathname();
   const [orgName, setOrgName] = useState("optima sync");
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [activeTab, setActiveTab] = useState("sales");
 
@@ -61,7 +61,10 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("product");
     }else if (pathname.includes("/marketing")) {
       setActiveTab("marketing");
+    }else{
+      setActiveTab("");
     }
+
     
   }, [pathname]);
 
@@ -72,11 +75,12 @@ export default function DashboardLayout({ children, params }) {
   return (
     <div className="flex h-screen w-full bg-zinc-50 text-zinc-900 font-sans antialiased overflow-hidden relative">
       {/* Sidebar */}
-      <aside
+    <aside
         className={`
-          ${isSidebarOpen ? "flex fixed inset-y-0 z-40 shadow-2xl" : "hidden"} 
-          lg:flex lg:static 
-          w-64 min-w-[256px] h-full bg-zinc-100 flex-col justify-between border-r border-zinc-200 lg:shadow-sm z-20 flex-shrink-0
+          ${isSidebarOpen ? "flex" : "hidden"} 
+          fixed lg:static inset-y-0 left-0 z-40
+          w-64 min-w-[256px] h-full bg-zinc-100 flex-col justify-between border-r border-zinc-200 shadow-2xl lg:shadow-sm z-20 flex-shrink-0
+          transition-all duration-300
         `}
       >
         <div className="p-6 flex-1 overflow-y-auto">
@@ -88,9 +92,11 @@ export default function DashboardLayout({ children, params }) {
                 Optima Sync
               </h2>
             </div>
+
+
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-1 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-200 transition"
+              className="text-zinc-500 hover:text-zinc-900 rounded-lg p-1 hover:bg-zinc-200 transition cursor-pointer"
               aria-label="Close menu"
             >
               <X className="w-5 h-5" />
@@ -100,12 +106,12 @@ export default function DashboardLayout({ children, params }) {
           <nav className="flex flex-col gap-1.5">
             <Link
               href={`${basePath}/sales`}
-              onClick={() => setIsSidebarOpen(false)}
+
             >
               <button
                 onClick={() => {
                   setActiveTab("sales");
-                  setIsSidebarOpen(false);
+                 
                 }}
                 className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
                   activeTab === "sales"
@@ -120,7 +126,7 @@ export default function DashboardLayout({ children, params }) {
 
             <Link
               href={`${basePath}/member`}
-              onClick={() => setIsSidebarOpen(false)}
+              
             >
               <button
                 onClick={() => setActiveTab("member")}
@@ -138,7 +144,7 @@ export default function DashboardLayout({ children, params }) {
 
               <Link
               href={`${basePath}/product`}
-              onClick={() => setIsSidebarOpen(false)}
+
             >
               <button
                 onClick={() => setActiveTab("product")}
@@ -155,11 +161,11 @@ export default function DashboardLayout({ children, params }) {
   
                 <Link
               href={`${basePath}/marketing`}
-              onClick={() => setIsSidebarOpen(false)}>
+>
               <button
                 onClick={() => {
                   setActiveTab("marketing");
-                  setIsSidebarOpen(false);
+
                 }}
                 className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
                   activeTab === "marketing"
@@ -176,7 +182,7 @@ export default function DashboardLayout({ children, params }) {
 
             <Link
               href={`${basePath}/clients`}
-              onClick={() => setIsSidebarOpen(false)}
+
             >
               <button
                 onClick={() => setActiveTab("clients")}
@@ -193,7 +199,7 @@ export default function DashboardLayout({ children, params }) {
 
             <Link
               href={`${basePath}/industries`}
-              onClick={() => setIsSidebarOpen(false)}
+
             >
               <button
                 onClick={() => setActiveTab("industries")}
@@ -210,7 +216,7 @@ export default function DashboardLayout({ children, params }) {
 
             <Link
               href={`${basePath}/cities`}
-              onClick={() => setIsSidebarOpen(false)}
+
             >
               <button
                 onClick={() => setActiveTab("cities")}
@@ -227,7 +233,7 @@ export default function DashboardLayout({ children, params }) {
 
             <Link
               href={`${basePath}/channels`}
-              onClick={() => setIsSidebarOpen(false)}
+
             >
               <button
                 onClick={() => setActiveTab("channels")}
@@ -265,7 +271,7 @@ export default function DashboardLayout({ children, params }) {
                   href={`${basePath}/settings/profile`}
                   onClick={() => {
                     setActiveTab("profile");
-                    setIsSidebarOpen(false);
+
                   }}
                   className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-left ${
                     activeTab === "profile"
@@ -274,24 +280,10 @@ export default function DashboardLayout({ children, params }) {
                   }`}
                 >
                   <User className="w-3.5 h-3.5" />
-                  <span>Edit Profile</span>
+                  <span>Edit Organaization</span>
                 </Link>
 
-                <Link
-                  href={`${basePath}/settings/edit-logo`}
-                  onClick={() => {
-                    setActiveTab("Logo");
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-left ${
-                    activeTab === "Logo"
-                      ? "bg-blue-100 text-blue-700 font-bold"
-                      : "text-zinc-600 hover:bg-zinc-200 hover:text-blue-600"
-                  }`}
-                >
-                  <Image className="w-3.5 h-3.5" />
-                  <span>Edit Logo</span>
-                </Link>
+
               </div>
             )}
           </nav>
@@ -316,19 +308,17 @@ export default function DashboardLayout({ children, params }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        {/* Mobile Toggle Button (Visible only on mobile devices) */}
-        <div className="lg:hidden p-4 bg-white border-b border-zinc-200 flex items-center justify-between">
+
+            {/* 2. التعديل الثاني: إضافة زر الثلاث شخطات Menu ليظهر فقط عندما يكون السايدبار مغلقاً */}
+        {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition cursor-pointer"
+            className="absolute top-4 left-4 z-30 p-2.5 bg-white border border-zinc-200 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg shadow-sm transition cursor-pointer flex items-center justify-center"
             aria-label="Open menu"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5" />
           </button>
-          <span className="bg-zinc-200 text-zinc-900 px-3 py-1 rounded-md font-bold text-xs">
-            {orgName}
-          </span>
-        </div>
+        )}
 
         <main className="flex-1 bg-zinc-50 p-4 sm:p-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto">{children}</div>
