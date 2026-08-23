@@ -58,7 +58,7 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
   const [deletingId, setDeletingId] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // 👇 State for Delete Dialog
+  // State for Delete Dialog
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
     connectionId: null,
@@ -77,20 +77,12 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
     fetchConnections();
   }, [fetchConnections]);
 
-  /* ── On Success ── */
-  const handleSuccess = async (newConnection) => {
+  /* ── On Success (تعديل لضمان الجلب المباشر المكتمل) ── */
+  const handleSuccess = async () => {
     setToast({ type: "success", message: "Connection saved successfully!" });
     setTimeout(() => setToast(null), 3000);
 
-    if (editingConnection) {
-      setConnections((prev) =>
-        prev.map((c) =>
-          c.id === newConnection?.id ? { ...c, ...newConnection } : c,
-        ),
-      );
-    } else {
-      setConnections((prev) => [newConnection, ...prev]);
-    }
+    // إعادة الجلب مباشرة لحل مشكلة عدم إرجاع البيانات المكتملة (Product & Channel Relations)
     await fetchConnections();
     setEditingConnection(null);
   };
@@ -99,12 +91,12 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
     setEditingConnection(conn);
     setIsModalOpen(true);
   };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingConnection(null);
   };
 
-  // 👇 Open Delete Dialog instead of confirm()
   const openDeleteDialog = (conn) => {
     setDeleteDialog({
       isOpen: true,
@@ -113,7 +105,6 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
     });
   };
 
-  // 👇 Close Delete Dialog
   const closeDeleteDialog = () => {
     setDeleteDialog({
       isOpen: false,
@@ -122,7 +113,6 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
     });
   };
 
-  // 👇 Handle Delete
   const handleDelete = async () => {
     const id = deleteDialog.connectionId;
     if (!id) return;
@@ -142,7 +132,7 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
   };
 
   return (
-    <div className="space-y-5" dir="ltr">
+    <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4" dir="ltr">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -154,204 +144,143 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
         </div>
       )}
 
-      {/* ============================================ */}
-      {/* 🗑️ Delete Confirmation Dialog */}
-      {/* ============================================ */}
+      {/* Delete Confirmation Dialog */}
       {deleteDialog.isOpen && (
         <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Delete Connection</h3>
-                  <p className="text-xs text-slate-500">This action cannot be undone</p>
-                </div>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-amber-600">
+              <div className="p-2.5 bg-amber-50 rounded-xl">
+                <AlertTriangle className="w-6 h-6" />
               </div>
-              <button
-                onClick={closeDeleteDialog}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <h3 className="font-bold text-gray-900 text-lg">Confirm Deletion</h3>
             </div>
-
-            {/* Body */}
-            <div className="mb-6">
-              <p className="text-sm text-slate-600">
-                Are you sure you want to delete{" "}
-                <span className="font-semibold text-slate-900">
-                  {deleteDialog.connectionName}
-                </span>
-                ?
-              </p>
-              <p className="text-xs text-slate-400 mt-2">
-                All activities related to this connection will also be removed.
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete connection{" "}
+              <span className="font-semibold text-gray-900">
+                {deleteDialog.connectionName}
+              </span>
+              ?
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
               <button
+                type="button"
                 onClick={closeDeleteDialog}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleDelete}
                 disabled={deletingId === deleteDialog.connectionId}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-red-600/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition disabled:opacity-50 shadow-sm"
               >
-                {deletingId === deleteDialog.connectionId ? (
+                {deletingId === deleteDialog.connectionId && (
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
                 )}
-                <span>Delete</span>
+                Confirm Delete
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
-            <Link2 className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-lg font-extrabold text-slate-900">
-              Connections Log
-            </h3>
-            <p className="text-xs text-slate-500 font-medium">
-              Track all interactions and deals with this client
-            </p>
-          </div>
-        </div>
+      {/* Header - متناسق مع عنوان Stakeholders */}
+      <div className="flex items-center justify-between border-b pb-3 border-gray-100">
+        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <Link2 className="w-5 h-5 text-blue-600" />
+          Connections Log
+        </h2>
         <button
+          type="button"
           onClick={() => {
             setEditingConnection(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition shadow-sm"
         >
           <Plus className="w-4 h-4" />
-          <span>New Connection</span>
+          Add Connection
         </button>
       </div>
 
       {/* Loading / Empty / List */}
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-          <p className="text-slate-500 text-sm font-semibold">
-            Loading connections...
-          </p>
+        <div className="py-8 flex flex-col items-center justify-center gap-2">
+          <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+          <p className="text-gray-400 text-xs font-medium">Loading connections...</p>
         </div>
       ) : connections.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 flex flex-col items-center justify-center gap-3 text-center">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-            <Link2 className="w-6 h-6" />
-          </div>
-          <p className="text-slate-700 text-sm font-bold">
-            No connections recorded
-          </p>
-          <p className="text-slate-400 text-xs">
-            Click New Connection to record the first interaction with the
-            client
-          </p>
-        </div>
+        <p className="text-gray-400 text-sm pt-1">
+          No connections recorded yet for this client.
+        </p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 pt-1">
           {connections.map((conn, index) => {
-            const rawStage = conn.stage
-              ? String(conn.stage).toLowerCase()
-              : "lead";
+            const rawStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
             const stageInfo = STAGES[rawStage] || STAGES.lead;
             const uniqueKey = conn.id ? `${conn.id}-${index}` : index;
 
             return (
               <div
                 key={uniqueKey}
-                className="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-all"
+                className="flex flex-col gap-3 border border-gray-100 rounded-xl p-3 hover:bg-gray-50/50 transition-colors"
               >
-                {/* Connection Details */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex flex-col gap-2 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${stageInfo.color}`}
-                      >
-                        {stageInfo.label}
+                {/* Details Row (نفس أسلوب وسطر Stakeholder) */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-wrap">
+                    {/* اسم المنتج */}
+                    <span className="text-gray-900 font-semibold text-sm min-w-[120px] flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-gray-400" />
+                      {conn.product?.name || "N/A"}
+                    </span>
+
+                    {/* المرحلة / Stage */}
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${stageInfo.color}`}>
+                      {stageInfo.label}
+                    </span>
+
+                    {/* القناة / Channel */}
+                    {conn.channel?.name && (
+                      <span className="text-gray-500 text-sm flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5 text-gray-400" />
+                        <span style={{ color: conn.channel?.color || "#2563eb" }}>
+                          {conn.channel.name}
+                        </span>
                       </span>
-                      {conn.initiated_by && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                          <ArrowRightLeft className="w-3 h-3" />
-                          {INITIATED_LABELS[conn.initiated_by] ||
-                            conn.initiated_by}
-                        </span>
-                      )}
-                    </div>
+                    )}
 
-                    <div className="flex items-center gap-4 text-sm text-slate-600 flex-wrap">
-                      {conn.product?.name && (
-                        <span className="flex items-center gap-1.5">
-                          <Package className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="font-semibold text-slate-800">
-                            {conn.product.name}
-                          </span>
-                        </span>
-                      )}
-                      {conn.channel?.name && (
-                        <span className="flex items-center gap-1.5">
-                          <Tag className="w-3.5 h-3.5 text-slate-400" />
-                          <span
-                            style={{ color: conn.channel?.color || "#2563eb" }}
-                            className="font-semibold"
-                          >
-                            {conn.channel.name}
-                          </span>
-                        </span>
-                      )}
-                      {conn.assignee?.name && (
-                        <span className="flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{conn.assignee.name}</span>
-                        </span>
-                      )}
-                    </div>
+                    {/* Assignee */}
+                    {conn.assignee?.name && (
+                      <span className="text-gray-500 text-xs flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-gray-400" />
+                        {conn.assignee.name}
+                      </span>
+                    )}
 
-                    <p className="text-xs text-slate-400">
-                      {conn.created_at
-                        ? new Date(conn.created_at).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : ""}
-                    </p>
+                    {/* Initiated By */}
+                    {conn.initiated_by && (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        {INITIATED_LABELS[conn.initiated_by] || conn.initiated_by}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  {/* Actions (أزرار التعديل والحذف بنفس أسلوب الأيقونات في الـ Stakeholder) */}
+                  <div className="flex items-center gap-1.5 self-end sm:self-center">
                     <button
+                      type="button"
                       onClick={() => handleEdit(conn)}
-                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                      className="p-2 text-zinc-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                       title="Edit"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
-                    {/* 👇 زر الحذف - يفتح Dialog بدلاً من confirm */}
                     <button
-                      onClick={() => openDeleteDialog(conn)}
+                      type="button"
                       disabled={deletingId === conn.id}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all disabled:opacity-40"
+                      onClick={() => openDeleteDialog(conn)}
+                      className="p-2 text-zinc-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all disabled:opacity-40"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />

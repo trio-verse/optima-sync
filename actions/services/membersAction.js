@@ -24,28 +24,23 @@ export async function getMembers(orgId) {
       };
     }
 
-    const resdata = await api.get(`/organizations/${orgId}`, {
+    const resdata = await api.get(`/organizations/${orgId}/members`, {
       token,
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
-    const orgData = resdata?.data?.data || resdata?.data;
-    return {
-      success: true,
-      data: orgData?.members || [],
-    };
-  } catch (error) {
-    console.error("DEBUG getMembers Error:", error.cause);
-    console.error("DEBUG getMembers Error", error.message);
-    return {
-      success: false,
-      message:
-        error.data?.message ||
-        error.message ||
-        "Failed to fetch members",
-      data: [],
-    };
-  }
+     return {
+            success: true,
+            data: resdata?.data?.data || [],
+        };
+    } catch (error) {
+        console.error("DEBUG getProducts Error:", error);
+        return {
+            success: false,
+            message: error.data?.message || error.message || "Failed to fetch products",
+            data: [],
+        };
+    }
 }
 
 /**

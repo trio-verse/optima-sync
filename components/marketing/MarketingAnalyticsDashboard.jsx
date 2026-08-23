@@ -102,24 +102,24 @@ function ConnectionsDonutChart({ totalConnections, totalWins }) {
                             ))}
                         </Pie>
                         <Tooltip
-                            formatter={(val, name) => [Number(val).toLocaleString(), name]}
+                            formatter={(val, name) => [Number(val).toLocaleString("en-US"), name]}
                             contentStyle={{ backgroundColor: "#ffffff", borderRadius: "8px", borderColor: "#e2e8f0" }}
                         />
                     </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-2xl font-extrabold text-slate-900 tabular-nums">{totalWins}</span>
-                    <span className="text-[10px] font-semibold text-slate-400">of {totalConnections} won</span>
+                    <span className="text-2xl font-extrabold text-slate-900 tabular-nums">{Number(totalWins).toLocaleString("en-US")}</span>
+                    <span className="text-[10px] font-semibold text-slate-400">of {Number(totalConnections).toLocaleString("en-US")} won</span>
                 </div>
             </div>
             <div className="flex items-center justify-center gap-5">
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Won ({totalWins})
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />Won ({Number(totalWins).toLocaleString("en-US")})
                 </span>
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300" /> Other ({remaining})
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300" /> Other ({Number(remaining).toLocaleString("en-US")})
                 </span>
-                <span className="text-xs font-bold text-indigo-600">{winRate}%</span>
+                <span className="text-xs font-bold text-indigo-600">{Number(winRate).toLocaleString("en-US")}%</span>
             </div>
         </div>
     );
@@ -151,7 +151,7 @@ function RadialGauge({ label, value, color, domainMax }) {
                     </RadialBarChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-lg font-extrabold text-slate-900 tabular-nums">{value}%</span>
+                    <span className="text-lg font-extrabold text-slate-900 tabular-nums">{Number(value).toLocaleString("en-US")}% </span>
                 </div>
             </div>
             <span className="text-xs font-semibold text-slate-500">{label}</span>
@@ -309,8 +309,8 @@ export default function MarketingAnalyticsDashboard({
     }, [processedCampaigns, sortBy]);
 
     /* ============================================================
-       4. بيانات مخطط Spent vs Revenue الإجمالي — من kpiData مباشرة
-       (نفسه مبني من الـ analytics الجاي من الباك).
+        4. بيانات مخطط Spent vs Revenue الإجمالي — من kpiData مباشرة
+        (نفسه مبني من الـ analytics الجاي من الباك).
        ============================================================ */
     const spentVsRevenueData = useMemo(
         () => [
@@ -320,7 +320,7 @@ export default function MarketingAnalyticsDashboard({
         [kpiData.totalSpent, kpiData.totalRevenue]
     );
 
-    const currencyFormatter = (v) => `$${Number(v || 0).toLocaleString()}`;
+    const currencyFormatter = (v) => `$${Number(v || 0).toLocaleString("en-US")}`;
 
     // تصدير CSV
     const handleExportCSV = () => {
@@ -368,7 +368,7 @@ export default function MarketingAnalyticsDashboard({
             </div>
 
             {/* 1. KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-5">
                 {/* Total Campaigns ✅ Backend */}
                 <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-1.5">
                     <div className="flex items-center justify-between text-slate-500">
@@ -377,7 +377,7 @@ export default function MarketingAnalyticsDashboard({
                             <Layers className="h-3.5 w-3.5" />
                         </div>
                     </div>
-                    <div className="text-xl font-extrabold text-slate-900">{kpiData.totalCampaigns}</div>
+                    <div className="text-xl font-extrabold text-slate-900">{kpiData.totalCampaigns.toLocaleString("en-US")}</div>
                     <p className="text-[10px] text-slate-400">All campaigns</p>
                 </div>
 
@@ -389,7 +389,7 @@ export default function MarketingAnalyticsDashboard({
                             <Megaphone className="h-3.5 w-3.5" />
                         </div>
                     </div>
-                    <div className="text-xl font-extrabold text-slate-900">{kpiData.activeCount}</div>
+                    <div className="text-xl font-extrabold text-slate-900">{kpiData.activeCount.toLocaleString("en-US")}</div>
                     <p className="text-[10px] text-slate-400">Running campaigns</p>
                 </div>
 
@@ -402,7 +402,7 @@ export default function MarketingAnalyticsDashboard({
                         </div>
                     </div>
                     <div className="text-xl font-extrabold text-slate-900">
-                        ${kpiData.totalSpent.toLocaleString()}
+                        ${kpiData.totalSpent.toLocaleString("en-US")}
                     </div>
                     <p className="text-[10px] text-slate-400">Total approved expenses</p>
                 </div>
@@ -416,7 +416,7 @@ export default function MarketingAnalyticsDashboard({
                         </div>
                     </div>
                     <div className="text-xl font-extrabold text-emerald-600">
-                        ${kpiData.totalRevenue.toLocaleString()}
+                        ${kpiData.totalRevenue.toLocaleString("en-US")}
                     </div>
                     <p className="text-[10px] text-emerald-600 font-semibold inline-flex items-center gap-0.5">
                         <ArrowUpRight className="h-3 w-3" /> Won deals
@@ -432,7 +432,7 @@ export default function MarketingAnalyticsDashboard({
                         </div>
                     </div>
                     <div className="text-xl font-extrabold text-rose-600">
-                        {kpiData.totalWins.toLocaleString()}
+                        {kpiData.totalWins.toLocaleString("en-US")}
                     </div>
                     <p className="text-[10px] text-slate-400">Won deals total</p>
                 </div>
@@ -446,7 +446,7 @@ export default function MarketingAnalyticsDashboard({
                         </div>
                     </div>
                     <div className="text-xl font-extrabold text-cyan-600">
-                        ${kpiData.overallCpl.toFixed(2)}
+                        ${Number(kpiData.overallCpl).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-slate-400">Spent ÷ connections</p>
                 </div>
@@ -462,7 +462,7 @@ export default function MarketingAnalyticsDashboard({
                         </div>
                     </div>
                     <div className="text-xl font-extrabold text-emerald-700">
-                        {kpiData.effectiveCampaignCount} / {kpiData.totalCampaigns}
+                        {kpiData.effectiveCampaignCount.toLocaleString("en-US")} / {kpiData.totalCampaigns.toLocaleString("en-US")}
                     </div>
                     <p className="text-[10px] text-emerald-600 font-medium">From effective-campaigns endpoint</p>
                 </div>
@@ -478,7 +478,7 @@ export default function MarketingAnalyticsDashboard({
                         </div>
                     </div>
                     <div className="text-xl font-extrabold text-purple-700">
-                        {kpiData.totalExpectedContent.toLocaleString()}
+                        {kpiData.totalExpectedContent.toLocaleString("en-US")}
                     </div>
                     <p className="text-[10px] text-purple-600 font-medium">Sum across campaigns</p>
                 </div>
@@ -526,136 +526,6 @@ export default function MarketingAnalyticsDashboard({
                     ) : (
                         <KpiGauges winRate={kpiData.totalWinRate} roi={kpiData.totalROI} />
                     )}
-                </div>
-            </div>
-
-            {/* 3. Campaign Cards */}
-            <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <h3 className="text-base font-bold text-slate-900">Campaigns Performance</h3>
-                        <p className="text-xs text-slate-500">
-                            {kpiData.effectiveCampaignCount} effective campaigns out of {kpiData.totalCampaigns} total
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-500 font-semibold">Rank by:</span>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-700 outline-none font-semibold"
-                        >
-                            <option value="roi">Highest ROI</option>
-                            <option value="cpl">Lowest CPL</option>
-                            <option value="winRate">Highest Win Rate</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {sortedCampaigns.map((c) => (
-                        <div
-                            key={c.id}
-                            className={`group rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 ${c.isEffective
-                                    ? "border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-white"
-                                    : "border-slate-200/80 bg-white"
-                                }`}
-                        >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1 min-w-0">
-                                    <Link
-                                        href={`/${orgId}/dashboard/marketing/campaigns/${c.id}`}
-                                        className="text-base font-bold text-slate-900 hover:text-blue-600 transition-colors line-clamp-1"
-                                    >
-                                        {c.name}
-                                    </Link>
-                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                        <span
-                                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.status === "active"
-                                                    ? "bg-emerald-50 text-emerald-700"
-                                                    : "bg-slate-100 text-slate-600"
-                                                }`}
-                                        >
-                                            <span
-                                                className={`h-1.5 w-1.5 rounded-full ${c.status === "active" ? "bg-emerald-500" : "bg-slate-400"
-                                                    }`}
-                                            />
-                                            {c.status}
-                                        </span>
-                                        {c.isEffective && (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                                                <Sparkles className="h-3 w-3" /> Effective
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="text-right flex-shrink-0 ml-3">
-                                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">ROI</div>
-                                    {c.roi !== null ? (
-                                        <span className={`text-lg font-extrabold ${c.roi >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                                            {c.roi >= 0 ? "+" : ""}{c.roi}%
-                                        </span>
-                                    ) : (
-                                        <span className="text-sm text-slate-400">N/A</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Spent</p>
-                                    <p className="text-sm font-bold text-slate-900">${c.spent.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Connections</p>
-                                    <p className="text-sm font-bold text-slate-900">{c.connections}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Wins</p>
-                                    <p className="text-sm font-bold text-rose-600">{c.wonDeals || 0}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Win Rate</p>
-                                    <p
-                                        className={`text-sm font-bold ${c.winRate >= 50
-                                                ? "text-emerald-600"
-                                                : c.winRate >= 25
-                                                    ? "text-amber-600"
-                                                    : "text-slate-500"
-                                            }`}
-                                    >
-                                        {c.winRate}%
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">CPL</p>
-                                    <p className="text-sm font-bold text-cyan-600">${c.cpl.toFixed(2)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Content</p>
-                                    <p className="text-sm font-bold text-purple-600">{c.expectedContent || 0}</p>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 pt-4 border-t border-slate-100">
-                                <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                                    <span>Conversion Rate</span>
-                                    <span className="font-semibold">{c.winRate}%</span>
-                                </div>
-                                <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-500 ${c.winRate >= 50
-                                                ? "bg-emerald-500"
-                                                : c.winRate >= 25
-                                                    ? "bg-amber-500"
-                                                    : "bg-slate-400"
-                                            }`}
-                                        style={{ width: `${Math.min(c.winRate, 100)}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
                 </div>
             </div>
         </div>

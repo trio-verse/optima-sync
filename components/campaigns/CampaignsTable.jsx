@@ -13,35 +13,57 @@ export default function CampaignsTable({ initialCampaigns = [], orgId }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState(null);
 
-  // حساب الحقول تلقائياً في حال لم تكن محسوبة من الباك إند
-  const processedCampaigns = initialCampaigns.map((campaign) => {
-    const budget = Number(campaign.expected_budget || campaign.budget || 0);
-    const spent = Number(campaign.current_spent || campaign.spent || 0);
-    const connectionsCount = Array.isArray(campaign.connections)
+  // 1. تأمين قراءة القائمة للتأكد من أنها مصفوفة دائماً
+  const rawList = Array.isArray(initialCampaigns)
+    ? initialCampaigns
+    : initialCampaigns?.data && Array.isArray(initialCampaigns.data)
+    ? initialCampaigns.data
+    : [];
+
+  // 2. معالجة وحساب البيانات مع تعيين قيم افتراضية حامية
+  const processedCampaigns = rawList.map((campaign) => {
+    // التأكد من اسم الحملة أو معرفها
+    const displayName = campaign?.name || campaign?.title || "Campaign without name";
+
+    // الميزانية والمبلغ المصروف
+    const budget = Number(campaign?.expected_budget || campaign?.budget || 0);
+    const spent = Number(campaign?.current_spent || campaign?.spent || 0);
+
+    // عدد الاتصالات / العملاء
+    const connectionsCount = Array.isArray(campaign?.connections)
       ? campaign.connections.length
-      : Number(campaign.connections_count || 0);
+      : Number(campaign?.connections_count || campaign?.leads_count || 0);
 
-    const cpl =
-      campaign.cpl !== undefined && campaign.cpl !== null
-        ? Number(campaign.cpl)
-        : connectionsCount > 0
-        ? spent / connectionsCount
-        : 0;
+    // حساب CPL بآمان مع التحقق من القسمة على صفر أو القيم غير المحددة
+    let cpl = 0;
+    if (campaign?.cpl !== undefined && campaign?.cpl !== null) {
+      cpl = Number(campaign.cpl) || 0;
+    } else if (connectionsCount > 0) {
+      cpl = spent / connectionsCount;
+    }
 
-    const roi = campaign.roi !== undefined ? campaign.roi : null;
+    // العائد على الاستثمار ROI
+    const roi =
+      campaign?.roi !== undefined && campaign?.roi !== null
+        ? Number(campaign.roi)
+        : null;
 
     return {
       ...campaign,
+      displayName,
       computedBudget: budget,
       computedSpent: spent,
       computedConnectionsCount: connectionsCount,
-      computedCpl: cpl,
+      computedCpl: isNaN(cpl) ? 0 : cpl,
       computedRoi: roi,
     };
   });
 
   const filteredCampaigns = processedCampaigns
-    .filter((item) => statusFilter === "all" || item.status === statusFilter)
+    .filter((item) => {
+      if (statusFilter === "all") return true;
+      return item.status?.toLowerCase() === statusFilter.toLowerCase();
+    })
     .sort((a, b) => {
       if (sortBy === "cpl") return a.computedCpl - b.computedCpl;
       if (sortBy === "roi") return (b.computedRoi || 0) - (a.computedRoi || 0);
@@ -54,19 +76,20 @@ export default function CampaignsTable({ initialCampaigns = [], orgId }) {
   };
 
   const handleOpenEdit = (campaign, e) => {
-    e.stopPropagation(); // إيقاف الانتقال لصفحة التفاصيل عند النقر على التعديل
+    e.stopPropagation();
     setEditingCampaign(campaign);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id, e) => {
-    e.stopPropagation(); // إيقاف الانتقال لصفحة التفاصيل عند النقر على الحذف
+    e.stopPropagation();
     if (confirm("Are you sure you want to delete this campaign?")) {
       await deleteCampaign(id, orgId);
     }
   };
 
   const handleRowClick = (campaignId) => {
+    if (!campaignId) return;
     router.push(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
   };
 
@@ -138,56 +161,75 @@ export default function CampaignsTable({ initialCampaigns = [], orgId }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filteredCampaigns.map((campaign) => (
-              <tr
-                key={campaign.id}
-                onClick={() => handleRowClick(campaign.id)}
-                className="hover:bg-gray-50/80 cursor-pointer transition"
-              >
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  {campaign.name}
-                </td>
-                <td className="px-6 py-4">
-                  <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 capitalize">
-                    {campaign.status || "active"}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  ${campaign.computedSpent} / ${campaign.computedBudget}
-                </td>
-                <td className="px-6 py-4">{campaign.computedConnectionsCount}</td>
-                <td className="px-6 py-4 font-semibold text-gray-800">
-                  ${campaign.computedCpl.toFixed(2)}
-                </td>
-                <td className="px-6 py-4">
-                  {campaign.computedRoi !== null ? (
-                    <span className="font-semibold text-green-600">
-                      +{campaign.computedRoi}%
+            {filteredCampaigns.map((campaign) => {
+              const campaignId = campaign.id || campaign._id;
+              return (
+                <tr
+                  key={campaignId || Math.random()}
+                  onClick={() => handleRowClick(campaignId)}
+                  className="hover:bg-gray-50/80 cursor-pointer transition"
+                >
+                  {/* اسم الحملة */}
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    {campaign.displayName}
+                  </td>
+
+                  {/* الحالة */}
+                  <td className="px-6 py-4">
+                    <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 capitalize">
+                      {campaign.status || "Draft"}
                     </span>
-                  ) : (
-                    <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                      N/A
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-right space-x-1">
-                  <button
-                    onClick={(e) => handleOpenEdit(campaign, e)}
-                    className="rounded-lg p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
-                    title="Edit Campaign"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={(e) => handleDelete(campaign.id, e)}
-                    className="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-                    title="Delete Campaign"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+
+                  {/* المصروف / الميزانية */}
+                  <td className="px-6 py-4">
+                    ${campaign.computedSpent.toLocaleString()} / $
+                    {campaign.computedBudget.toLocaleString()}
+                  </td>
+
+                  {/* عدد الاتصالات */}
+                  <td className="px-6 py-4">
+                    {campaign.computedConnectionsCount.toLocaleString()}
+                  </td>
+
+                  {/* تكلفة العميل CPL */}
+                  <td className="px-6 py-4 font-semibold text-gray-800">
+                    ${campaign.computedCpl.toFixed(2)}
+                  </td>
+
+                  {/* العائد على الاستثمار ROI */}
+                  <td className="px-6 py-4">
+                    {campaign.computedRoi !== null && !isNaN(campaign.computedRoi) ? (
+                      <span className="font-semibold text-green-600">
+                        +{campaign.computedRoi}%
+                      </span>
+                    ) : (
+                      <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                        N/A
+                      </span>
+                    )}
+                  </td>
+
+                  {/* أزرار التحكم */}
+                  <td className="px-6 py-4 text-right space-x-1">
+                    <button
+                      onClick={(e) => handleOpenEdit(campaign, e)}
+                      className="rounded-lg p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                      title="Edit Campaign"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(campaignId, e)}
+                      className="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+                      title="Delete Campaign"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
             {filteredCampaigns.length === 0 && (
               <tr>
                 <td colSpan="7" className="px-6 py-8 text-center text-gray-400">

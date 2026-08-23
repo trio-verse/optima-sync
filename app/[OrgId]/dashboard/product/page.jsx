@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect ,use} from "react";
+import { useState, useEffect, use } from "react";
 import {
   Package,
   Plus,
@@ -23,7 +23,7 @@ import {
   deleteProduct,
 } from "@/actions/services/productsService";
 
-export default function ProductsPage({params}) {
+export default function ProductsPage({ params }) {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,12 +42,12 @@ export default function ProductsPage({params}) {
 
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId || resolvedParams?.orgId;
+
   useEffect(() => {
     if (!orgId) return;
     async function fetchProductsData() {
-      
       setLoading(true);
-      const result = await getProducts(orgId );
+      const result = await getProducts(orgId);
       if (result?.success) {
         setProducts(result?.data || []);
       } else {
@@ -91,43 +91,50 @@ export default function ProductsPage({params}) {
     setDeletingProduct(null);
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  // التحقق من أن حقل الاسم والوصف ليسا فارغين
+  const validateForm = () => {
     if (!formData.name.trim()) {
       setErrorMsg("Product name is required.");
-      return;
+      return false;
     }
+    if (!formData.description.trim()) {
+      setErrorMsg("Product description is required.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
     setLoading(true);
     setErrorMsg("");
 
-    const result = await createProduct(formData,orgId);
+    const result = await createProduct(formData, orgId);
     if (result?.success) {
       const newItem = result.data || { id: result.id, ...formData };
       setProducts((prev) => [newItem, ...prev]);
       handleCloseModal();
     } else {
-      console.error(result?.message, "Failed to create product.");
+      setErrorMsg(result?.message || "Failed to create product.");
     }
     setLoading(false);
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      setErrorMsg("Product name is required.");
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setErrorMsg("");
 
-    const result = await updateProduct(editingId, formData,orgId);
+    const result = await updateProduct(editingId, formData, orgId);
     if (result?.success) {
       setProducts((prev) =>
         prev.map((item) =>
-          item.id === editingId ? { ...item, ...formData } : item,
-        ),
+          item.id === editingId ? { ...item, ...formData } : item
+        )
       );
       handleCloseModal();
     } else {
@@ -140,10 +147,10 @@ export default function ProductsPage({params}) {
     if (!deletingProduct) return;
 
     setLoading(true);
-    const result = await deleteProduct(deletingProduct.id,orgId );
+    const result = await deleteProduct(deletingProduct.id, orgId);
     if (result?.success) {
       setProducts((prev) =>
-        prev.filter((item) => item.id !== deletingProduct.id),
+        prev.filter((item) => item.id !== deletingProduct.id)
       );
       handleCloseDeleteModal();
     } else {
@@ -152,7 +159,7 @@ export default function ProductsPage({params}) {
     setLoading(false);
   };
 
-const filteredProducts = products.filter((item) => {
+  const filteredProducts = products.filter((item) => {
     const query = search.toLowerCase();
     const nameMatch = item.name?.toLowerCase().includes(query);
     const descMatch = item.description?.toLowerCase().includes(query);
@@ -160,13 +167,13 @@ const filteredProducts = products.filter((item) => {
   });
 
   const totalProducts = products.length;
-  const avgPrice =
+  const totalPrices =
     totalProducts > 0
       ? (
           products.reduce(
             (acc, curr) => acc + (parseFloat(curr.price) || 0),
-            0,
-          ) / totalProducts
+            0
+          ) 
         ).toFixed(2)
       : "0.00";
 
@@ -184,8 +191,7 @@ const filteredProducts = products.filter((item) => {
                 <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
               </h1>
               <p className="text-slate-500 text-xs mt-0.5 font-medium">
-                Manage all available products to link them with deals and
-                clients.
+                Manage all available products to link them with deals and clients.
               </p>
             </div>
           </div>
@@ -218,10 +224,10 @@ const filteredProducts = products.filter((item) => {
           <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Average Price
+                total Prices
               </p>
               <h3 className="text-2xl font-black text-slate-900 mt-1">
-                ${avgPrice}
+                ${totalPrices}
               </h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
@@ -270,7 +276,6 @@ const filteredProducts = products.filter((item) => {
                 key={item.id}
                 className="bg-white rounded-2xl border border-slate-200/80 hover:border-blue-300 p-5 flex flex-col justify-between gap-5 shadow-xs hover:shadow-md transition-all duration-200 group relative overflow-hidden"
               >
-                {/* Top decorative gradient line */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
                 <div className="flex flex-col gap-3">
@@ -364,9 +369,12 @@ const filteredProducts = products.filter((item) => {
                 onSubmit={editingId ? handleUpdate : handleCreate}
                 className="flex flex-col gap-4"
               >
+                {/* Product Name Input */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Product or Service Name *
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>
+                      Product or Service Name <span className="text-rose-500">*</span>
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -380,6 +388,7 @@ const filteredProducts = products.filter((item) => {
                   />
                 </div>
 
+                {/* Price Input */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-700">
                     Default Price ($)
@@ -396,25 +405,39 @@ const filteredProducts = products.filter((item) => {
                   />
                 </div>
 
+                {/* Description Textarea - الإجباري والمصمم بشكل جميل */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Description & Details
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <span>Description & Details</span>
+                      <span className="text-rose-500 font-extrabold">*</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                      Required
+                    </span>
+                  </div>
                   <textarea
                     rows={3}
                     value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, description: e.target.value });
+                      if (errorMsg) setErrorMsg("");
+                    }}
                     placeholder="Write a brief description of the product..."
-                    className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none transition-all"
+                    className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none resize-none transition-all ${
+                      errorMsg && !formData.description.trim()
+                        ? "border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    }`}
                   />
                 </div>
 
+                {/* Error Banner */}
                 {errorMsg && (
-                  <p className="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-100">
-                    {errorMsg}
-                  </p>
+                  <div className="text-xs font-bold text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200/80 flex items-center gap-2 animate-in fade-in duration-150">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                    <span>{errorMsg}</span>
+                  </div>
                 )}
 
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">

@@ -39,7 +39,12 @@ const CONTENT_TYPES = [
   { value: "ad_copy", label: "Ad Copy" },
 ];
 
-export default function ContentForm({ campaignId, orgId, editingContent = null,onSave }) {
+export default function ContentForm({
+  campaignId,
+  orgId,
+  editingContent = null,
+  onSave,
+}) {
   const router = useRouter();
   const [channels, setChannels] = useState([]);
   const [loadingLists, setLoadingLists] = useState(false);
@@ -53,7 +58,9 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
   const [formData, setFormData] = useState({
     title: editingContent?.title || "",
     type: editingContent?.type || "",
-    channelId: String(editingContent?.channel_id || editingContent?.channelId || ""),
+    channelId: String(
+      editingContent?.channel_id || editingContent?.channelId || "",
+    ),
     cost: editingContent?.cost || "",
     status: editingContent?.status || "draft",
     publishedAt: editingContent?.published_at
@@ -113,7 +120,7 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
       textarea.focus();
       textarea.setSelectionRange(
         start + prefix.length,
-        start + prefix.length + selectedText.length
+        start + prefix.length + selectedText.length,
       );
     }, 0);
   };
@@ -140,32 +147,41 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
     payload.append("channel_id", formData.channelId);
     payload.append("cost", formData.cost);
     payload.append("status", formData.status);
-    if (formData.publishedAt) payload.append("published_at", formData.publishedAt);
+    if (formData.publishedAt)
+      payload.append("published_at", formData.publishedAt);
     payload.append("description", formData.description);
     payload.append("script", formData.script);
 
     try {
-      console.log(isEditing+"----"+editingContent.id)
       const result = isEditing
-        ? await updateContent(editingContent.id,orgId, payload, campaignId)
-        : await createContent(campaignId,orgId, payload);
-
+        ? await updateContent(editingContent?.id, orgId, payload, campaignId)
+        : await createContent(campaignId, orgId, payload);
       if (result?.success) {
         router.push(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
         router.refresh();
-        onSave();
+        if (typeof onSave === "function") {
+          onSave();
+        }
       } else {
-        setGlobalError(result?.error || result?.message || "An error occurred while saving");
+        setGlobalError(
+          result?.error || result?.message || "An error occurred while saving",
+        );
       }
     } catch (err) {
-      setGlobalError("Unable to connect to the server. Please try again.");
+      console.error("Form submission error:", err);
+      setGlobalError(
+        err?.message || "Unable to connect to the server. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-sm border border-slate-200" dir="ltr">
+    <div
+      className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-sm border border-slate-200"
+      dir="ltr"
+    >
       <div className="flex items-center justify-between border-b border-slate-100 pb-5 mb-6">
         <div className="flex items-center gap-3">
           <button
@@ -180,7 +196,9 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
               {isEditing ? "Edit Content" : "Create New Content"}
             </h1>
             <p className="text-xs text-slate-500">
-              {isEditing ? "Update existing content details" : "Add new piece of content to this campaign"}
+              {isEditing
+                ? "Update existing content details"
+                : "Add new piece of content to this campaign"}
             </p>
           </div>
         </div>
@@ -201,10 +219,14 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
               onChange={handleChange}
               placeholder="e.g. Promo Video Script"
               className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all ${
-                errors.title ? "border-red-300 bg-red-50/30" : "border-slate-200"
+                errors.title
+                  ? "border-red-300 bg-red-50/30"
+                  : "border-slate-200"
               }`}
             />
-            {errors.title && <span className="text-red-500 text-xs">{errors.title}</span>}
+            {errors.title && (
+              <span className="text-red-500 text-xs">{errors.title}</span>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -227,7 +249,9 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
                 </option>
               ))}
             </select>
-            {errors.type && <span className="text-red-500 text-xs">{errors.type}</span>}
+            {errors.type && (
+              <span className="text-red-500 text-xs">{errors.type}</span>
+            )}
           </div>
         </div>
 
@@ -244,7 +268,9 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
               onChange={handleChange}
               disabled={loadingLists}
               className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white ${
-                errors.channelId ? "border-red-300 bg-red-50/30" : "border-slate-200"
+                errors.channelId
+                  ? "border-red-300 bg-red-50/30"
+                  : "border-slate-200"
               }`}
             >
               <option value="">Select channel...</option>
@@ -254,7 +280,9 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
                 </option>
               ))}
             </select>
-            {errors.channelId && <span className="text-red-500 text-xs">{errors.channelId}</span>}
+            {errors.channelId && (
+              <span className="text-red-500 text-xs">{errors.channelId}</span>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -312,7 +340,9 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
 
         {/* Description */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-700">Description</label>
+          <label className="text-xs font-bold text-slate-700">
+            Description
+          </label>
           <textarea
             name="description"
             rows={3}
@@ -405,8 +435,18 @@ export default function ContentForm({ campaignId, orgId, editingContent = null,o
             disabled={loading}
             className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md transition-all disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            <span>{loading ? "Saving..." : isEditing ? "Update Content" : "Save Content"}</span>
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Check className="w-4 h-4" />
+            )}
+            <span>
+              {loading
+                ? "Saving..."
+                : isEditing
+                  ? "Update Content"
+                  : "Save Content"}
+            </span>
           </button>
         </div>
       </form>

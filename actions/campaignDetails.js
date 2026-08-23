@@ -1,6 +1,5 @@
-// actions/campaignDetails.js
 "use server";
-
+// actions/campaignDetails.js
 import { api } from "@/lib/api/client";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -19,7 +18,7 @@ async function getAuthContext() {
   };
 }
 
-export async function createContent(campaignId, formData) {
+export async function createContent(campaignId,orgId, formData) {
   try {
 
      const cookieStore = await cookies();
@@ -96,7 +95,7 @@ console.log(payload)
     });
 
     if (campaignId) {
-      revalidatePath(`/campaigns/${campaignId}`);
+      revalidatePath(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
     }
     return { success: true, data: res?.data?.data, };
   } catch (error) {

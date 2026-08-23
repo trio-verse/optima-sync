@@ -60,6 +60,7 @@ export async function getCampaignById(id ,orgId ) {
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
+    console.log("vvvvvvvvvvv",res);
     return { success: true, data: res.data?.data || res.data };
   } catch (error) {
     return {
@@ -89,8 +90,8 @@ export async function createCampaign(formData, orgId) {
       description: formData.get("description"),
       estimated_content_count: Number(formData.get("estimated_content_count")),
       expected_budget: Number(formData.get("expected_budget")),
-      starts_at: formData.get("start_date"),
-      end_at: formData.get("end_date"),
+      start_date: formData.get("start_date"),
+      end_date: formData.get("end_date"),
       status: formData.get("status"),
       target: formData.get("target"),
     };
@@ -138,8 +139,8 @@ export async function updateCampaign(id, formData, orgId) {
       description: formData.get("description"),
       estimated_content_count: Number(formData.get("estimated_content_count")),
       expected_budget: Number(formData.get("expected_budget")),
-      starts_at: formData.get("start_date"),
-      end_at: formData.get("end_date"),
+      start_date: formData.get("start_date"),
+      start_date: formData.get("start_date"),
       status: formData.get("status"),
       target: formData.get("target"),
     };
@@ -311,7 +312,7 @@ export async function getAllCampaigns(orgId) {
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
-
+    console.log(response);
     return {
       success: true,
       data: response?.data?.data || [],
