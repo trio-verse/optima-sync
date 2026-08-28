@@ -17,8 +17,8 @@ import {
 
 import { getClients } from "@/actions/clientActions";
 import { getAllConnections } from "@/actions/connectionActions";
-import { getCity } from "@/actions/services/cityService";
-import { getIndustry } from "@/actions/services/industryService";
+import { getcities } from "@/actions/services/cityService";
+import { getindustries } from "@/actions/services/industryService";
 import { getProducts } from "@/actions/services/productsService";
 
 /* ============================================================
@@ -246,8 +246,8 @@ export default function SalesDashboardPage({ params: paramsPromise }) {
     const [clientsRes, connectionsRes, citiesRes, industriesRes, productsRes] = await Promise.all([
       getClients({}, orgId),
       getAllConnections(orgId),
-      getCity(orgId),
-      getIndustry(orgId),
+      getcities(orgId),
+      getindustries(orgId),
       getProducts(orgId),
     ]);
 

@@ -1,7 +1,7 @@
 // components/connections/ActivityModal.jsx
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect} from "react";
 import { X, Loader2, Send, AlertTriangle } from "lucide-react";
 
 export default function ActivityModal({
@@ -10,10 +10,18 @@ export default function ActivityModal({
     onSubmit,
     connectionName,
     isSubmitting,
+    initialData = null,
 }) {
     const [content, setContent] = useState("");
     const [error, setError] = useState("");
 
+    useEffect(() => {
+        if (initialData) {
+            setContent(initialData.content || "");
+        } else {
+            setContent("");
+        }
+    }, [initialData, isOpen]);
     if (!isOpen) return null;
 
     const handleSubmit = (e) => {

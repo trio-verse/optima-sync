@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Check,
@@ -13,11 +14,12 @@ import {
   Palette,
   AlertTriangle,
 } from "lucide-react";
+
 import {
   creatIndustry,
   updateIndustry,
   deleteIndustry,
-  getIndustry,
+  getindustries,
 } from "@/actions/services/industryService";
 
 const PRESET_COLORS = [
@@ -31,42 +33,84 @@ const PRESET_COLORS = [
 ];
 
 export default function IndustriesPage({ params }) {
-  const [industries, setIndustries] = useState([]);
-  const [isAdding, setIsAdding] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [addError, setAddError] = useState("");
-  const [search, setSearch] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editingName, setEditingName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [newColor, setNewColor] = useState("#2563eb");
-  const [editingColor, setEditingColor] = useState("");
-
-  // State للتحكم بظهور دايلوغ الحذف وتخزين العنصر المحدد والخطأ
-  const [deletingItem, setDeletingItem] = useState(null);
-  const [deleteError, setDeleteError] = useState("");
-
+  const queryClient = useQueryClient();
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId;
 
-  useEffect(() => {
-    if (!orgId) return;
-    async function fetchIndustry() {
-      setLoading(true);
-      const result = await getIndustry(orgId);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState("#2563eb");
+  const [addError, setAddError] = useState("");
+  const [search, setSearch] = useState("");
+
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingColor, setEditingColor] = useState("");
+
+  const [deletingItem, setDeletingItem] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+
+  const { data: industries = [], isLoading: loadingFetch } = useQuery({
+    queryKey: ["industries", orgId],
+    queryFn: async () => {
+      const result = await getindustries(orgId);
+      if (result?.success) return result?.data || [];
+      throw new Error(result?.message || "Failed to load industries");
+    },
+    enabled: !!orgId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: ({ name, color }) => creatIndustry(name, color, orgId),
+    onSuccess: (result) => {
       if (result?.success) {
-        setIndustries(result?.data || []);
+        queryClient.invalidateQueries({ queryKey: ["industries", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
+        setNewName("");
+        setNewColor("#2563eb");
+        setAddError("");
+        setIsAdding(false);
       } else {
-        console.error("Faild to load industries", result?.message);
+        setAddError(result?.message || "Could not save industry, please try again.");
       }
-      setLoading(false);
-    }
-    fetchIndustry();
-  }, [orgId]);
+    },
+  });
 
-  const handleAddIndustry = async (e) => {
+  const updateMutation = useMutation({
+    mutationFn: ({ id, name, color }) => updateIndustry(id, name, color, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["industries", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
+        setEditingId(null);
+        setEditingName("");
+        setEditingColor("");
+      } else {
+        console.error("Failed to update industry", result?.message);
+      }
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteIndustry(id, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["industries", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
+        setDeletingItem(null);
+        setDeleteError("");
+      } else {
+        setDeleteError("Cannot delete this industry because it is linked to existing clients.");
+      }
+    },
+  });
+
+  const loading =
+    addMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+  const handleAddIndustry = (e) => {
     e.preventDefault();
-
     if (!newName.trim()) {
       setAddError("Industry name is required.");
       return;
@@ -75,82 +119,30 @@ export default function IndustriesPage({ params }) {
       (item) => item.name.toLowerCase() === newName.trim().toLowerCase()
     );
     if (isDuplicate) {
-      setAddError("An industry with this name already exites.");
+      setAddError("An industry with this name already exists.");
       return;
     }
-    setLoading(true);
-    const result = await creatIndustry(newName.trim(), newColor, orgId);
-    if (result?.success) {
-      const createdItem = result.data || {
-        id: result.id,
-        name: newName.trim(),
-        color: newColor,
-        createAt: new Date().toISOString(),
-      };
-
-      setIndustries((prev) => [createdItem, ...prev]);
-      setNewName("");
-      setNewColor("#2563eb");
-      setAddError("");
-      setIsAdding(false);
-    } else {
-      console.error(result?.message, "Faild to Add industries");
-      setAddError("could not save industry please try a gain");
-    }
-    setLoading(false);
+    addMutation.mutate({ name: newName.trim(), color: newColor });
   };
 
-  const handleSaveEdit = async (id) => {
+  const handleSaveEdit = (id) => {
     if (!editingName.trim()) return;
-
     const isDuplicate = industries.some(
       (item) =>
         item.id !== id &&
         item.name.toLowerCase() === editingName.trim().toLowerCase()
     );
-
     if (isDuplicate) {
       alert("An industry with this name already exists.");
       return;
     }
-    setLoading(true);
-    const result = await updateIndustry(
-      id,
-      editingName.trim(),
-      editingColor,
-      orgId
-    );
-    if (result?.success) {
-      setIndustries((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? { ...item, name: editingName.trim(), color: editingColor }
-            : item
-        )
-      );
-      setEditingId(null);
-      setEditingName("");
-    } else {
-      console.error("Faild to update industry", result?.message);
-    }
-    setLoading(false);
+    updateMutation.mutate({ id, name: editingName.trim(), color: editingColor });
   };
 
-  // عند الضغط على تأكيد الحذف في الدايلوغ
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!deletingItem) return;
-
     setDeleteError("");
-    setLoading(true);
-    const result = await deleteIndustry(deletingItem.id, orgId);
-    if (result?.success) {
-      setIndustries((prev) => prev.filter((item) => item.id !== deletingItem.id));
-      setDeletingItem(null);
-      setDeleteError("");
-    } else {
-      setDeleteError("Cannot delete this industry because it is linked to existing clients.");
-    }
-    setLoading(false);
+    deleteMutation.mutate(deletingItem.id);
   };
 
   const filteredIndustries = industries.filter((item) =>
@@ -174,7 +166,7 @@ export default function IndustriesPage({ params }) {
           {!isAdding && (
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || loadingFetch}
               onClick={() => setIsAdding(true)}
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md cursor-pointer shrink-0 disabled:opacity-50"
             >
@@ -243,7 +235,9 @@ export default function IndustriesPage({ params }) {
                         type="button"
                         onClick={() => setNewColor(c)}
                         className={`w-6 h-6 rounded-lg shrink-0 transition-transform ${
-                          newColor === c ? "scale-110 ring-2 ring-offset-1 ring-blue-600" : "hover:scale-105 opacity-80 hover:opacity-100"
+                          newColor === c
+                            ? "scale-110 ring-2 ring-offset-1 ring-blue-600"
+                            : "hover:scale-105 opacity-80 hover:opacity-100"
                         }`}
                         style={{ backgroundColor: c }}
                       />
@@ -292,12 +286,12 @@ export default function IndustriesPage({ params }) {
                 disabled={loading}
                 className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {loading ? (
+                {addMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Check className="w-4 h-4" />
                 )}
-                <span>{loading ? "Saving..." : "Save Industry"}</span>
+                <span>{addMutation.isPending ? "Saving..." : "Save Industry"}</span>
               </button>
             </div>
           </form>
@@ -317,7 +311,7 @@ export default function IndustriesPage({ params }) {
         )}
 
         <div className="flex flex-col gap-3">
-          {loading && industries.length === 0 ? (
+          {loadingFetch ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-zinc-200/80 flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               <p className="text-zinc-500 text-sm font-medium">
@@ -381,7 +375,7 @@ export default function IndustriesPage({ params }) {
                         className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shrink-0 cursor-pointer disabled:opacity-50"
                         title="Save"
                       >
-                        {loading ? (
+                        {updateMutation.isPending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Check className="w-4 h-4" />
@@ -445,7 +439,7 @@ export default function IndustriesPage({ params }) {
             ))
           )}
 
-          {!loading && industries.length === 0 && (
+          {!loadingFetch && filteredIndustries.length === 0 && (
             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
               <Building2 className="w-10 h-10 text-zinc-300" />
               <p className="text-zinc-500 text-sm font-semibold">
@@ -481,7 +475,6 @@ export default function IndustriesPage({ params }) {
               </div>
             </div>
 
-            {/* عرض رسالة الخطأ باللون الأحمـر المريح عند فشل الحذف */}
             {deleteError && (
               <div className="bg-rose-50 border border-rose-200/80 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-700 font-medium animate-in fade-in duration-200">
                 <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -507,12 +500,12 @@ export default function IndustriesPage({ params }) {
                 onClick={confirmDelete}
                 className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {loading ? (
+                {deleteMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                <span>{loading ? "Deleting..." : "Delete"}</span>
+                <span>{deleteMutation.isPending ? "Deleting..." : "Delete"}</span>
               </button>
             </div>
           </div>

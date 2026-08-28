@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Check,
@@ -31,7 +32,12 @@ const PRESET_COLORS = [
 ];
 
 export default function ChannelsPage({ params }) {
-  const [channels, setChannels] = useState([]);
+  const queryClient = useQueryClient();
+
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
+
+  // Local state
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#2563eb");
@@ -42,31 +48,76 @@ export default function ChannelsPage({ params }) {
   const [editingName, setEditingName] = useState("");
   const [editingColor, setEditingColor] = useState("");
 
-  const [loading, setLoading] = useState(false);
-
-  // State للتحكم بظهور Modal الحذف وتخزين العنصر المحدد والخطأ
   const [deletingItem, setDeletingItem] = useState(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const resolvedParams = params ? use(params) : null;
-  const orgId = resolvedParams?.OrgId;
-
-  useEffect(() => {
-    if (!orgId) return;
-    async function fetchChannelsData() {
-      setLoading(true);
+  // 1. Fetching Data using React Query
+  const { data: channels = [], isLoading: isFetchingChannels } = useQuery({
+    queryKey: ["channels", orgId],
+    queryFn: async () => {
       const result = await getChannels(orgId);
-      if (result?.success) {
-        setChannels(result?.data || []);
-      } else {
-        console.error("Failed to load channels:", result?.message);
-      }
-      setLoading(false);
-    }
-    fetchChannelsData();
-  }, [orgId]);
+      if (!result?.success) throw new Error(result?.message || "Failed to load channels");
+      return result?.data || [];
+    },
+    enabled: !!orgId,
+  });
 
-  const handleAddChannel = async (e) => {
+  // 2. Add Channel Mutation
+  const createMutation = useMutation({
+    mutationFn: ({ name, color }) => createChannel(name, color, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["channels", orgId] });
+        setNewName("");
+        setNewColor("#2563eb");
+        setAddError("");
+        setIsAdding(false);
+      } else {
+        setAddError(result?.message || "Could not save channel, please try again.");
+      }
+    },
+    onError: (error) => {
+      setAddError(error.message || "Something went wrong.");
+    },
+  });
+
+  // 3. Update Channel Mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, name, color }) => updateChannel(id, name, color, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["channels", orgId] });
+        setEditingId(null);
+        setEditingName("");
+        setEditingColor("");
+      } else {
+        alert(result?.message || "Failed to update channel.");
+      }
+    },
+  });
+
+  // 4. Delete Channel Mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteChannel(id, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["channels", orgId] });
+        setDeletingItem(null);
+        setDeleteError("");
+      } else {
+        setDeleteError(
+          "Cannot delete this channel because it is linked to existing records."
+        );
+      }
+    },
+  });
+
+  const loading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
+
+  const handleAddChannel = (e) => {
     e.preventDefault();
 
     if (!newName.trim()) {
@@ -83,32 +134,10 @@ export default function ChannelsPage({ params }) {
       return;
     }
 
-    setLoading(true);
-    const result = await createChannel(newName.trim(), newColor, orgId);
-
-    if (result?.success) {
-      const createdItem = result.data || {
-        id: result.id,
-        name: newName.trim(),
-        color: newColor,
-        createdAt: new Date().toISOString(),
-      };
-
-      setChannels((prev) => [createdItem, ...prev]);
-      setNewName("");
-      setNewColor("#2563eb");
-      setAddError("");
-      setIsAdding(false);
-    } else {
-      console.error(result?.message, "Failed to add channel");
-      setAddError(
-        result?.message || "Could not save channel, please try again."
-      );
-    }
-    setLoading(false);
+    createMutation.mutate({ name: newName.trim(), color: newColor });
   };
 
-  const handleSaveEdit = async (id) => {
+  const handleSaveEdit = (id) => {
     if (!editingName.trim()) return;
 
     const isDuplicate = channels.some(
@@ -122,49 +151,17 @@ export default function ChannelsPage({ params }) {
       return;
     }
 
-    setLoading(true);
-    const result = await updateChannel(
+    updateMutation.mutate({
       id,
-      editingName.trim(),
-      editingColor,
-      orgId
-    );
-
-    if (result?.success) {
-      setChannels((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? { ...item, name: editingName.trim(), color: editingColor }
-            : item
-        )
-      );
-      setEditingId(null);
-      setEditingName("");
-      setEditingColor("");
-    } else {
-      console.error("Failed to update channel:", result?.message);
-    }
-    setLoading(false);
+      name: editingName.trim(),
+      color: editingColor,
+    });
   };
 
-  // تأكيد الحذف والتعامل مع أخطاء القيود بشكل مريح
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!deletingItem) return;
-
     setDeleteError("");
-    setLoading(true);
-    const result = await deleteChannel(deletingItem.id, orgId);
-
-    if (result?.success) {
-      setChannels((prev) => prev.filter((item) => item.id !== deletingItem.id));
-      setDeletingItem(null);
-      setDeleteError("");
-    } else {
-      setDeleteError(
-          "Cannot delete this channel because it is linked to existing records."
-      );
-    }
-    setLoading(false);
+    deleteMutation.mutate(deletingItem.id);
   };
 
   const filteredChannels = channels.filter((item) =>
@@ -174,7 +171,7 @@ export default function ChannelsPage({ params }) {
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-10 flex justify-center">
       <div className="w-full max-w-4xl flex flex-col gap-6">
-        {/* الهيدر */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm">
           <div>
             <h1 className="text-2xl font-extrabold text-zinc-900 tracking-tight flex items-center gap-2.5">
@@ -182,15 +179,14 @@ export default function ChannelsPage({ params }) {
               Channels Management
             </h1>
             <p className="text-zinc-500 text-xs mt-1 font-medium">
-              Manage and organize the communication channels available in your
-              system.
+              Manage and organize the communication channels available in your system.
             </p>
           </div>
 
           {!isAdding && (
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || isFetchingChannels}
               onClick={() => setIsAdding(true)}
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md cursor-pointer shrink-0 disabled:opacity-50"
             >
@@ -200,7 +196,7 @@ export default function ChannelsPage({ params }) {
           )}
         </div>
 
-        {/* نموذج الإضافة */}
+        {/* Add Form */}
         {isAdding && (
           <form
             onSubmit={handleAddChannel}
@@ -323,7 +319,7 @@ export default function ChannelsPage({ params }) {
           </form>
         )}
 
-        {/* شريط البحث */}
+        {/* Search Input */}
         {channels.length > 0 && (
           <div className="relative w-full">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -337,9 +333,9 @@ export default function ChannelsPage({ params }) {
           </div>
         )}
 
-        {/* قائمة القنوات */}
+        {/* Channels List */}
         <div className="flex flex-col gap-3">
-          {loading && channels.length === 0 ? (
+          {isFetchingChannels ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-zinc-200/80 flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               <p className="text-zinc-500 text-sm font-medium">
@@ -353,7 +349,7 @@ export default function ChannelsPage({ params }) {
                 className="bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm hover:shadow transition-all"
               >
                 {editingId === item.id ? (
-                  /* وضع التعديل */
+                  /* Edit Mode */
                   <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
                     <input
                       type="text"
@@ -404,7 +400,7 @@ export default function ChannelsPage({ params }) {
                         className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shrink-0 cursor-pointer disabled:opacity-50"
                         title="Save"
                       >
-                        {loading ? (
+                        {updateMutation.isPending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Check className="w-4 h-4" />
@@ -426,7 +422,7 @@ export default function ChannelsPage({ params }) {
                     </div>
                   </div>
                 ) : (
-                  /* وضع العرض */
+                  /* Display Mode */
                   <>
                     <div className="flex items-center gap-3">
                       <div
@@ -473,7 +469,7 @@ export default function ChannelsPage({ params }) {
             ))
           )}
 
-          {!loading && filteredChannels.length === 0 && (
+          {!isFetchingChannels && filteredChannels.length === 0 && (
             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
               <Radio className="w-10 h-10 text-zinc-300" />
               <p className="text-zinc-500 text-sm font-semibold">
@@ -509,7 +505,6 @@ export default function ChannelsPage({ params }) {
               </div>
             </div>
 
-            {/* عرض رسالة الخطأ المريحة عند فشل الحذف */}
             {deleteError && (
               <div className="bg-rose-50 border border-rose-200/80 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-700 font-medium animate-in fade-in duration-200">
                 <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -535,12 +530,12 @@ export default function ChannelsPage({ params }) {
                 onClick={confirmDelete}
                 className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {loading ? (
+                {deleteMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                <span>{loading ? "Deleting..." : "Delete"}</span>
+                <span>{deleteMutation.isPending ? "Deleting..." : "Delete"}</span>
               </button>
             </div>
           </div>

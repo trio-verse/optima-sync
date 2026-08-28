@@ -17,33 +17,12 @@ import {
 import {
   createConnection,
   updateConnection,
+  updateConnectionStage,
 } from "@/actions/connectionActions";
 import { getProducts } from "@/actions/services/productsService";
 import { getChannels } from "@/actions/services/channelService";
 import { getMembers } from "@/actions/services/membersAction";
 import { getCampaigns } from "@/actions/campaigns";
-import { getConnections } from "@/actions/connectionActions";
-/* ── STAGES (Lowercase) ── */
-const STAGES = {
-  lead: { label: "Lead", color: "bg-amber-100 text-amber-700" },
-  conected: { label: "Contacted", color: "bg-blue-100 text-blue-700" },
-  missing_info: {
-    label: "Missing Info",
-    color: "bg-purple-100 text-purple-700",
-  },
-  intrested: { label: "Interested", color: "bg-emerald-100 text-emerald-700" },
-  not_intrested: {
-    label: "Not Interested",
-    color: "bg-gray-100 text-gray-700",
-  },
-  win: { label: "Won", color: "bg-green-100 text-green-700" },
-  closed: { label: "Closed", color: "bg-red-100 text-red-700" },
-};
-
-const INITIATED_BY_OPTIONS = [
-  { value: "CLIENT", label: "Client" },
-  { value: "SALES_REP", label: "Sales Rep" },
-];
 
 export default function ConnectionModal({
   clientId,
@@ -57,12 +36,11 @@ export default function ConnectionModal({
   const [channels, setChannels] = useState([]);
   const [members, setMembers] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
-  const [dealValue, setDealValue] = useState([]);
   const [loadingLists, setLoadingLists] = useState(true);
 
   const [formData, setFormData] = useState({
     productId: "",
-    stage: "",
+    stage: "lead", // قيمة افتراضية للباك إند عند الإنشاء
     channelId: "",
     assigneeId: "",
     campaignId: "",
@@ -76,56 +54,32 @@ export default function ConnectionModal({
 
   const isEditing = !!editingConnection;
 
-  /* ── Fetch Products & Channels ── */
+  /* ── Fetch Products, Channels, Members & Campaigns ── */
   useEffect(() => {
     if (!isOpen) return;
 
     if (!orgId) {
-      console.error(" orgId is missing in ConnectionModal");
+      console.error("orgId is missing in ConnectionModal");
       return;
     }
 
     async function fetchLists() {
       setLoadingLists(true);
       try {
-        const [prodRes, chanRes, memRes, campRes, dealRes] = await Promise.all([
+        const [prodRes, chanRes, memRes, campRes] = await Promise.all([
           getProducts(orgId),
           getChannels(orgId),
           getMembers(orgId),
           getCampaigns(orgId),
-          getConnections(clientId, orgId),
         ]);
 
-        if (prodRes?.success) {
-          setProducts(prodRes.data || []);
-        } else {
-          console.error(" getProducts failed:", prodRes?.message);
-        }
-
-        if (chanRes?.success) {
-          setChannels(chanRes.data || []);
-        } else {
-          console.error(" getChannels failed:", chanRes?.message);
-        }
-        if (memRes?.success) {
-          setMembers(memRes.data || []);
-          // console.log(members)
-        } else {
-          console.error(" getMembers failed:", memRes?.message);
-        }
-        if (campRes?.success) {
-          setCampaigns(campRes.data || []);
-        } else {
-          console.error(" getCampaigns failed:", campRes?.message);
-        }
-        if (dealRes?.success) {
-          setDealValue(dealRes.data.deal_value || []);
-        } else {
-          console.error(" getDealValue failed:", dealRes?.message);
-        }
+        if (prodRes?.success) setProducts(prodRes.data || []);
+        if (chanRes?.success) setChannels(chanRes.data || []);
+        if (memRes?.success) setMembers(memRes.data || []);
+        if (campRes?.success) setCampaigns(campRes.data || []);
       } catch (err) {
-        console.error(" Exception loading lists:", err);
-      } finally {
+        console.error("Exception loading lists:", err);
+      }finally{
         setLoadingLists(false);
       }
     }
@@ -135,16 +89,16 @@ export default function ConnectionModal({
     if (editingConnection) {
       setFormData({
         productId: String(
-          editingConnection.product_id || editingConnection.productId || "",
+          editingConnection.product_id || editingConnection.productId || ""
         ),
-        stage: editingConnection.stage || "",
+        stage: editingConnection.stage || "lead", // حفظ الحالة القادمة من الباك إند
         channelId: String(
-          editingConnection.channel_id || editingConnection.channelId || "",
+          editingConnection.channel_id || editingConnection.channelId || ""
         ),
         assigneeId:
           editingConnection.assignee_id || editingConnection.assigneeId || "",
         campaignId: String(
-          editingConnection.campaign_id || editingConnection.campaignId || "",
+          editingConnection.campaign_id || editingConnection.campaignId || ""
         ),
         dealValue:
           editingConnection.deal_value || editingConnection.dealValue || "",
@@ -154,7 +108,7 @@ export default function ConnectionModal({
     } else {
       setFormData({
         productId: "",
-        stage: "",
+        stage: "lead", // حالة افتراضية للإنشاء الجديد
         channelId: "",
         assigneeId: "",
         campaignId: "",
@@ -172,10 +126,10 @@ export default function ConnectionModal({
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
 
-      // إذا تم تغيير المنتج، جلب قيمته وتحديث dealValue
+      // تحديث dealValue تلقائياً بناءً على سعر المنتج المختار
       if (name === "productId") {
         const selectedProd = products.find(
-          (p) => String(p.id) === String(value),
+          (p) => String(p.id) === String(value)
         );
         updated.dealValue = selectedProd?.price || selectedProd?.value || "";
       }
@@ -197,7 +151,6 @@ export default function ConnectionModal({
   const validate = () => {
     const newErrors = {};
     if (!formData.productId) newErrors.productId = "Product is required";
-    if (!formData.stage) newErrors.stage = "Stage is required";
     if (!formData.channelId) newErrors.channelId = "Channel is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -211,14 +164,18 @@ export default function ConnectionModal({
     setGlobalError("");
 
     try {
-      const result = isEditing
-        ? await updateConnection(
-            editingConnection.id,
-            formData,
-            orgId,
-            clientId,
-          )
-        : await createConnection(clientId, formData, orgId);
+      let result;
+
+      if (isEditing) {
+        result = await updateConnection(
+          editingConnection.id,
+          formData,
+          orgId,
+          clientId
+        );
+      } else {
+        result = await createConnection(clientId, formData, orgId);
+      }
 
       if (result?.success) {
         onSuccess?.(result.data);
@@ -227,11 +184,11 @@ export default function ConnectionModal({
         if (result?.errors) {
           const map = {
             product_id: "productId",
-            stage: "stage",
             channel_id: "channelId",
             campaign_id: "campaignId",
             assignee_id: "assigneeId",
             initiated_by: "initiatedBy",
+            deal_value: "dealValue",
           };
           const be = {};
           Object.entries(result.errors).forEach(([k, v]) => {
@@ -243,13 +200,20 @@ export default function ConnectionModal({
         }
       }
     } catch (err) {
-      setGlobalError("Unable to connect to the server. Please try again.");
+      setGlobalError(
+        err?.message || "Unable to connect to the server. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   if (!isOpen) return null;
+
+  // التحقق من حالة الفوز لإظهار حقل deal_value
+  const isWonStage =
+    String(formData.stage).toLowerCase() === "win" ||
+    String(formData.stage).toLowerCase() === "won";
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
@@ -295,7 +259,11 @@ export default function ConnectionModal({
               value={formData.productId}
               onChange={handleChange}
               disabled={loadingLists}
-              className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white ${errors.productId ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
+              className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white ${
+                errors.productId
+                  ? "border-red-300 bg-red-50/30"
+                  : "border-slate-200"
+              }`}
             >
               <option value="">Select product...</option>
               {products.map((p) => (
@@ -311,34 +279,8 @@ export default function ConnectionModal({
             )}
           </div>
 
-          {/* Stage */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-              <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400" />
-              Stage <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="stage"
-              value={formData.stage}
-              onChange={handleChange}
-              className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white ${errors.stage ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
-            >
-              <option value="">Select stage...</option>
-              {Object.entries(STAGES).map(([key, { label }]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            {errors.stage && (
-              <span className="text-red-500 text-xs font-medium">
-                {errors.stage}
-              </span>
-            )}
-          </div>
-
-          {/* Deal Value (يظهر فقط عندما تكون الحالة won أو win) */}
-          {(formData.stage === "won" || formData.stage === "win") && (
+          {/* Deal Value (يظهر فقط في حال كانت الحالة win/won ولا يمكن التعديل عليه) */}
+          {isWonStage && (
             <div className="flex flex-col gap-1.5 animate-in fade-in duration-150">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
                 <DollarSign className="w-3.5 h-3.5 text-slate-400" />
@@ -349,7 +291,6 @@ export default function ConnectionModal({
                 name="dealValue"
                 value={formData.dealValue}
                 readOnly
-                onChange={handleChange}
                 placeholder="Product price"
                 className="border border-slate-200 bg-slate-50 text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none cursor-not-allowed select-none font-semibold"
               />
@@ -367,7 +308,11 @@ export default function ConnectionModal({
               value={formData.channelId}
               onChange={handleChange}
               disabled={loadingLists}
-              className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white ${errors.channelId ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
+              className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white ${
+                errors.channelId
+                  ? "border-red-300 bg-red-50/30"
+                  : "border-slate-200"
+              }`}
             >
               <option value="">Select channel...</option>
               {channels.map((c) => (
@@ -427,7 +372,7 @@ export default function ConnectionModal({
                   value={m.id}
                   className="bg-white text-slate-800"
                 >
-                  {m.user.name || m.user.full_name || m.user.email}
+                  {m.user?.name || m.user?.full_name || m.user?.email}
                 </option>
               ))}
             </select>

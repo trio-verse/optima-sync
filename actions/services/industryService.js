@@ -7,7 +7,7 @@ import { api } from "@/lib/api/client";
 /**
  * جلب قائمة المجالات (Industries)
  */
-export async function getIndustry(orgId) {
+export async function getindustries(orgId) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;

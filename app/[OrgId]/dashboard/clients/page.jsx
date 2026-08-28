@@ -4,17 +4,15 @@ import { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
 import { getClients } from "@/actions/clientActions";
 import { useClientLookups } from "@/hooks/useClientLookups";
-
+import { useQuery } from "@tanstack/react-query";
 export default function ClientsListPage({ params }) {
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId;
 
   const { cities, industries } = useClientLookups(orgId);
-
-  const [clients, setClients] = useState([]);
-  const [meta, setMeta] = useState({});
-  const [loading, setLoading] = useState(true);
-
+  const [isSearch, setIsSearch] = useState(false);
+  const [searchName, setSearchName] = useState("");
+  const [searchContact, setSearchContact] = useState("");
   const [filters, setFilters] = useState({
     searchName: "",
     searchContact: "",
@@ -24,19 +22,29 @@ export default function ClientsListPage({ params }) {
     page: 1,
   });
 
-  const fetchClientsData = useCallback(async () => {
-    setLoading(true);
-    const res = await getClients(filters, orgId);
-    if (res.success) {
-      setClients(res.data);
-      setMeta(res.meta);
-    }
-    setLoading(false);
-  }, [filters, orgId]);
-
   useEffect(() => {
-    fetchClientsData();
-  }, [fetchClientsData]);
+    const timer = setTimeout(() => {
+    const hasSearchText = searchName.trim().length > 0 || searchContact.trim().length > 0;
+      setFilters((prev) => ({
+          ...prev,
+          searchName: searchName,
+          searchContact: searchContact,
+          page: 1,
+        }));
+        setIsSearch(hasSearchText);
+        console.log("refresh");
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [searchName, searchContact]);
+
+  const { data: clientsData, isLoading: loading } = useQuery({
+  queryKey: ["clients", orgId, filters], 
+  queryFn: () => getClients(filters, orgId).then((res) => res), 
+  enabled: !!orgId, 
+});
+
+const clients = clientsData?.data || [];
+const meta = clientsData?.meta || {};
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -62,16 +70,16 @@ export default function ClientsListPage({ params }) {
           type="text"
           name="searchName"
           placeholder="Search by client name..."
-          value={filters.searchName}
-          onChange={handleFilterChange}
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
           className="border border-gray-200 p-2 rounded-lg text-sm focus:outline-none focus:border-blue-500"
         />
         <input
           type="text"
           name="searchContact"
           placeholder="Search by phone / email..."
-          value={filters.searchContact}
-          onChange={handleFilterChange}
+          value={searchContact}
+          onChange={(e) => setSearchContact(e.target.value)}
           className="border border-gray-200 p-2 rounded-lg text-sm focus:outline-none focus:border-blue-500"
         />
         <select
