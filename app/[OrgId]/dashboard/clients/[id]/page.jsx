@@ -249,8 +249,8 @@ export default function ClientProfilePage({ params: paramsPromise }) {
       dir="ltr"
     >
       {/* Option 1: Clean Open Layout */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 md:pb-6 border-b border-gray-200">
+        <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={() => router.push(`/${orgId}/dashboard/clients`)}
             className="p-2 text-gray-400 hover:text-gray-900 hover:bg-white rounded-xl transition border border-transparent hover:border-gray-200"
@@ -261,7 +261,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
 
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight truncate">
                 {clientData.name}
               </h1>
             </div>
@@ -271,10 +271,10 @@ export default function ClientProfilePage({ params: paramsPromise }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 ${
+            className={`w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 ${
               isEditing
-                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-2xs"
-                : "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -390,7 +390,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                 <div className="divide-y divide-gray-50">
                   {stakeholders.map((s) =>
                     editingId === s.id ? (
-                      <div key={s.id} className="py-2.5 space-y-2">
+                      <div key={s.id} className="py-3 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <input
                             type="text"
@@ -401,7 +401,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                                 name: e.target.value,
                               })
                             }
-                            className="p-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
+                            className="w-full p-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
                           />
                           <input
                             type="text"
@@ -412,7 +412,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                                 phone: e.target.value,
                               })
                             }
-                            className="p-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
+                            className="w-full p-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
                             dir="ltr"
                           />
                           <input
@@ -424,14 +424,14 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                                 role: e.target.value,
                               })
                             }
-                            className="p-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
+                            className="w-full p-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
                           />
                         </div>
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -439,7 +439,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                             type="button"
                             disabled={saving}
                             onClick={() => handleSaveEdit(s.id)}
-                            className="p-1 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
+                            className="px-3 py-1 bg-gray-900 text-white text-xs rounded-md hover:bg-gray-800"
                           >
                             {saving ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -452,27 +452,30 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                     ) : (
                       <div
                         key={s.id}
-                        className="py-2.5 flex items-center justify-between text-xs group"
+                        className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2 min-w-0">
                           <span className="font-semibold text-gray-800">
                             {s.name}
                           </span>
-                          <span className="text-gray-400 font-mono" dir="ltr">
+                          <span
+                            className="text-gray-400 font-mono text-[11px]"
+                            dir="ltr"
+                          >
                             {s.phone}
                           </span>
                           {s.role && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] bg-gray-100 text-gray-500 font-medium">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] bg-gray-100 text-gray-500 font-medium shrink-0">
                               {s.role}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-3 self-end sm:self-auto shrink-0 pt-1 sm:pt-0">
                           <button
                             type="button"
                             disabled={saving}
                             onClick={() => startEdit(s)}
-                            className="p-1 text-gray-400 hover:text-gray-700 transition"
+                            className="text-gray-400 hover:text-gray-700 p-1"
                             title="Edit"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -481,7 +484,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                             type="button"
                             disabled={saving}
                             onClick={() => setDeletingStakeholder(s)}
-                            className="p-1 text-gray-400 hover:text-red-600 transition"
+                            className="text-gray-400 hover:text-red-600 p-1"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -501,7 +504,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Client Type Section */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs space-y-2">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-xs space-y-4">
               <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2 border-b border-gray-50 pb-2">
                 Client Type
               </h2>
