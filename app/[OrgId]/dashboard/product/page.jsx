@@ -122,14 +122,41 @@ export default function ProductsPage({ params }) {
     setLoading(false);
   };
 
-  const handleUpdate = async (e) => {
+ const handleUpdate = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setLoading(true);
     setErrorMsg("");
 
-    const result = await updateProduct(editingId, formData, orgId);
+    // 1. العثور على المنتج الأصلي قبل التعديل
+    const originalProduct = products.find((item) => item.id === editingId);
+
+    // 2. بناء كائن يحوي فقط الحقول التي تغيرت فعلياً
+    const updatedFields = {};
+
+    if (formData.name.trim() !== originalProduct?.name) {
+      updatedFields.name = formData.name.trim();
+    }
+
+    if (formData.description.trim() !== originalProduct?.description) {
+      updatedFields.description = formData.description.trim();
+    }
+
+    if (Number(formData.price) !== Number(originalProduct?.price)) {
+      updatedFields.price = formData.price;
+    }
+
+    // 3. إذا لم يتغير أي حقل، نغلق النافذة دون إرسال طلب للـ Backend
+    if (Object.keys(updatedFields).length === 0) {
+      handleCloseModal();
+      setLoading(false);
+      return;
+    }
+
+    // 4. إرسال الحقول المعدلة فقط
+    const result = await updateProduct(editingId, updatedFields, orgId);
+
     if (result?.success) {
       setProducts((prev) =>
         prev.map((item) =>

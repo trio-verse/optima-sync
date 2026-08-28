@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Inter } from "next/font/google";
 
-// استخدام خط Inter الأنيق والمتوازن
 const inter = Inter({ 
   subsets: ["latin"], 
   weight: ["400", "500", "600", "700"] 
@@ -13,10 +12,13 @@ const inter = Inter({
 
 export default function HeroSection() {
   return (
-    <section className={`min-h-screen relative overflow-hidden flex flex-col justify-center items-center bg-gradient-to-b from-white via-blue-50/30 to-blue-100/20 p-6 text-center ${inter.className}`}>
+    <section className={`min-h-screen relative overflow-hidden flex flex-col justify-center items-center bg-white p-6 text-center ${inter.className}`}>
       
-      {/* خلفية تدرج ناعمة وجذابة */}
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-blue-300/15 rounded-full blur-3xl pointer-events-none" />
+      {/* خلفية التدرج فوق خلفية بيضاء ثابتة */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/40 to-blue-100/30 pointer-events-none" />
+
+      {/* خلفية الإضاءة */}
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-blue-300/20 rounded-full blur-3xl pointer-events-none" />
 
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
@@ -25,13 +27,13 @@ export default function HeroSection() {
         className="relative z-10 max-w-2xl flex flex-col items-center justify-center space-y-6"
       >
         {/* البادج العلوي */}
-        <span className="inline-flex items-center gap-2 bg-blue-50/80 text-blue-700 text-xs font-semibold px-3.5 py-1.5 rounded-full border border-blue-200/60 shadow-xs">
+        <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-semibold px-3.5 py-1.5 rounded-full border border-blue-200/60 shadow-xs">
           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
           Next Generation ERP System
         </span>
 
-        {/* العنوان الرئيسي بأبعاد متناسقة غير ضخمة */}
-        <h1 className="text-2xl sm:text-4xl font-semibold text-slate-800 tracking-tight leading-snug">
+        {/* العنوان الرئيسي */}
+        <h1 className="text-2xl sm:text-4xl font-semibold text-slate-900 tracking-tight leading-snug">
           Manage Your Business & Organizations{" "}
           <span className="font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Effortlessly
@@ -43,7 +45,7 @@ export default function HeroSection() {
           Say goodbye to complex passwords. Access your workspace securely with passwordless authentication, build your team, and scale seamlessly.
         </p>
 
-        {/* زر التفاعل الوحيد */}
+        {/* زر التفاعل */}
         <div className="pt-2">
           <Link href="/register">
             <motion.button 

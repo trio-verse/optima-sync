@@ -1,7 +1,7 @@
 import { getCampaignAnalytics, getCampaignContents } from "@/actions/campaignDetails";
 import ContentKanban from "@/components/campaigns/[id]/ContentKanban";
 import CampaignModal from "@/components/campaigns/CampaignModal";
-import { Calendar, Target, Clock, ArrowUpRight, DollarSign, PieChart, Layers, Share2 } from "lucide-react";
+import { Calendar, Target, Clock, ArrowUpRight, ArrowDownRight,DollarSign, PieChart, Layers, Share2 } from "lucide-react";
 
 export default async function CampaignDetailsPage({ params }) {
   const resolvedParams = await params;
@@ -13,11 +13,12 @@ export default async function CampaignDetailsPage({ params }) {
     getCampaignContents(campaignId, orgId),
   ]);
 
+  
   const rawData = analyticsRes.data || {};
   const campaign = rawData.campaign || {};
   const analytics = rawData.analytics || {};
   const contents = contentsRes.data || [];
-
+  console.log(rawData,"rawdataaaa");
   const formatCurrency = (val) =>
     val !== null && val !== undefined ? `$${Number(val).toLocaleString()}` : "N/A";
 
@@ -37,7 +38,10 @@ export default async function CampaignDetailsPage({ params }) {
     analytics.expected_content_count > 0
       ? Math.round(((analytics.current_content_count || 0) / analytics.expected_content_count) * 100)
       : 0;
-
+  const rawRoi = analytics.roi ?? 0; // القيمة المرجعة من الباك إند
+  const isProfitable = rawRoi >= 0; // التحقق إذا كان الاستثمار مربحاً أم خسارة
+  const displayRoi = isProfitable ? rawRoi : rawRoi * -1;
+  
   const statusCounts = analytics.content_by_status || {};
   const channelCounts = analytics.content_by_channel || [];
   const totalContent = analytics.current_content_count || 1;
@@ -196,17 +200,33 @@ export default async function CampaignDetailsPage({ params }) {
           </div>
         </div>
 
-        {/* Revenue & ROI Card */}
         <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Revenue & ROI</span>
-            <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+            {isProfitable ? (
+              <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <ArrowDownRight className="w-4 h-4 text-rose-500" />
+            )}
           </div>
-          <div className="my-2 space-y-1">
+          <div className="my-2 space-y-1.5">
             <div className="text-2xl font-black text-gray-900">{formatCurrency(analytics.total_revenue)}</div>
-            <span className="inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600">
-              ROI: {analytics.roi !== null ? `${analytics.roi}%` : "0%"}
-            </span>
+            <div>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  isProfitable
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-rose-50 text-rose-600"
+                }`}
+              >
+                {isProfitable ? (
+                  <ArrowUpRight className="w-3 h-3" />
+                ) : (
+                  <ArrowDownRight className="w-3 h-3" />
+                )}
+                ROI: {displayRoi}% {isProfitable ? "Making Profit" : "Losing Money"}
+              </span>
+            </div>
           </div>
           <div className="border-t pt-3 border-gray-100 text-xs flex justify-between">
             <span className="text-gray-500">Cost Per Lead (CPL):</span>

@@ -140,7 +140,7 @@ export async function updateCampaign(id, formData, orgId) {
       estimated_content_count: Number(formData.get("estimated_content_count")),
       expected_budget: Number(formData.get("expected_budget")),
       start_date: formData.get("start_date"),
-      start_date: formData.get("start_date"),
+      end_date: formData.get("end_date"),
       status: formData.get("status"),
       target: formData.get("target"),
     };
@@ -265,6 +265,14 @@ export async function getEffectiveCampaigns(orgId) {
       };
     }
 
+    if (!orgId) {
+      return {
+        success: false,
+        message: "Organization ID is missing.",
+        data: [],
+      };
+    }
+
     const response = await api.get(
       "/marketing/analytics/effective-campaigns",
       {
@@ -276,13 +284,11 @@ export async function getEffectiveCampaigns(orgId) {
 
     return {
       success: true,
-      data: Array.isArray(response?.data)
-        ? response.data
-        : response?.data?.data || [],
+      data: response?.data?.data || response?.data || [],
       message: response?.data?.message || "Success",
     };
   } catch (error) {
-    console.error(" getEffectiveCampaigns Error:", error);
+    console.error("getEffectiveCampaigns Error:", error);
     return {
       success: false,
       message:
@@ -293,7 +299,6 @@ export async function getEffectiveCampaigns(orgId) {
     };
   }
 }
-
 export async function getAllCampaigns(orgId) {
   try {
     const cookieStore = await cookies();

@@ -52,7 +52,7 @@ export default function CreateOrganisationPage({params}) {
         </div>
       )}
 
-      <OrganisationForm
+      <OrganisationForm 
         onSubmit={handleCreateOrganisation}
         isEditing={false}
         loading={loading}
