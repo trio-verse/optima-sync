@@ -1,4 +1,3 @@
-// components/connections/ConnectionsTimeline.jsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -11,11 +10,13 @@ import {
   Package,
   Tag,
   User,
-  ArrowRightLeft,
   AlertTriangle,
-  X,
 } from "lucide-react";
-import { getConnections, deleteConnection } from "@/actions/connectionActions";
+import {
+  getConnections,
+  deleteConnection,
+  updateConnectionStage,
+} from "@/actions/connectionActions";
 import ConnectionModal from "@/components/connections/ConnectionForm";
 import ActivityList from "./ActivityList";
 
@@ -77,24 +78,55 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
     fetchConnections();
   }, [fetchConnections]);
 
-  /* ── On Success (تعديل لضمان الجلب المباشر المكتمل) ── */
+  /* ── On Success ── */
   const handleSuccess = async () => {
     setToast({ type: "success", message: "Connection saved successfully!" });
     setTimeout(() => setToast(null), 3000);
-
-    // إعادة الجلب مباشرة لحل مشكلة عدم إرجاع البيانات المكتملة (Product & Channel Relations)
     await fetchConnections();
     setEditingConnection(null);
+  };
+
+  /* ── Quick Stage Change Handler ── */
+  const handleStageChange = async (connectionId, newStage, currentConn) => {
+    setConnections((prev) =>
+      prev.map((c) => (c.id === connectionId ? { ...c, stage: newStage } : c))
+    );
+
+    const payload = {
+      stage: newStage,
+      dealValue:
+        newStage === "win" || newStage === "won"
+          ? currentConn.product?.price || currentConn.deal_value || 0
+          : undefined,
+    };
+
+    const res = await updateConnectionStage(
+      connectionId,
+      payload,
+      orgId,
+      clientId
+    );
+
+    if (res?.success) {
+      setToast({ type: "success", message: "Stage updated successfully!" });
+    } else {
+      setConnections((prev) =>
+        prev.map((c) =>
+          c.id === connectionId ? { ...c, stage: currentConn.stage } : c
+        )
+      );
+      setToast({
+        type: "error",
+        message: res?.message || "Failed to update stage",
+      });
+    }
+
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleEdit = (conn) => {
     setEditingConnection(conn);
     setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingConnection(null);
   };
 
   const openDeleteDialog = (conn) => {
@@ -132,12 +164,17 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
   };
 
   return (
-    <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4" dir="ltr">
+    <div
+      className="md:col-span-2 bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-xs space-y-4 min-w-0"
+      dir="ltr"
+    >
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-5 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 rounded-xl shadow-lg text-sm font-bold animate-in fade-in slide-in-from-top-2 ${
-            toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+          className={`fixed top-5 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] px-4 sm:px-6 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-bold text-center animate-in fade-in slide-in-from-top-2 ${
+            toast.type === "success"
+              ? "bg-emerald-600 text-white"
+              : "bg-red-600 text-white"
           }`}
         >
           {toast.message}
@@ -146,17 +183,19 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
 
       {/* Delete Confirmation Dialog */}
       {deleteDialog.isOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 sm:p-6 space-y-4 shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 text-amber-600">
-              <div className="p-2.5 bg-amber-50 rounded-xl">
-                <AlertTriangle className="w-6 h-6" />
+              <div className="p-2.5 bg-amber-50 rounded-xl shrink-0">
+                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <h3 className="font-bold text-gray-900 text-lg">Confirm Deletion</h3>
+              <h3 className="font-bold text-gray-900 text-base sm:text-lg">
+                Confirm Deletion
+              </h3>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600 leading-normal">
               Are you sure you want to delete connection{" "}
-              <span className="font-semibold text-gray-900">
+              <span className="font-semibold text-gray-900 break-all">
                 {deleteDialog.connectionName}
               </span>
               ?
@@ -165,7 +204,7 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
               <button
                 type="button"
                 onClick={closeDeleteDialog}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition"
+                className="px-3.5 py-2 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition"
               >
                 Cancel
               </button>
@@ -173,7 +212,7 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
                 type="button"
                 onClick={handleDelete}
                 disabled={deletingId === deleteDialog.connectionId}
-                className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition disabled:opacity-50 shadow-sm"
+                className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white text-xs sm:text-sm font-medium rounded-xl hover:bg-rose-700 transition disabled:opacity-50 shadow-xs"
               >
                 {deletingId === deleteDialog.connectionId && (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -185,10 +224,10 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
         </div>
       )}
 
-      {/* Header - متناسق مع عنوان Stakeholders */}
-      <div className="flex items-center justify-between border-b pb-3 border-gray-100">
-        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <Link2 className="w-5 h-5 text-blue-600" />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-gray-100">
+        <h2 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+          <Link2 className="w-5 h-5 text-gray-400 shrink-0" />
           Connections Log
         </h2>
         <button
@@ -197,7 +236,7 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
             setEditingConnection(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition shadow-sm"
+          className="w-full sm:w-auto justify-center flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-xl transition-all"
         >
           <Plus className="w-4 h-4" />
           Add Connection
@@ -208,43 +247,67 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
       {loading ? (
         <div className="py-8 flex flex-col items-center justify-center gap-2">
           <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-          <p className="text-gray-400 text-xs font-medium">Loading connections...</p>
+          <p className="text-gray-400 text-xs font-medium">
+            Loading connections...
+          </p>
         </div>
       ) : connections.length === 0 ? (
-        <p className="text-gray-400 text-sm pt-1">
+        <p className="text-gray-400 text-xs sm:text-sm pt-1">
           No connections recorded yet for this client.
         </p>
       ) : (
-        <div className="flex flex-col gap-2 pt-1">
+        <div className="flex flex-col gap-3 pt-1">
           {connections.map((conn, index) => {
-            const rawStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
+            const rawStage = conn.stage
+              ? String(conn.stage).toLowerCase()
+              : "lead";
             const stageInfo = STAGES[rawStage] || STAGES.lead;
             const uniqueKey = conn.id ? `${conn.id}-${index}` : index;
 
             return (
               <div
                 key={uniqueKey}
-                className="flex flex-col gap-3 border border-gray-100 rounded-xl p-3 hover:bg-gray-50/50 transition-colors"
+                className="flex flex-col gap-3 border border-gray-100 rounded-xl p-3 sm:p-4 hover:bg-gray-50/50 transition-colors min-w-0"
               >
-                {/* Details Row (نفس أسلوب وسطر Stakeholder) */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-wrap">
+                {/* Details Row */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0 flex-1">
                     {/* اسم المنتج */}
-                    <span className="text-gray-900 font-semibold text-sm min-w-[120px] flex items-center gap-1.5">
-                      <Package className="w-4 h-4 text-gray-400" />
-                      {conn.product?.name || "N/A"}
+                    <span className="text-gray-900 font-semibold text-xs sm:text-sm flex items-center gap-1.5 truncate max-w-[200px] sm:max-w-none">
+                      <Package className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="truncate">{conn.product?.name || "N/A"}</span>
                     </span>
 
-                    {/* المرحلة / Stage */}
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${stageInfo.color}`}>
-                      {stageInfo.label}
-                    </span>
+                    {/* قائمة المنسدلة للـ Stage */}
+                    <select
+                      value={rawStage}
+                      onChange={(e) =>
+                        handleStageChange(conn.id, e.target.value, conn)
+                      }
+                      className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold border outline-none cursor-pointer transition-all shrink-0 ${stageInfo.color}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {Object.entries(STAGES).map(([key, { label }]) => (
+                        <option
+                          key={key}
+                          value={key}
+                          className="bg-white text-gray-800 font-normal"
+                        >
+                          {label}
+                        </option>
+                      ))}
+                    </select>
 
                     {/* القناة / Channel */}
                     {conn.channel?.name && (
-                      <span className="text-gray-500 text-sm flex items-center gap-1">
-                        <Tag className="w-3.5 h-3.5 text-gray-400" />
-                        <span style={{ color: conn.channel?.color || "#2563eb" }}>
+                      <span className="text-gray-500 text-xs flex items-center gap-1 shrink-0">
+                        <Tag className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span
+                          style={{
+                            color: conn.channel?.color || "#2563eb",
+                          }}
+                          className="font-medium"
+                        >
                           {conn.channel.name}
                         </span>
                       </span>
@@ -252,26 +315,27 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
 
                     {/* Assignee */}
                     {conn.assignee?.name && (
-                      <span className="text-gray-500 text-xs flex items-center gap-1">
-                        <User className="w-3.5 h-3.5 text-gray-400" />
-                        {conn.assignee.name}
+                      <span className="text-gray-500 text-xs flex items-center gap-1 shrink-0">
+                        <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span className="truncate max-w-[120px]">{conn.assignee.name}</span>
                       </span>
                     )}
 
                     {/* Initiated By */}
                     {conn.initiated_by && (
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                        {INITIATED_LABELS[conn.initiated_by] || conn.initiated_by}
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-gray-100 text-gray-600 shrink-0">
+                        {INITIATED_LABELS[conn.initiated_by] ||
+                          conn.initiated_by}
                       </span>
                     )}
                   </div>
 
-                  {/* Actions (أزرار التعديل والحذف بنفس أسلوب الأيقونات في الـ Stakeholder) */}
-                  <div className="flex items-center gap-1.5 self-end sm:self-center">
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 self-end sm:self-start shrink-0">
                     <button
                       type="button"
                       onClick={() => handleEdit(conn)}
-                      className="p-2 text-zinc-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      className="p-1.5 text-zinc-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                       title="Edit"
                     >
                       <Pencil className="w-4 h-4" />
@@ -280,7 +344,7 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
                       type="button"
                       disabled={deletingId === conn.id}
                       onClick={() => openDeleteDialog(conn)}
-                      className="p-2 text-zinc-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all disabled:opacity-40"
+                      className="p-1.5 text-zinc-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all disabled:opacity-40"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -293,7 +357,9 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
                   connectionId={conn.id}
                   orgId={orgId}
                   clientId={clientId}
-                  connectionName={`${conn.product?.name || "Connection"} - ${stageInfo.label}`}
+                  connectionName={`${
+                    conn.product?.name || "Connection"
+                  } - ${stageInfo.label}`}
                 />
               </div>
             );
@@ -305,7 +371,10 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
         clientId={clientId}
         orgId={orgId}
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingConnection(null);
+        }}
         onSuccess={handleSuccess}
         editingConnection={editingConnection}
       />

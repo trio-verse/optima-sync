@@ -95,7 +95,7 @@ export async function getClients(options = {}, orgId) {
     if (perPage) params.per_page = Number(perPage);
     if (cityId) params.city_id = Number(cityId);
     if (industryId) params.industry_id = Number(industryId);
-    if (type?.trim()) params.type = type.trim();
+    if (type?.trim()) params.client_type = type.trim();
     if (searchName?.trim()) params["search[name]"] = searchName.trim();
     if (searchContact?.trim())
       params["search[contact_info]"] = searchContact.trim();

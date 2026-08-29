@@ -112,7 +112,7 @@ export default function RegisterForm() {
     >
       <div
         aria-description="register-card"
-        className=" w-full max-w-md bg-white/60 flex flex-col items-center justify-center rounded-2xl p-6"
+        className="w-full max-w-md bg-white/80 backdrop-blur-md shadow-2xl shadow-blue-900/10 border border-slate-200/60 flex flex-col items-center justify-center rounded-2xl p-6 transition-all"
       >
         <div className="text-center w-full mb-6">
           <h1 className="text-zinc-900 font-extrabold text-3xl tracking-wide mb-2">

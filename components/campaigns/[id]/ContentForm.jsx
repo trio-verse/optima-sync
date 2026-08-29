@@ -9,7 +9,6 @@ import {
   Layers,
   DollarSign,
   Calendar,
-  FileText,
   Type,
   AlertTriangle,
   Bold,
@@ -17,19 +16,10 @@ import {
   Heading,
   List,
   Code,
-  Clock,
   ArrowLeft,
 } from "lucide-react";
 import { createContent, updateContent } from "@/actions/campaignDetails";
 import { getChannels } from "@/actions/services/channelService";
-
-const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "in_review", label: "In Review" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-  { value: "published", label: "Published" },
-];
 
 const CONTENT_TYPES = [
   { value: "video_script", label: "Video Script" },
@@ -43,7 +33,6 @@ export default function ContentForm({
   campaignId,
   orgId,
   editingContent = null,
-  onSave,
 }) {
   const router = useRouter();
   const [channels, setChannels] = useState([]);
@@ -59,10 +48,9 @@ export default function ContentForm({
     title: editingContent?.title || "",
     type: editingContent?.type || "",
     channelId: String(
-      editingContent?.channel_id || editingContent?.channelId || "",
+      editingContent?.channel_id || editingContent?.channel?.id || ""
     ),
     cost: editingContent?.cost || "",
-    status: editingContent?.status || "draft",
     publishedAt: editingContent?.published_at
       ? new Date(editingContent.published_at).toISOString().slice(0, 16)
       : "",
@@ -79,7 +67,7 @@ export default function ContentForm({
         if (res?.success) setChannels(res.data || []);
       } catch (err) {
         console.error("Error loading channels:", err);
-      } finally {
+      } finally{
         setLoadingLists(false);
       }
     }
@@ -120,7 +108,7 @@ export default function ContentForm({
       textarea.focus();
       textarea.setSelectionRange(
         start + prefix.length,
-        start + prefix.length + selectedText.length,
+        start + prefix.length + selectedText.length
       );
     }, 0);
   };
@@ -141,36 +129,33 @@ export default function ContentForm({
     setLoading(true);
     setGlobalError("");
 
-    const payload = new FormData();
-    payload.append("title", formData.title);
-    payload.append("type", formData.type);
-    payload.append("channel_id", formData.channelId);
-    payload.append("cost", formData.cost);
-    payload.append("status", formData.status);
-    if (formData.publishedAt)
-      payload.append("published_at", formData.publishedAt);
-    payload.append("description", formData.description);
-    payload.append("script", formData.script);
+    const payload = {
+      title: formData.title,
+      type: formData.type,
+      channel_id: Number(formData.channelId),
+      cost: formData.cost ? Number(formData.cost) : 0,
+      published_at: formData.publishedAt || null,
+      description: formData.description,
+      script: formData.script,
+    };
 
     try {
       const result = isEditing
         ? await updateContent(editingContent?.id, orgId, payload, campaignId)
         : await createContent(campaignId, orgId, payload);
+
       if (result?.success) {
         router.push(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
         router.refresh();
-        if (typeof onSave === "function") {
-          onSave();
-        }
       } else {
         setGlobalError(
-          result?.error || result?.message || "An error occurred while saving",
+          result?.error || result?.message || "An error occurred while saving"
         );
       }
     } catch (err) {
       console.error("Form submission error:", err);
       setGlobalError(
-        err?.message || "Unable to connect to the server. Please try again.",
+        err?.message || "Unable to connect to the server. Please try again."
       );
     } finally {
       setLoading(false);
@@ -197,7 +182,7 @@ export default function ContentForm({
             </h1>
             <p className="text-xs text-slate-500">
               {isEditing
-                ? "Update existing content details"
+                ? "Update content details"
                 : "Add new piece of content to this campaign"}
             </p>
           </div>
@@ -302,40 +287,19 @@ export default function ContentForm({
           </div>
         </div>
 
-        {/* Status & Published At */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              Status
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
-            >
-              {STATUS_OPTIONS.map((st) => (
-                <option key={st.value} value={st.value}>
-                  {st.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              Published At
-            </label>
-            <input
-              type="datetime-local"
-              name="publishedAt"
-              value={formData.publishedAt}
-              onChange={handleChange}
-              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-            />
-          </div>
+        {/* Published At */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            Published At
+          </label>
+          <input
+            type="datetime-local"
+            name="publishedAt"
+            value={formData.publishedAt}
+            onChange={handleChange}
+            className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+          />
         </div>
 
         {/* Description */}
@@ -353,18 +317,17 @@ export default function ContentForm({
           />
         </div>
 
-        {/* Script Toolbar */}
+        {/* Script Editor */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-            <span>Script (Markdown Format)</span>
+          <label className="text-xs font-bold text-slate-700">
+            Script (Markdown Format)
           </label>
-
           <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
             <div className="flex items-center gap-1 p-2 border-b border-slate-200 bg-slate-100/70 flex-wrap">
               <button
                 type="button"
                 onClick={() => applyFormatting("**", "**")}
-                className="p-1.5 text-slate-600 hover:bg-white hover:text-slate-900 rounded-md transition-all"
+                className="p-1.5 text-slate-600 hover:bg-white rounded-md transition-all"
                 title="Bold"
               >
                 <Bold className="w-4 h-4" />
@@ -372,7 +335,7 @@ export default function ContentForm({
               <button
                 type="button"
                 onClick={() => applyFormatting("*", "*")}
-                className="p-1.5 text-slate-600 hover:bg-white hover:text-slate-900 rounded-md transition-all"
+                className="p-1.5 text-slate-600 hover:bg-white rounded-md transition-all"
                 title="Italic"
               >
                 <Italic className="w-4 h-4" />
@@ -380,7 +343,7 @@ export default function ContentForm({
               <button
                 type="button"
                 onClick={() => applyFormatting("### ")}
-                className="p-1.5 text-slate-600 hover:bg-white hover:text-slate-900 rounded-md transition-all"
+                className="p-1.5 text-slate-600 hover:bg-white rounded-md transition-all"
                 title="Heading"
               >
                 <Heading className="w-4 h-4" />
@@ -388,7 +351,7 @@ export default function ContentForm({
               <button
                 type="button"
                 onClick={() => applyFormatting("- ")}
-                className="p-1.5 text-slate-600 hover:bg-white hover:text-slate-900 rounded-md transition-all"
+                className="p-1.5 text-slate-600 hover:bg-white rounded-md transition-all"
                 title="List"
               >
                 <List className="w-4 h-4" />
@@ -396,7 +359,7 @@ export default function ContentForm({
               <button
                 type="button"
                 onClick={() => applyFormatting("```\n", "\n```")}
-                className="p-1.5 text-slate-600 hover:bg-white hover:text-slate-900 rounded-md transition-all"
+                className="p-1.5 text-slate-600 hover:bg-white rounded-md transition-all"
                 title="Code Block"
               >
                 <Code className="w-4 h-4" />

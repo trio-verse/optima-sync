@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Package,
   Plus,
@@ -24,10 +25,9 @@ import {
 } from "@/actions/services/productsService";
 
 export default function ProductsPage({ params }) {
-  const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
+  const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -43,20 +43,65 @@ export default function ProductsPage({ params }) {
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId || resolvedParams?.orgId;
 
-  useEffect(() => {
-    if (!orgId) return;
-    async function fetchProductsData() {
-      setLoading(true);
-      const result = await getProducts(orgId);
+  // 1. Fetching Data via React Query
+  const {
+    data: products = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["products", orgId],
+    queryFn: async () => {
+      const res = await getProducts(orgId);
+      if (!res?.success) throw new Error(res?.message || "Failed to fetch");
+      return res?.data || [];
+    },
+    enabled: !!orgId,
+  });
+
+  // 2. Mutations
+  const createMutation = useMutation({
+    mutationFn: (data) => createProduct(data, orgId),
+    onSuccess: (result) => {
       if (result?.success) {
-        setProducts(result?.data || []);
+        queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+        handleCloseModal();
       } else {
-        console.error("Failed to load products:", result?.message);
+        setErrorMsg(result?.message || "Failed to create product.");
       }
-      setLoading(false);
-    }
-    fetchProductsData();
-  }, [orgId]);
+    },
+    onError: (err) => setErrorMsg(err.message || "Something went wrong."),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data) => updateProduct(editingId, data, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+        handleCloseModal();
+      } else {
+        setErrorMsg(result?.message || "Failed to update product.");
+      }
+    },
+    onError: (err) => setErrorMsg(err.message || "Something went wrong."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteProduct(id, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+        handleCloseDeleteModal();
+      } else {
+        alert(result?.message || "Delete failed.");
+      }
+    },
+    onError: (err) => alert(err.message || "Delete failed."),
+  });
+
+  const isSubmitting =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
 
   const handleOpenModal = (product = null) => {
     setErrorMsg("");
@@ -91,7 +136,6 @@ export default function ProductsPage({ params }) {
     setDeletingProduct(null);
   };
 
-  // التحقق من أن حقل الاسم والوصف ليسا فارغين
   const validateForm = () => {
     if (!formData.name.trim()) {
       setErrorMsg("Product name is required.");
@@ -104,59 +148,21 @@ export default function ProductsPage({ params }) {
     return true;
   };
 
-  const handleCreate = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
-    setLoading(true);
     setErrorMsg("");
 
-    const result = await createProduct(formData, orgId);
-    if (result?.success) {
-      const newItem = result.data || { id: result.id, ...formData };
-      setProducts((prev) => [newItem, ...prev]);
-      handleCloseModal();
+    if (editingId) {
+      updateMutation.mutate(formData);
     } else {
-      setErrorMsg(result?.message || "Failed to create product.");
+      createMutation.mutate(formData);
     }
-    setLoading(false);
   };
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setLoading(true);
-    setErrorMsg("");
-
-    const result = await updateProduct(editingId, formData, orgId);
-    if (result?.success) {
-      setProducts((prev) =>
-        prev.map((item) =>
-          item.id === editingId ? { ...item, ...formData } : item
-        )
-      );
-      handleCloseModal();
-    } else {
-      setErrorMsg(result?.message || "Failed to update product.");
-    }
-    setLoading(false);
-  };
-
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!deletingProduct) return;
-
-    setLoading(true);
-    const result = await deleteProduct(deletingProduct.id, orgId);
-    if (result?.success) {
-      setProducts((prev) =>
-        prev.filter((item) => item.id !== deletingProduct.id)
-      );
-      handleCloseDeleteModal();
-    } else {
-      alert(result?.message || "Delete failed.");
-    }
-    setLoading(false);
+    deleteMutation.mutate(deletingProduct.id);
   };
 
   const filteredProducts = products.filter((item) => {
@@ -169,12 +175,9 @@ export default function ProductsPage({ params }) {
   const totalProducts = products.length;
   const totalPrices =
     totalProducts > 0
-      ? (
-          products.reduce(
-            (acc, curr) => acc + (parseFloat(curr.price) || 0),
-            0
-          ) 
-        ).toFixed(2)
+      ? products
+          .reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0)
+          .toFixed(2)
       : "0.00";
 
   return (
@@ -224,7 +227,7 @@ export default function ProductsPage({ params }) {
           <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                total Prices
+                Total Prices
               </p>
               <h3 className="text-2xl font-black text-slate-900 mt-1">
                 ${totalPrices}
@@ -263,7 +266,7 @@ export default function ProductsPage({ params }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {loading && products.length === 0 ? (
+          {isLoading ? (
             <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200/80 flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               <p className="text-slate-500 text-sm font-semibold">
@@ -308,7 +311,7 @@ export default function ProductsPage({ params }) {
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                   <button
                     type="button"
-                    disabled={loading}
+                    disabled={isSubmitting}
                     onClick={() => handleOpenModal(item)}
                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer disabled:opacity-40"
                     title="Edit"
@@ -317,7 +320,7 @@ export default function ProductsPage({ params }) {
                   </button>
                   <button
                     type="button"
-                    disabled={loading}
+                    disabled={isSubmitting}
                     onClick={() => handleOpenDeleteModal(item)}
                     className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer disabled:opacity-40"
                     title="Delete"
@@ -329,7 +332,7 @@ export default function ProductsPage({ params }) {
             ))
           )}
 
-          {!loading && filteredProducts.length === 0 && (
+          {!isLoading && filteredProducts.length === 0 && (
             <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center gap-3">
               <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                 <Package className="w-6 h-6" />
@@ -365,11 +368,7 @@ export default function ProductsPage({ params }) {
                 </button>
               </div>
 
-              <form
-                onSubmit={editingId ? handleUpdate : handleCreate}
-                className="flex flex-col gap-4"
-              >
-                {/* Product Name Input */}
+              <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>
@@ -388,7 +387,6 @@ export default function ProductsPage({ params }) {
                   />
                 </div>
 
-                {/* Price Input */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-700">
                     Default Price ($)
@@ -405,7 +403,6 @@ export default function ProductsPage({ params }) {
                   />
                 </div>
 
-                {/* Description Textarea - الإجباري والمصمم بشكل جميل */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -432,7 +429,6 @@ export default function ProductsPage({ params }) {
                   />
                 </div>
 
-                {/* Error Banner */}
                 {errorMsg && (
                   <div className="text-xs font-bold text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200/80 flex items-center gap-2 animate-in fade-in duration-150">
                     <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -450,10 +446,10 @@ export default function ProductsPage({ params }) {
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={isSubmitting}
                     className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all disabled:opacity-50 cursor-pointer"
                   >
-                    {loading ? (
+                    {createMutation.isPending || updateMutation.isPending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Check className="w-4 h-4 stroke-[3]" />
@@ -501,11 +497,11 @@ export default function ProductsPage({ params }) {
                 </button>
                 <button
                   type="button"
-                  disabled={loading}
+                  disabled={deleteMutation.isPending}
                   onClick={handleDeleteConfirm}
                   className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-md shadow-rose-600/20 transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {loading ? (
+                  {deleteMutation.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Trash2 className="w-4 h-4" />

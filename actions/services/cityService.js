@@ -7,8 +7,8 @@ import { api } from "@/lib/api/client";
 /**
  * جلب قائمة المدن
  */
-export async function getCity(orgId) {
-  try {
+export async function getcities(orgId) {
+    try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 

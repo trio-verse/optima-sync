@@ -12,10 +12,13 @@ import {
   ArrowRightLeft,
   Search,
   Filter,
+  Megaphone,
+  DollarSign,
 } from "lucide-react";
 import {
   getAllConnections,
   deleteConnection,
+  updateConnectionStage,
 } from "@/actions/connectionActions";
 import ConnectionModal from "@/components/connections/ConnectionForm";
 
@@ -67,12 +70,14 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingConnection, setEditingConnection] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [updatingStageId, setUpdatingStageId] = useState(null);
   const [toast, setToast] = useState(null);
 
   /* ── Fetch Organization Connections ── */
   const fetchAllConnectionsData = useCallback(async () => {
     setLoading(true);
     const res = await getAllConnections(orgId);
+    console.log("=== Connections Data in Page ===", res?.data);
     if (res?.success) {
       setConnections(res.data || []);
     }
@@ -80,9 +85,46 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   }, [orgId]);
 
   useEffect(() => {
-    if(!orgId) return
+    if (!orgId) return;
     fetchAllConnectionsData();
   }, [fetchAllConnectionsData]);
+
+  /* ── Update Stage Directly ── */
+  const handleStageChange = async (conn, newStage) => {
+    const rawCurrentStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
+    if (rawCurrentStage === newStage) return;
+
+    setUpdatingStageId(conn.id);
+
+    const clientId = conn.client_id || conn.client?.id;
+    const isWon = newStage === "win" || newStage === "won";
+    const payload = {
+      stage: newStage,
+      ...(isWon && { dealValue: conn.product?.price || conn.product?.value || conn.deal_value }),
+    };
+
+    const res = await updateConnectionStage(conn.id, payload, orgId, clientId);
+
+    if (res?.success) {
+      setConnections((prev) =>
+        prev.map((c) =>
+          c.id === conn.id
+            ? {
+                ...c,
+                stage: newStage,
+                ...(res.data?.deal_value && { deal_value: res.data.deal_value }),
+              }
+            : c
+        )
+      );
+      setToast({ type: "success", message: "Stage updated successfully!" });
+    } else {
+      setToast({ type: "error", message: res?.message || "Failed to update stage" });
+    }
+
+    setUpdatingStageId(null);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   /* ── Success Handler ── */
   const handleSuccess = (updatedConnection) => {
@@ -91,8 +133,8 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
 
     setConnections((prev) =>
       prev.map((c) =>
-        c.id === updatedConnection?.id ? { ...c, ...updatedConnection } : c,
-      ),
+        c.id === updatedConnection?.id ? { ...c, ...updatedConnection } : c
+      )
     );
     setEditingConnection(null);
   };
@@ -108,7 +150,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     const res = await deleteConnection(
       conn.id,
       orgId,
-      conn.client_id || conn.client?.id,
+      conn.client_id || conn.client?.id
     );
     if (res?.success) {
       setConnections((prev) => prev.filter((c) => c.id !== conn.id));
@@ -225,6 +267,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
             const rawStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
             const stageInfo = STAGES[rawStage] || STAGES.lead;
             const clientName = conn.client?.name || "Unknown Client";
+            const isWon = rawStage === "win" || rawStage === "won";
 
             return (
               <div
@@ -232,16 +275,42 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                 className="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all group"
               >
                 <div className="flex flex-col gap-2 flex-1">
-                  {/* Top Bar: Stage, Client Name & Initiator */}
+                  {/* Top Bar: Client Name, Dynamic Stage Dropdown & Initiator */}
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-bold text-slate-900 text-base bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
                       {clientName}
                     </span>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${stageInfo.color}`}
-                    >
-                      {stageInfo.label}
-                    </span>
+
+                    {/* Stage Selector Dropdown */}
+                    <div className="relative flex items-center">
+                      {updatingStageId === conn.id ? (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Updating...</span>
+                        </div>
+                      ) : (
+                        <select
+                          value={rawStage}
+                          onChange={(e) => handleStageChange(conn, e.target.value)}
+                          className={`cursor-pointer px-2.5 py-1 rounded-lg text-xs font-bold border outline-none transition-all ${stageInfo.color}`}
+                        >
+                          {Object.entries(STAGES).map(([key, { label }]) => (
+                            <option key={key} value={key} className="bg-white text-slate-800 font-medium">
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Deal Value Badge if Stage is Won */}
+                    {isWon && (conn.deal_value || conn.product?.price) && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <DollarSign className="w-3.5 h-3.5" />
+                        {conn.deal_value || conn.product?.price}
+                      </span>
+                    )}
+
                     {conn.initiated_by && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200">
                         <ArrowRightLeft className="w-3 h-3" />
@@ -272,6 +341,14 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                         </span>
                       </span>
                     )}
+                    {conn.campaign?.name && (
+                      <span className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-lg">
+                        <Megaphone className="w-3.5 h-3.5 text-indigo-500" />
+                        <span className="font-semibold text-indigo-700">
+                          {conn.campaign.name}
+                        </span>
+                      </span>
+                    )}
                     {conn.assignee?.name && (
                       <span className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-slate-400" />
@@ -284,6 +361,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                   <p className="text-xs text-slate-400 mt-1">
                     {conn.created_at
                       ? new Date(conn.created_at).toLocaleDateString("en-US", {
+                          timeZone: "UTC",
                           year: "numeric",
                           month: "short",
                           day: "numeric",

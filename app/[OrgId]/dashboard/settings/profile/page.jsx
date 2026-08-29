@@ -113,7 +113,7 @@ export default function EditProfilePage({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 py-10 px-4 flex justify-center items-center">
+    <div className="min-h-screen  py-10 px-4 flex justify-center items-center">
       <div className="w-full max-w-xl">
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
           

@@ -40,8 +40,8 @@ const FALLBACK_CAMPAIGNS = [
 ];
 
 /* ============================================================
-   1️⃣ Column chart — لمقارنة رقمين إجماليين بالفلوس (Spent vs
-   Revenue). عمودي لأنه أوضح لعين المستخدم لمقارنة قيمتين بسيطة.
+1️⃣ Column chart — لمقارنة رقمين إجماليين بالفلوس (Spent vs
+Revenue). عمودي لأنه أوضح لعين المستخدم لمقارنة قيمتين بسيطة.
    ============================================================ */
 function ColumnComparisonChart({ data, valueFormatter = (v) => v }) {
     return (
@@ -129,7 +129,7 @@ function ConnectionsDonutChart({ totalConnections, totalWins }) {
    3️⃣ Radial gauge — Win Rate و ROI هوي مؤشرات أداء (%) مش أرقام
    للمقارنة، فعداد دائري أوضح بكتير من bar عادي.
    ============================================================ */
-function RadialGauge({ label, value, color, domainMax }) {
+function RadialGauge({ label, value, color, domainMax, subtitle }) {
     const clamped = Math.max(0, Math.min(value, domainMax));
     const data = [{ value: clamped, fill: color }];
     return (
@@ -155,16 +155,39 @@ function RadialGauge({ label, value, color, domainMax }) {
                 </div>
             </div>
             <span className="text-xs font-semibold text-slate-500">{label}</span>
+            {/* عرض النص التوضيحي للـ ROI بأسفل العداد */}
+            {subtitle && (
+                <span className={`text-[11px] font-bold ${color === "#10b981" ? "text-emerald-600" : "text-rose-600"}`}>
+                    {subtitle}
+                </span>
+            )}
         </div>
     );
 }
 
 function KpiGauges({ winRate, roi }) {
-    const roiDomainMax = Math.max(100, Math.abs(roi) + 20);
+    /* =========================================================================
+       [COMMENT 1]: معالجة قيمة ROI
+       - في حال كانت القيمة موجبة أو صفر: نثبت القيمة كما هي مع عبارة "Profitable" (أو Making Money)
+       - في حال كانت القيمة سالبة: نضرب بـ (1-) لتحويلها لموجبة مع عبارة "losing money"
+       ========================================================================= */
+    const isPositiveRoi = roi >= 0;
+    const displayRoi = isPositiveRoi ? roi : roi * -1;
+    const roiStatusText = isPositiveRoi ? "Making Money" : "Losing Money";
+    const roiColor = isPositiveRoi ? "#10b981" : "#ef4444";
+
+    const roiDomainMax = Math.max(100, Math.abs(displayRoi) + 20);
+
     return (
         <div className="h-56 flex items-center justify-around">
             <RadialGauge label="Win Rate" value={winRate} color="#8b5cf6" domainMax={100} />
-            <RadialGauge label="ROI" value={roi} color={roi >= 0 ? "#10b981" : "#ef4444"} domainMax={roiDomainMax} />
+            <RadialGauge
+                label="ROI"
+                value={displayRoi}
+                color={roiColor}
+                domainMax={roiDomainMax}
+                subtitle={roiStatusText}
+            />
         </div>
     );
 }
@@ -187,9 +210,7 @@ export default function MarketingAnalyticsDashboard({
     console.log("📦 Raw analytics:", analytics);
     console.log("📦 Raw campaigns:", initialCampaigns);
 
-    const [campaigns] = useState(
-        initialCampaigns.length > 0 ? initialCampaigns : FALLBACK_CAMPAIGNS
-    );
+const [campaigns] = useState(initialCampaigns || []);
     const [sortBy, setSortBy] = useState("roi");
 
     // خريطة أداء كل حملة لحالها (win_rate / roi / cpl) الجايي من
@@ -393,49 +414,8 @@ export default function MarketingAnalyticsDashboard({
                     <p className="text-[10px] text-slate-400">Running campaigns</p>
                 </div>
 
-                {/* Total Spent ✅ Backend */}
-                <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-1.5">
-                    <div className="flex items-center justify-between text-slate-500">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider">Total Spent</span>
-                        <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
-                            <DollarSign className="h-3.5 w-3.5" />
-                        </div>
-                    </div>
-                    <div className="text-xl font-extrabold text-slate-900">
-                        ${kpiData.totalSpent.toLocaleString("en-US")}
-                    </div>
-                    <p className="text-[10px] text-slate-400">Total approved expenses</p>
-                </div>
-
-                {/* Revenue ✅ Backend */}
-                <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-1.5">
-                    <div className="flex items-center justify-between text-slate-500">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider">Revenue</span>
-                        <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
-                            <TrendingUp className="h-3.5 w-3.5" />
-                        </div>
-                    </div>
-                    <div className="text-xl font-extrabold text-emerald-600">
-                        ${kpiData.totalRevenue.toLocaleString("en-US")}
-                    </div>
-                    <p className="text-[10px] text-emerald-600 font-semibold inline-flex items-center gap-0.5">
-                        <ArrowUpRight className="h-3 w-3" /> Won deals
-                    </p>
-                </div>
-
                 {/* Total Wins ✅ Backend */}
-                <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-1.5">
-                    <div className="flex items-center justify-between text-slate-500">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider">Total Wins</span>
-                        <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600">
-                            <Trophy className="h-3.5 w-3.5" />
-                        </div>
-                    </div>
-                    <div className="text-xl font-extrabold text-rose-600">
-                        {kpiData.totalWins.toLocaleString("en-US")}
-                    </div>
-                    <p className="text-[10px] text-slate-400">Won deals total</p>
-                </div>
+
 
                 {/* Overall CPL ✅ Backend */}
                 <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-1.5">
@@ -452,20 +432,7 @@ export default function MarketingAnalyticsDashboard({
                 </div>
 
                 {/* Effective Campaigns ✅ من GET /marketing/analytics/effective-campaigns */}
-                <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-white p-5 shadow-sm space-y-1.5">
-                    <div className="flex items-center justify-between text-slate-500">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-                            Effective Campaigns
-                        </span>
-                        <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600">
-                            <Sparkles className="h-3.5 w-3.5" />
-                        </div>
-                    </div>
-                    <div className="text-xl font-extrabold text-emerald-700">
-                        {kpiData.effectiveCampaignCount.toLocaleString("en-US")} / {kpiData.totalCampaigns.toLocaleString("en-US")}
-                    </div>
-                    <p className="text-[10px] text-emerald-600 font-medium">From effective-campaigns endpoint</p>
-                </div>
+
 
                 {/* Expected Content ✅ مجموع حقيقي من estimated_content_count */}
                 <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50/50 to-white p-5 shadow-sm space-y-1.5">

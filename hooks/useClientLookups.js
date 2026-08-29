@@ -1,36 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getCity } from "../actions/services/cityService";
-import { getIndustry } from "../actions/services/industryService";
+import { getcities } from "@/actions/services/cityService";
+import { getindustries } from "@/actions/services/industryService";
+import { useQuery } from "@tanstack/react-query";
 
 export function useClientLookups(orgId) {
-  const [cities, setCities] = useState([]);
-  const [industries, setIndustries] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-     if (!orgId) return; 
-    async function loadData() {
-      setLoading(true);
-      const [cityRes, industryRes] = await Promise.all([
-        getCity(orgId),
-        getIndustry(orgId),
+  const { data, isLoading } = useQuery({
+    queryKey: ["clientLookups", orgId], 
+    queryFn: async () => {
+      console.log("🔥 [LOOKUPS API CALL] Fetching cities & industries from server...");
+      const [citiesRes, industriesRes] = await Promise.all([
+        getcities(orgId),
+        getindustries(orgId),
       ]);
+      return {
+        cities: citiesRes.data || [],
+        industries: industriesRes.data || [],
+      };
+    },
+    staleTime: 1000 * 60 , 
+    enabled: !!orgId,
+  });
 
-      if (cityRes?.success && Array.isArray(cityRes.data)) {
-        setCities(cityRes.data);
-      }
-
-      if (industryRes?.success && Array.isArray(industryRes.data)) {
-        setIndustries(industryRes.data);
-      }
-
-      setLoading(false);
-    }
-
-    loadData();
-  }, [orgId]);
-
-  return { cities, industries, loadingLookups: loading };
+  return {
+    cities: data?.cities || [],
+    industries: data?.industries || [],
+    loadingLookups: isLoading,
+  };
 }

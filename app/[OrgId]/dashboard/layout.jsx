@@ -14,7 +14,6 @@ import {
   MessageSquare,
   Settings,
   User,
-  Image,
   LogOut,
   Package
 } from "lucide-react";
@@ -23,9 +22,8 @@ import LogOutButton from "../../../actions/auth";
 export default function DashboardLayout({ children, params }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [orgName, setOrgName] = useState("optima sync");
   const [isSettingsOpen, setIsSettingsOpen] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   const [activeTab, setActiveTab] = useState("sales");
 
@@ -56,16 +54,13 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("member");
     } else if (pathname.includes("/sales")) {
       setActiveTab("sales");
-    }
-    else if (pathname.includes("/product")) {
+    } else if (pathname.includes("/product")) {
       setActiveTab("product");
-    }else if (pathname.includes("/marketing")) {
+    } else if (pathname.includes("/marketing")) {
       setActiveTab("marketing");
-    }else{
+    } else {
       setActiveTab("");
     }
-
-    
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -75,176 +70,192 @@ export default function DashboardLayout({ children, params }) {
   return (
     <div className="flex h-screen w-full bg-zinc-50 text-zinc-900 font-sans antialiased overflow-hidden relative">
       {/* Sidebar */}
-    <aside
+      <aside
         className={`
-          ${isSidebarOpen ? "flex" : "hidden"} 
-          fixed lg:static inset-y-0 left-0 z-40
-          w-64 min-w-[256px] h-full bg-zinc-100 flex-col justify-between border-r border-zinc-200 shadow-2xl lg:shadow-sm z-20 flex-shrink-0
+          relative h-full bg-zinc-100 flex flex-col justify-between border-r border-zinc-200 shadow-sm z-20 flex-shrink-0
           transition-all duration-300
+          ${
+            isSidebarExpanded
+              ? "w-16 lg:w-64 lg:min-w-[256px]"
+              : "w-16 min-w-[64px]"
+          }
         `}
       >
-        <div className="p-6 flex-1 overflow-y-auto">
-          {/* Brand Header & Organization Info */}
-          <div className="flex items-center justify-between mb-6 px-2">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-blue-600 animate-pulse"></div>
-              <h2 className="text-xl font-bold tracking-tight text-zinc-900">
-                Optima Sync
-              </h2>
+        <div className="p-3 lg:p-4 flex-1 overflow-y-auto overflow-x-hidden">
+          {/* Brand Header & Toggle Button */}
+          <div
+            className={`flex items-center mb-6 px-1 ${
+              isSidebarExpanded ? "justify-center lg:justify-between" : "justify-center"
+            }`}
+          >
+            {/* اسم الشركة يظهر فقط في الشاشات الكبيرة lg وعند فتح القائمة */}
+            {isSidebarExpanded && (
+              <div className="hidden lg:flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-blue-600 animate-pulse flex-shrink-0"></div>
+                <h2 className="text-xl font-bold tracking-tight text-zinc-900 truncate">
+                  Optima Sync
+                </h2>
+              </div>
+            )}
+
+            {/* أزرار التبديل تظهر فقط في الشاشات الكبيرة lg */}
+            <div className="hidden lg:block">
+              {isSidebarExpanded ? (
+                <button
+                  onClick={() => setIsSidebarExpanded(false)}
+                  className="text-zinc-500 hover:text-zinc-900 rounded-lg p-1.5 hover:bg-zinc-200 transition cursor-pointer"
+                  aria-label="Collapse menu"
+                  title="Collapse Sidebar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsSidebarExpanded(true)}
+                  className="text-zinc-500 hover:text-zinc-900 rounded-lg p-1.5 hover:bg-zinc-200 transition cursor-pointer"
+                  aria-label="Expand menu"
+                  title="Expand Sidebar"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
             </div>
-
-
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="text-zinc-500 hover:text-zinc-900 rounded-lg p-1 hover:bg-zinc-200 transition cursor-pointer"
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           <nav className="flex flex-col gap-1.5">
-            <Link
-              href={`${basePath}/sales`}
-
-            >
+            <Link href={`${basePath}/sales`}>
               <button
-                onClick={() => {
-                  setActiveTab("sales");
-                 
-                }}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                onClick={() => setActiveTab("sales")}
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "sales"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Sales"
               >
-                <BarChart3 className="w-4 h-4" />
-                <span>Sales</span>
+                <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Sales</span>}
               </button>
             </Link>
 
-            <Link
-              href={`${basePath}/member`}
-              
-            >
+            <Link href={`${basePath}/member`}>
               <button
                 onClick={() => setActiveTab("member")}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "member"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Member"
               >
-                <Users className="w-4 h-4" />
-                <span>Member</span>
+                <Users className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Member</span>}
               </button>
             </Link>
 
-
-              <Link
-              href={`${basePath}/product`}
-
-            >
+            <Link href={`${basePath}/product`}>
               <button
                 onClick={() => setActiveTab("product")}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "product"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Product"
               >
-                <Package className="w-4 h-4" />
-                <span>product</span>
+                <Package className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Product</span>}
               </button>
             </Link>
-  
-                <Link
-              href={`${basePath}/marketing`}
->
-              <button
-                onClick={() => {
-                  setActiveTab("marketing");
 
-                }}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+            <Link href={`${basePath}/marketing`}>
+              <button
+                onClick={() => setActiveTab("marketing")}
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "marketing"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Marketing"
               >
-                <Megaphone className="w-4 h-4" />
-                <span>Marketing</span>
+                <Megaphone className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Marketing</span>}
               </button>
             </Link>
 
-
-
-            <Link
-              href={`${basePath}/clients`}
-
-            >
+            <Link href={`${basePath}/clients`}>
               <button
                 onClick={() => setActiveTab("clients")}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "clients"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Clients"
               >
-                <Users className="w-4 h-4" />
-                <span>Clients</span>
+                <Users className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Clients</span>}
               </button>
             </Link>
 
-            <Link
-              href={`${basePath}/industries`}
-
-            >
+            <Link href={`${basePath}/industries`}>
               <button
                 onClick={() => setActiveTab("industries")}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "industries"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Industries"
               >
-                <Building2 className="w-4 h-4" />
-                <span>Industries</span>
+                <Building2 className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Industries</span>}
               </button>
             </Link>
 
-            <Link
-              href={`${basePath}/cities`}
-
-            >
+            <Link href={`${basePath}/cities`}>
               <button
                 onClick={() => setActiveTab("cities")}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "cities"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Cities"
               >
-                <MapPin className="w-4 h-4" />
-                <span>Cities</span>
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Cities</span>}
               </button>
             </Link>
 
-            <Link
-              href={`${basePath}/channels`}
-
-            >
+            <Link href={`${basePath}/channels`}>
               <button
                 onClick={() => setActiveTab("channels")}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                   activeTab === "channels"
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
                 }`}
+                title="Channels"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>Channels</span>
+                <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Channels</span>}
               </button>
             </Link>
 
@@ -253,74 +264,71 @@ export default function DashboardLayout({ children, params }) {
                 setActiveTab("settings");
                 setIsSettingsOpen(!isSettingsOpen);
               }}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition text-left cursor-pointer ${
+              className={`flex items-center ${
+                isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+              } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
                 activeTab === "settings" ||
                 activeTab === "profile" ||
                 activeTab === "Logo"
                   ? "bg-zinc-900 text-white shadow-sm"
                   : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
               }`}
+              title="Settings"
             >
-              <Settings className="w-4 h-4" />
-              <span>Settings</span>
+              <Settings className="w-4 h-4 flex-shrink-0" />
+              {isSidebarExpanded && <span className="hidden lg:inline">Settings</span>}
             </button>
 
             {isSettingsOpen && (
-              <div className="flex flex-col gap-1 pl-6 pr-2 transition-all duration-200">
+              <div
+                className={`flex flex-col gap-1 transition-all duration-200 ${
+                  isSidebarExpanded ? "items-center lg:items-stretch lg:pl-6 lg:pr-2" : "items-center"
+                }`}
+              >
                 <Link
                   href={`${basePath}/settings/profile`}
-                  onClick={() => {
-                    setActiveTab("profile");
-
-                  }}
-                  className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-semibold transition text-left ${
+                  onClick={() => setActiveTab("profile")}
+                  className={`flex items-center ${
+                    isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                  } gap-2 w-full py-2 rounded-lg text-xs font-semibold transition ${
                     activeTab === "profile"
                       ? "bg-blue-100 text-blue-700 font-bold"
                       : "text-zinc-600 hover:bg-zinc-200 hover:text-blue-600"
                   }`}
+                  title="Edit Organization"
                 >
-                  <User className="w-3.5 h-3.5" />
-                  <span>Edit Organaization</span>
+                  <User className="w-3.5 h-3.5 flex-shrink-0" />
+                  {isSidebarExpanded && <span className="hidden lg:inline">Edit Organization</span>}
                 </Link>
-
-
               </div>
             )}
           </nav>
         </div>
 
         {/* Bottom Sidebar Footer */}
-        <div className="p-4 border-t border-zinc-200 space-y-3">
-          {/* Red Logout Button */}
+        <div className="p-2 lg:p-4 border-t border-zinc-200 space-y-3">
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white font-semibold text-sm rounded-lg transition-all duration-200 cursor-pointer group shadow-sm"
+            className={`flex items-center justify-center gap-2 w-full ${
+              isSidebarExpanded ? "px-0 lg:px-4" : "px-0"
+            } py-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white font-semibold text-sm rounded-lg transition-all duration-200 cursor-pointer group shadow-sm`}
+            title="Log out"
           >
-            <LogOut className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>Log out</span>
+            <LogOut className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 flex-shrink-0" />
+            {isSidebarExpanded && <span className="hidden lg:inline">Log out</span>}
           </button>
 
-          <div className="text-[11px] text-zinc-400 text-center tracking-wider font-mono">
-            PANEL v1.0
-          </div>
+          {isSidebarExpanded && (
+            <div className="hidden lg:block text-[11px] text-zinc-400 text-center tracking-wider font-mono">
+              PANEL v1.0
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-
-            {/* 2. التعديل الثاني: إضافة زر الثلاث شخطات Menu ليظهر فقط عندما يكون السايدبار مغلقاً */}
-        {!isSidebarOpen && (
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 left-4 z-30 p-2.5 bg-white border border-zinc-200 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg shadow-sm transition cursor-pointer flex items-center justify-center"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
-
-        <main className="flex-1 bg-zinc-50 p-4 sm:p-8 overflow-y-auto">
+        <main className="flex-1 bg-zinc-50 p-4 sm:p-8 pl-3 overflow-y-auto">
           <div className="max-w-6xl mx-auto">{children}</div>
         </main>
       </div>

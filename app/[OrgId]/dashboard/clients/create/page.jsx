@@ -13,7 +13,7 @@ export default function CreateClientPage({ params }) {
   const resolvedParams = params ? use(params) : null;            
   const orgId = resolvedParams?.OrgId;      
 
-  const handleCreate = async (formDataPayload) => {
+  const handleCreate = async (formDataPayload, { actionType, resetForm }) => {
     setIsSubmitting(true);
     setErrorMsg("");
 
@@ -21,8 +21,17 @@ export default function CreateClientPage({ params }) {
       const res = await createClient(formDataPayload, orgId);
 
       if (res?.success) {
-        router.push(`/${orgId}/dashboard/clients`); 
-        // router.refresh();
+        if (actionType === "add_another") {
+          resetForm();
+          setIsSubmitting(false);
+        } else {
+          const newClientId = res?.data?.id || res?.id;
+          if (newClientId) {
+            router.push(`/${orgId}/dashboard/clients/${newClientId}`);
+          } else {
+            router.push(`/${orgId}/dashboard/clients`);
+          }
+        }
       } else {
         setErrorMsg(res?.message || "An error occurred while adding the client");
         setIsSubmitting(false);
@@ -34,14 +43,23 @@ export default function CreateClientPage({ params }) {
     }
   };
 
+  const handleClose = () => {
+    router.back(); 
+  };
+
   return (
     <div className="p-6">
       {errorMsg && (
-        <div className="max-w-2xl mx-auto mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+        <div className="max-w-3xl mx-auto mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
           {errorMsg}
         </div>
       )}
-      <ClientForm onSubmit={handleCreate} isSubmitting={isSubmitting} orgId={orgId}  />
+      <ClientForm
+        onSubmit={handleCreate}
+        onClose={handleClose} 
+        isSubmitting={isSubmitting}
+        orgId={orgId}
+      />
     </div>
   );
 }

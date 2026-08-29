@@ -93,11 +93,10 @@ export async function updateProduct(id, productData, orgId) {
             message: "Unauthorized"
         };
 
-        const payload = {
-            name: productData.name,
-            price: productData.price ? Number(productData.price) : 0,
-            description: productData.description || "",
-        };
+const payload = {};
+        if (productData.name !== undefined) payload.name = productData.name;
+        if (productData.price !== undefined) payload.price = Number(productData.price);
+        if (productData.description !== undefined) payload.description = productData.description;
 
 
 
@@ -114,7 +113,11 @@ export async function updateProduct(id, productData, orgId) {
             message: resdata?.data?.message || "Product updated successfully",
         };
     } catch (error) {
-        console.error("DEBUG updateProduct Error:", error);
+        console.log("=== BACKEND VALIDATION ERROR DETAILS ===");
+    console.log("Status Code:", error.response?.status);
+    console.log("Response Data:", JSON.stringify(error.response?.data, null, 2));
+    console.log("========================================");
+
         return {
             success: false,
             message: error.data?.message || error.message || "Failed to update product",

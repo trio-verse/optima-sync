@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Check,
@@ -19,7 +20,7 @@ import {
   createCity,
   updateCity,
   deleteCity,
-  getCity,
+  getcities,
 } from "@/actions/services/cityService";
 
 const PRESET_COLORS = [
@@ -33,7 +34,11 @@ const PRESET_COLORS = [
 ];
 
 export default function CitiesPage({ params }) {
-  const [cities, setCities] = useState([]);
+  const queryClient = useQueryClient();
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
+
+  // States للـ Form والـ Modals فقط
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#2563eb");
@@ -44,122 +49,102 @@ export default function CitiesPage({ params }) {
   const [editingName, setEditingName] = useState("");
   const [editingColor, setEditingColor] = useState("");
 
-  const [loading, setLoading] = useState(false);
-
-  // State للتحكم بظهور دايلوغ الحذف وتخزين العنصر المحدد والخطأ
   const [deletingItem, setDeletingItem] = useState(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const resolvedParams = params ? use(params) : null;
-  const orgId = resolvedParams?.OrgId;
+  const { data: cities = [], isLoading: loadingFetch } = useQuery({
+    queryKey: ["cities", orgId],
+    queryFn: async () => {
+      const result = await getcities(orgId);
+      if (result?.success) return result?.data || [];
+      throw new Error(result?.message || "Failed to load cities");
+    },
+    enabled: !!orgId,
+    staleTime: 1000 * 60 * 5,
+  });
 
-  useEffect(() => {
-    if (!orgId) return;
-    async function fetchCities() {
-      setLoading(true);
-      const result = await getCity(orgId);
+  const addMutation = useMutation({
+    mutationFn: ({ name, color }) => createCity(name, color, orgId),
+    onSuccess: (result) => {
       if (result?.success) {
-        setCities(result?.data || []);
+        queryClient.invalidateQueries({ queryKey: ["cities", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
+        setNewName("");
+        setNewColor("#2563eb");
+        setAddError("");
+        setIsAdding(false);
       } else {
-        console.error("Failed to load cities", result?.message);
+        setAddError(result?.message || "Could not save city, please try again.");
       }
-      setLoading(false);
-    }
-    fetchCities();
-  }, [orgId]);
+    },
+  });
 
-  const handleAddCity = async (e) => {
+  const updateMutation = useMutation({
+    mutationFn: ({ id, name, color }) => updateCity(id, name, color, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["cities", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
+        setEditingId(null);
+        setEditingName("");
+        setEditingColor("");
+      } else {
+        console.error("Failed to update city", result?.message);
+      }
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteCity(id, orgId),
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["cities", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
+        setDeletingItem(null);
+        setDeleteError("");
+      } else {
+        setDeleteError("Cannot delete this city because it is linked to existing records.");
+      }
+    },
+  });
+
+  const loading =
+    addMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+  const handleAddCity = (e) => {
     e.preventDefault();
-
     if (!newName.trim()) {
       setAddError("City name is required.");
       return;
     }
-
     const isDuplicate = cities.some(
       (item) => item.name.toLowerCase() === newName.trim().toLowerCase()
     );
-
     if (isDuplicate) {
       setAddError("This city already exists.");
       return;
     }
-
-    setLoading(true);
-
-    const result = await createCity(newName.trim(), newColor, orgId);
-    if (result?.success) {
-      const createdItem = result.data || {
-        id: result.id || Date.now().toString(),
-        name: newName.trim(),
-        color: newColor,
-        createdAt: new Date().toISOString(),
-      };
-
-      setCities((prev) => [createdItem, ...prev]);
-      setNewName("");
-      setNewColor("#2563eb");
-      setAddError("");
-      setIsAdding(false);
-    } else {
-      console.error(result?.message, "Failed to add city");
-      setAddError(result?.message || "Could not save city, please try again.");
-    }
-    setLoading(false);
+    addMutation.mutate({ name: newName.trim(), color: newColor });
   };
 
-  const handleSaveEdit = async (id) => {
+  const handleSaveEdit = (id) => {
     if (!editingName.trim()) return;
-
     const isDuplicate = cities.some(
       (item) =>
         item.id !== id &&
         item.name.toLowerCase() === editingName.trim().toLowerCase()
     );
-
     if (isDuplicate) {
       alert("This city already exists.");
       return;
     }
-
-    setLoading(true);
-    const result = await updateCity(id, editingName.trim(), editingColor, orgId);
-    if (result?.success) {
-      setCities((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? { ...item, name: editingName.trim(), color: editingColor }
-            : item
-        )
-      );
-      setEditingId(null);
-      setEditingName("");
-      setEditingColor("");
-    } else {
-      console.error("Failed to update city", result?.message);
-    }
-    setLoading(false);
+    updateMutation.mutate({ id, name: editingName.trim(), color: editingColor });
   };
 
-  // تأكيد الحذف والتعامل مع أخطاء القيود بشكل مريح
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!deletingItem) return;
-
     setDeleteError("");
-    setLoading(true);
-    const result = await deleteCity(deletingItem.id, orgId);
-
-    if (result?.success) {
-      setCities((prev) => prev.filter((item) => item.id !== deletingItem.id));
-      setDeletingItem(null);
-      setDeleteError("");
-    } else {
-      // إظهار الرسالة بالإنجليزية مع الاعتماد على رسالة الـ API إذا كانت متوفرة
-      setDeleteError(
-  "Cannot delete this city because it is linked to existing records."
-      );
-    }
-    setLoading(false);
+    deleteMutation.mutate(deletingItem.id);
   };
 
   const filteredCities = cities.filter((item) =>
@@ -184,7 +169,7 @@ export default function CitiesPage({ params }) {
           {!isAdding && (
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || loadingFetch}
               onClick={() => setIsAdding(true)}
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md cursor-pointer shrink-0 disabled:opacity-50"
             >
@@ -333,7 +318,7 @@ export default function CitiesPage({ params }) {
 
         {/* قائمة المدن */}
         <div className="flex flex-col gap-3">
-          {loading && cities.length === 0 ? (
+          {loadingFetch ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-zinc-200/80 flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               <p className="text-zinc-500 text-sm font-medium">
@@ -347,7 +332,6 @@ export default function CitiesPage({ params }) {
                 className="bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm hover:shadow transition-all"
               >
                 {editingId === item.id ? (
-                  /* وضع التعديل */
                   <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
                     <input
                       type="text"
@@ -398,7 +382,7 @@ export default function CitiesPage({ params }) {
                         className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shrink-0 cursor-pointer disabled:opacity-50"
                         title="Save"
                       >
-                        {loading ? (
+                        {updateMutation.isPending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Check className="w-4 h-4" />
@@ -420,7 +404,6 @@ export default function CitiesPage({ params }) {
                     </div>
                   </div>
                 ) : (
-                  /* وضع العرض */
                   <>
                     <div className="flex items-center gap-3">
                       <div
@@ -467,7 +450,7 @@ export default function CitiesPage({ params }) {
             ))
           )}
 
-          {!loading && filteredCities.length === 0 && (
+          {!loadingFetch && filteredCities.length === 0 && (
             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
               <Map className="w-10 h-10 text-zinc-300" />
               <p className="text-zinc-500 text-sm font-semibold">
@@ -503,7 +486,6 @@ export default function CitiesPage({ params }) {
               </div>
             </div>
 
-            {/* عرض رسالة الخطأ المريحة عند فشل الحذف */}
             {deleteError && (
               <div className="bg-rose-50 border border-rose-200/80 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-700 font-medium animate-in fade-in duration-200">
                 <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -529,12 +511,12 @@ export default function CitiesPage({ params }) {
                 onClick={confirmDelete}
                 className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {loading ? (
+                {deleteMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                <span>{loading ? "Deleting..." : "Delete"}</span>
+                <span>{deleteMutation.isPending ? "Deleting..." : "Delete"}</span>
               </button>
             </div>
           </div>
