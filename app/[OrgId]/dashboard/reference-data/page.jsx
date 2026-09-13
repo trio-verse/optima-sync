@@ -6,6 +6,9 @@ import {
   Plus,
   Check,
   X,
+  MapPin,
+  Map,
+  Building2,
   Radio,
   Pencil,
   Trash2,
@@ -13,31 +16,47 @@ import {
   Loader2,
   Palette,
   AlertTriangle,
+  Database,
 } from "lucide-react";
+
 import {
+  getcities,
+  createCity,
+  updateCity,
+  deleteCity,
+} from "@/actions/services/cityService";
+
+import {
+  getindustries,
+  creatIndustry,
+  updateIndustry,
+  deleteIndustry,
+} from "@/actions/services/industryService";
+
+import {
+  getChannels,
   createChannel,
   updateChannel,
   deleteChannel,
-  getChannels,
 } from "@/actions/services/channelService";
 
 const PRESET_COLORS = [
-  "#2563eb", // Blue
-  "#7c3aed", // Violet
-  "#db2777", // Pink
-  "#ea580c", // Orange
-  "#16a34a", // Green
-  "#0891b2", // Cyan
-  "#4b5563", // Slate
+  "#2563eb",
+  "#7c3aed",
+  "#db2777",
+  "#ea580c",
+  "#16a34a",
+  "#0891b2",
+  "#4b5563",
 ];
 
-export default function ChannelsPage({ params }) {
+export default function ReferenceDataPage({ params }) {
+  const [activeTab, setActiveTab] = useState("cities");
   const queryClient = useQueryClient();
-
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId;
 
-  // Local state
+  // Form & Action states
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#2563eb");
@@ -51,111 +70,158 @@ export default function ChannelsPage({ params }) {
   const [deletingItem, setDeletingItem] = useState(null);
   const [deleteError, setDeleteError] = useState("");
 
-  // 1. Fetching Data using React Query
-  const { data: channels = [], isLoading: isFetchingChannels } = useQuery({
-    queryKey: ["channels", orgId],
+  // Reset form states on tab change
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setIsAdding(false);
+    setNewName("");
+    setNewColor("#2563eb");
+    setAddError("");
+    setSearch("");
+    setEditingId(null);
+    setDeletingItem(null);
+    setDeleteError("");
+  };
+
+  // 1. Queries
+  const citiesQuery = useQuery({
+    queryKey: ["cities", orgId],
     queryFn: async () => {
-      const result = await getChannels(orgId);
-      if (!result?.success) throw new Error(result?.message || "Failed to load channels");
-      return result?.data || [];
+      const res = await getcities(orgId);
+      if (res?.success) return res?.data || [];
+      throw new Error(res?.message || "Failed to load cities");
     },
-    enabled: !!orgId,
+    enabled: !!orgId && activeTab === "cities",
+    staleTime: 1000 * 60 * 5,
   });
 
-  // 2. Add Channel Mutation
-  const createMutation = useMutation({
-    mutationFn: ({ name, color }) => createChannel(name, color, orgId),
+  const industriesQuery = useQuery({
+    queryKey: ["industries", orgId],
+    queryFn: async () => {
+      const res = await getindustries(orgId);
+      if (res?.success) return res?.data || [];
+      throw new Error(res?.message || "Failed to load industries");
+    },
+    enabled: !!orgId && activeTab === "industries",
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const channelsQuery = useQuery({
+    queryKey: ["channels", orgId],
+    queryFn: async () => {
+      const res = await getChannels(orgId);
+      if (res?.success) return res?.data || [];
+      throw new Error(res?.message || "Failed to load channels");
+    },
+    enabled: !!orgId && activeTab === "channels",
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Current Active Query & Data
+  const currentData =
+    activeTab === "cities"
+      ? citiesQuery.data || []
+      : activeTab === "industries"
+      ? industriesQuery.data || []
+      : channelsQuery.data || [];
+
+  const isFetching =
+    activeTab === "cities"
+      ? citiesQuery.isLoading
+      : activeTab === "industries"
+      ? industriesQuery.isLoading
+      : channelsQuery.isLoading;
+
+  // 2. Mutations
+  const addMutation = useMutation({
+    mutationFn: ({ name, color }) => {
+      if (activeTab === "cities") return createCity(name, color, orgId);
+      if (activeTab === "industries") return creatIndustry(name, color, orgId);
+      return createChannel(name, color, orgId);
+    },
     onSuccess: (result) => {
       if (result?.success) {
-        queryClient.invalidateQueries({ queryKey: ["channels", orgId] });
+        queryClient.invalidateQueries({ queryKey: [activeTab, orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
         setNewName("");
         setNewColor("#2563eb");
         setAddError("");
         setIsAdding(false);
       } else {
-        setAddError(result?.message || "Could not save channel, please try again.");
+        setAddError(result?.message || "Could not save item, please try again.");
       }
-    },
-    onError: (error) => {
-      setAddError(error.message || "Something went wrong.");
     },
   });
 
-  // 3. Update Channel Mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, name, color }) => updateChannel(id, name, color, orgId),
+    mutationFn: ({ id, name, color }) => {
+      if (activeTab === "cities") return updateCity(id, name, color, orgId);
+      if (activeTab === "industries") return updateIndustry(id, name, color, orgId);
+      return updateChannel(id, name, color, orgId);
+    },
     onSuccess: (result) => {
       if (result?.success) {
-        queryClient.invalidateQueries({ queryKey: ["channels", orgId] });
+        queryClient.invalidateQueries({ queryKey: [activeTab, orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
         setEditingId(null);
         setEditingName("");
         setEditingColor("");
       } else {
-        alert(result?.message || "Failed to update channel.");
+        alert(result?.message || "Failed to update item.");
       }
     },
   });
 
-  // 4. Delete Channel Mutation
   const deleteMutation = useMutation({
-    mutationFn: (id) => deleteChannel(id, orgId),
+    mutationFn: (id) => {
+      if (activeTab === "cities") return deleteCity(id, orgId);
+      if (activeTab === "industries") return deleteIndustry(id, orgId);
+      return deleteChannel(id, orgId);
+    },
     onSuccess: (result) => {
       if (result?.success) {
-        queryClient.invalidateQueries({ queryKey: ["channels", orgId] });
+        queryClient.invalidateQueries({ queryKey: [activeTab, orgId] });
+        queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
         setDeletingItem(null);
         setDeleteError("");
       } else {
-        setDeleteError(
-          "Cannot delete this channel because it is linked to existing records."
-        );
+        setDeleteError("Cannot delete this item because it is linked to existing records.");
       }
     },
   });
 
   const loading =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
+    addMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
-  const handleAddChannel = (e) => {
+  // Handlers
+  const handleAddItem = (e) => {
     e.preventDefault();
-
     if (!newName.trim()) {
-      setAddError("Channel name is required.");
+      setAddError("Name is required.");
       return;
     }
-
-    const isDuplicate = channels.some(
+    const isDuplicate = currentData.some(
       (item) => item.name.toLowerCase() === newName.trim().toLowerCase()
     );
-
     if (isDuplicate) {
-      setAddError("A channel with this name already exists.");
+      setAddError("An item with this name already exists.");
       return;
     }
-
-    createMutation.mutate({ name: newName.trim(), color: newColor });
+    addMutation.mutate({ name: newName.trim(), color: newColor });
   };
 
   const handleSaveEdit = (id) => {
     if (!editingName.trim()) return;
-
-    const isDuplicate = channels.some(
+    const isDuplicate = currentData.some(
       (item) =>
         item.id !== id &&
         item.name.toLowerCase() === editingName.trim().toLowerCase()
     );
-
     if (isDuplicate) {
-      alert("A channel with this name already exists.");
+      alert("An item with this name already exists.");
       return;
     }
-
-    updateMutation.mutate({
-      id,
-      name: editingName.trim(),
-      color: editingColor,
-    });
+    updateMutation.mutate({ id, name: editingName.trim(), color: editingColor });
   };
 
   const confirmDelete = () => {
@@ -164,9 +230,17 @@ export default function ChannelsPage({ params }) {
     deleteMutation.mutate(deletingItem.id);
   };
 
-  const filteredChannels = channels.filter((item) =>
+  const filteredData = currentData.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const tabConfig = {
+    cities: { title: "Cities", icon: MapPin, singular: "City" },
+    industries: { title: "Industries", icon: Building2, singular: "Industry" },
+    channels: { title: "Channels", icon: Radio, singular: "Channel" },
+  };
+
+  const CurrentIcon = tabConfig[activeTab].icon;
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-10 flex justify-center">
@@ -175,36 +249,58 @@ export default function ChannelsPage({ params }) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm">
           <div>
             <h1 className="text-2xl font-extrabold text-zinc-900 tracking-tight flex items-center gap-2.5">
-              <Radio className="w-7 h-7 text-blue-600" />
-              Channels Management
+              <Database className="w-7 h-7 text-blue-600" />
+              Reference Data
             </h1>
             <p className="text-zinc-500 text-xs mt-1 font-medium">
-              Manage and organize the communication channels available in your system.
+              Manage system lookups including cities, industries, and communication channels.
             </p>
           </div>
 
           {!isAdding && (
             <button
               type="button"
-              disabled={loading || isFetchingChannels}
+              disabled={loading || isFetching}
               onClick={() => setIsAdding(true)}
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md cursor-pointer shrink-0 disabled:opacity-50"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Channel</span>
+              <span>Add {tabConfig[activeTab].singular}</span>
             </button>
           )}
+        </div>
+
+        {/* Navigation Tabs */}
+       <div className="flex items-center gap-1 sm:gap-2 bg-zinc-200/60 p-1.5 rounded-2xl border border-zinc-200/80 overflow-x-auto">
+          {Object.keys(tabConfig).map((tabKey) => {
+            const Icon = tabConfig[tabKey].icon;
+            const isActive = activeTab === tabKey;
+            return (
+              <button
+                key={tabKey}
+                onClick={() => handleTabChange(tabKey)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/50"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">{tabConfig[tabKey].title}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Add Form */}
         {isAdding && (
           <form
-            onSubmit={handleAddChannel}
+            onSubmit={handleAddItem}
             className="bg-white border border-blue-200 p-6 rounded-2xl shadow-md flex flex-col gap-5 animate-in fade-in slide-in-from-top-2 duration-200"
           >
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <span className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Plus className="w-4 h-4 text-blue-600" /> New Channel
+                <Plus className="w-4 h-4 text-blue-600" /> New {tabConfig[activeTab].singular}
               </span>
               <button
                 type="button"
@@ -223,7 +319,7 @@ export default function ChannelsPage({ params }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-zinc-700">
-                  Channel Name
+                  {tabConfig[activeTab].singular} Name
                 </label>
                 <input
                   type="text"
@@ -233,7 +329,7 @@ export default function ChannelsPage({ params }) {
                     if (addError) setAddError("");
                   }}
                   disabled={loading}
-                  placeholder="e.g. WhatsApp, Email, Telegram..."
+                  placeholder={`Enter ${tabConfig[activeTab].singular.toLowerCase()} name...`}
                   autoFocus
                   className={`bg-zinc-50 border text-zinc-900 rounded-xl px-4 py-2.5 text-sm outline-none w-full focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                     addError ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"
@@ -283,9 +379,7 @@ export default function ChannelsPage({ params }) {
             </div>
 
             {addError && (
-              <span className="text-rose-500 text-xs font-medium">
-                {addError}
-              </span>
+              <span className="text-rose-500 text-xs font-medium">{addError}</span>
             )}
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
@@ -313,37 +407,39 @@ export default function ChannelsPage({ params }) {
                 ) : (
                   <Check className="w-4 h-4" />
                 )}
-                <span>{loading ? "Saving..." : "Save Channel"}</span>
+                <span>
+                  {loading ? "Saving..." : `Save ${tabConfig[activeTab].singular}`}
+                </span>
               </button>
             </div>
           </form>
         )}
 
-        {/* Search Input */}
-        {channels.length > 0 && (
+        {/* Search */}
+        {currentData.length > 0 && (
           <div className="relative w-full">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search channels..."
+              placeholder={`Search ${tabConfig[activeTab].title.toLowerCase()}...`}
               className="w-full bg-white border border-zinc-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
             />
           </div>
         )}
 
-        {/* Channels List */}
+        {/* List Items */}
         <div className="flex flex-col gap-3">
-          {isFetchingChannels ? (
+          {isFetching ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-zinc-200/80 flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               <p className="text-zinc-500 text-sm font-medium">
-                Loading channels...
+                Loading {tabConfig[activeTab].title.toLowerCase()}...
               </p>
             </div>
           ) : (
-            filteredChannels.map((item) => (
+            filteredData.map((item) => (
               <div
                 key={item.id}
                 className="bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm hover:shadow transition-all"
@@ -469,21 +565,21 @@ export default function ChannelsPage({ params }) {
             ))
           )}
 
-          {!isFetchingChannels && filteredChannels.length === 0 && (
+          {!isFetching && filteredData.length === 0 && (
             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-zinc-200 flex flex-col items-center justify-center gap-2">
-              <Radio className="w-10 h-10 text-zinc-300" />
+              <CurrentIcon className="w-10 h-10 text-zinc-300" />
               <p className="text-zinc-500 text-sm font-semibold">
-                No channels found.
+                No {tabConfig[activeTab].title.toLowerCase()} found.
               </p>
               <p className="text-zinc-400 text-xs">
-                Try adding a new channel or clearing the search filter.
+                Try adding a new {tabConfig[activeTab].singular.toLowerCase()} or clearing the search filter.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {deletingItem && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 border border-zinc-100 shadow-xl flex flex-col gap-4 animate-in zoom-in-95 duration-200">
@@ -493,7 +589,7 @@ export default function ChannelsPage({ params }) {
               </div>
               <div>
                 <h3 className="font-bold text-zinc-900 text-base">
-                  Delete Channel
+                  Delete {tabConfig[activeTab].singular}
                 </h3>
                 <p className="text-xs text-zinc-500 mt-0.5">
                   Are you sure you want to delete{" "}
