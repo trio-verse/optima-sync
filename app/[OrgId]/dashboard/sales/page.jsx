@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use, useCallback, useMemo } from "react";
 import {
   Link2,
   Pencil,
@@ -14,7 +14,9 @@ import {
   Filter,
   Megaphone,
   DollarSign,
+  Plus,
 } from "lucide-react";
+import Link from "next/link";
 import {
   getAllConnections,
   deleteConnection,
@@ -47,9 +49,9 @@ const STAGES = {
     label: "Won",
     color: "bg-green-100 text-green-700 border-green-200",
   },
-  closed: { 
-    label: "Closed", 
-    color: "bg-red-100 text-red-700 border-red-200" 
+  closed: {
+    label: "Closed",
+    color: "bg-red-100 text-red-700 border-red-200",
   },
 };
 
@@ -77,7 +79,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   const fetchAllConnectionsData = useCallback(async () => {
     setLoading(true);
     const res = await getAllConnections(orgId);
-    console.log("=== Connections Data in Page ===", res?.data);
     if (res?.success) {
       setConnections(res.data || []);
     }
@@ -89,9 +90,23 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     fetchAllConnectionsData();
   }, [fetchAllConnectionsData]);
 
+  /* ── استخراج قائمة العملاء لاستخدامها في الـ Modal ── */
+  const clientsList = useMemo(() => {
+    const map = new Map();
+    connections.forEach((conn) => {
+      const client = conn.client;
+      if (client?.id && !map.has(client.id)) {
+        map.set(client.id, client);
+      }
+    });
+    return Array.from(map.values());
+  }, [connections]);
+
   /* ── Update Stage Directly ── */
   const handleStageChange = async (conn, newStage) => {
-    const rawCurrentStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
+    const rawCurrentStage = conn.stage
+      ? String(conn.stage).toLowerCase()
+      : "lead";
     if (rawCurrentStage === newStage) return;
 
     setUpdatingStageId(conn.id);
@@ -100,7 +115,10 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     const isWon = newStage === "win" || newStage === "won";
     const payload = {
       stage: newStage,
-      ...(isWon && { dealValue: conn.product?.price || conn.product?.value || conn.deal_value }),
+      ...(isWon && {
+        dealValue:
+          conn.product?.price || conn.product?.value || conn.deal_value,
+      }),
     };
 
     const res = await updateConnectionStage(conn.id, payload, orgId, clientId);
@@ -112,31 +130,43 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
             ? {
                 ...c,
                 stage: newStage,
-                ...(res.data?.deal_value && { deal_value: res.data.deal_value }),
+                ...(res.data?.deal_value && {
+                  deal_value: res.data.deal_value,
+                }),
               }
-            : c
-        )
+            : c,
+        ),
       );
       setToast({ type: "success", message: "Stage updated successfully!" });
     } else {
-      setToast({ type: "error", message: res?.message || "Failed to update stage" });
+      setToast({
+        type: "error",
+        message: res?.message || "Failed to update stage",
+      });
     }
 
     setUpdatingStageId(null);
     setTimeout(() => setToast(null), 3000);
   };
 
-  /* ── Success Handler ── */
-  const handleSuccess = (updatedConnection) => {
-    setToast({ type: "success", message: "Connection updated successfully!" });
+  /* ── Success Handler (إنشاء/تعديل) ── */
+  const handleSuccess = (savedConnection) => {
+    setToast({
+      type: "success",
+      message: editingConnection
+        ? "Connection updated successfully!"
+        : "Connection created successfully!",
+    });
     setTimeout(() => setToast(null), 3000);
 
-    setConnections((prev) =>
-      prev.map((c) =>
-        c.id === updatedConnection?.id ? { ...c, ...updatedConnection } : c
-      )
-    );
+    fetchAllConnectionsData();
+    setIsModalOpen(false);
     setEditingConnection(null);
+  };
+
+  const handleCreateNew = () => {
+    setEditingConnection(null);
+    setIsModalOpen(true);
   };
 
   const handleEdit = (conn) => {
@@ -150,7 +180,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     const res = await deleteConnection(
       conn.id,
       orgId,
-      conn.client_id || conn.client?.id
+      conn.client_id || conn.client?.id,
     );
     if (res?.success) {
       setConnections((prev) => prev.filter((c) => c.id !== conn.id));
@@ -191,22 +221,34 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       )}
 
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-xl border border-orange-100">
-            <Link2 className="w-6 h-6" />
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0">
+        {/* Left Info Section */}
+        <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg sm:text-xl border border-slate-200/60 shrink-0">
+            <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
+
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate tracking-tight">
               All Clients Connections Log
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Manage and track all interactions and stages across all clients in one place
+            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2 sm:line-clamp-none leading-relaxed">
+              Manage and track all interactions and stages across all clients in
+              one place
             </p>
           </div>
         </div>
-      </div>
 
+        {/* Add Connection Button */}
+        <button
+          type="button"
+          onClick={handleCreateNew}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/15 transition-all active:scale-95 shrink-0 cursor-pointer"
+        >
+          <Plus className="w-4 h-4 shrink-0" />
+          <span>Add Connection</span>
+        </button>
+      </div>
       {/* Filters & Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center gap-4">
         {/* Search Input */}
@@ -222,7 +264,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
         </div>
 
         {/* Stage Filter Select */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full xs:max-w-[120px] sm:max-w-xs">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
           <select
             value={selectedStage}
@@ -264,9 +306,12 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       ) : (
         <div className="flex flex-col gap-3">
           {filteredConnections.map((conn) => {
-            const rawStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
+            const rawStage = conn.stage
+              ? String(conn.stage).toLowerCase()
+              : "lead";
             const stageInfo = STAGES[rawStage] || STAGES.lead;
-            const clientName = conn.client?.name || "Unknown Client";
+            const client = conn.client;
+            const clientName = client?.name || "Unknown Client";
             const isWon = rawStage === "win" || rawStage === "won";
 
             return (
@@ -277,25 +322,43 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                 <div className="flex flex-col gap-2 flex-1">
                   {/* Top Bar: Client Name, Dynamic Stage Dropdown & Initiator */}
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-bold text-slate-900 text-base bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
-                      {clientName}
-                    </span>
+                    {client?.id ? (
+                      <Link
+                        href={`/${orgId}/dashboard/clients/${client.id}`}
+                        title="View Client Details"
+                        className="text-gray-900 hover:text-blue-600 hover:underline transition-colors inline-block"
+                      >
+                        <span className="font-bold text-slate-900 text-base bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+                          {clientName}
+                        </span>
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-slate-900 text-base bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+                        {clientName}
+                      </span>
+                    )}
 
-                    {/* Stage Selector Dropdown */}
-                    <div className="relative flex items-center">
+                    {/* Stage Selector Dropdown Container */}
+                    <div className="relative flex items-center shrink-0 max-w-[100px] xs:max-w-[120px] sm:max-w-xs">
                       {updatingStageId === conn.id ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          <span>Updating...</span>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] sm:text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap w-full justify-center">
+                          <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                          <span className="truncate">Updating...</span>
                         </div>
                       ) : (
                         <select
                           value={rawStage}
-                          onChange={(e) => handleStageChange(conn, e.target.value)}
-                          className={`cursor-pointer px-2.5 py-1 rounded-lg text-xs font-bold border outline-none transition-all ${stageInfo.color}`}
+                          onChange={(e) =>
+                            handleStageChange(conn, e.target.value)
+                          }
+                          className={`w-full cursor-pointer px-1.5 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold border outline-none transition-all block truncate ${stageInfo.color}`}
                         >
                           {Object.entries(STAGES).map(([key, { label }]) => (
-                            <option key={key} value={key} className="bg-white text-slate-800 font-medium">
+                            <option
+                              key={key}
+                              value={key}
+                              className="bg-white text-slate-800 font-medium text-xs"
+                            >
                               {label}
                             </option>
                           ))}
@@ -400,10 +463,12 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
         </div>
       )}
 
-      {/* Edit Modal (reusing ConnectionModal) */}
-      {editingConnection && (
+      {/* Modal Connection Form */}
+      {isModalOpen && (
         <ConnectionModal
-          clientId={editingConnection.client_id || editingConnection.client?.id}
+          clientId={
+            editingConnection?.client_id || editingConnection?.client?.id
+          }
           orgId={orgId}
           isOpen={isModalOpen}
           onClose={() => {

@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
 import { getClients } from "@/actions/clientActions";
 import { useClientLookups } from "@/hooks/useClientLookups";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
 
 export default function ClientsListPage({ params }) {
   const resolvedParams = params ? use(params) : null;
@@ -22,10 +23,11 @@ export default function ClientsListPage({ params }) {
     type: "",
     page: 1,
   });
-
+  const { ref, inView } = useInView({ threshold: 0.2 });
   useEffect(() => {
     const timer = setTimeout(() => {
-      const hasSearchText = searchName.trim().length > 0 || searchContact.trim().length > 0;
+      const hasSearchText =
+        searchName.trim().length > 0 || searchContact.trim().length > 0;
       setFilters((prev) => ({
         ...prev,
         searchName: searchName,
@@ -38,27 +40,58 @@ export default function ClientsListPage({ params }) {
     return () => clearTimeout(timer);
   }, [searchName, searchContact]);
 
-  const { data: clientsData, isLoading: loading } = useQuery({
-    queryKey: ["clients", orgId, filters],
-    queryFn: () => getClients(filters, orgId).then((res) => res),
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loading,
+  } = useInfiniteQuery({
+    queryKey: ["clients-infinite", orgId, filters],
+    queryFn: ({ pageParam = 1 }) =>
+      getClients({ ...filters, page: pageParam, perPage: 15 }, orgId),
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage?.meta || {};
+      const currentPage = meta.current_page || 1;
+      const lastPageNum = meta.last_page || 1;
+      return currentPage < lastPageNum ? currentPage + 1 : undefined;
+    },
     enabled: !!orgId,
   });
 
-  const clients = clientsData?.data || [];
-  const meta = clientsData?.meta || {};
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const clients = data?.pages?.flatMap((page) => page?.data || []) || [];
+  const totalClients = data?.pages?.[0]?.meta?.total ?? clients.length;
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value, page: 1 }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 w-full max-w-7xl mx-auto" dir="ltr">
+    <div
+      className="p-4 sm:p-6 space-y-4 sm:space-y-6 w-full max-w-7xl mx-auto"
+      dir="ltr"
+    >
       {/* Header & Add Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Client Management</h1>
-          <p className="text-xs text-gray-500 mt-0.5 sm:hidden">Manage and filter your client list</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+              Client Management
+            </h1>
+            <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              {loading ? "..." : `${totalClients} Clients`}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-0.5 sm:hidden">
+            Manage and filter your client list
+          </p>
         </div>
         <Link
           href={`/${orgId}/dashboard/clients/create`}
@@ -143,7 +176,6 @@ export default function ClientsListPage({ params }) {
                   <th className="p-3.5 whitespace-nowrap">Type</th>
                   <th className="p-3.5 whitespace-nowrap">City</th>
                   <th className="p-3.5 whitespace-nowrap">Contact</th>
-                  <th className="p-3.5 text-right pr-5 whitespace-nowrap">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -154,7 +186,13 @@ export default function ClientsListPage({ params }) {
                       className="hover:bg-gray-50/80 transition-colors"
                     >
                       <td className="p-3.5 pl-5 font-semibold text-gray-900 whitespace-nowrap">
-                        {client.name}
+                        <Link
+                          href={`/${orgId}/dashboard/clients/${client.id}`}
+                          title="View Client Details"
+                          className="text-gray-900 hover:text-blue-600 hover:underline transition-colors inline-block"
+                        >
+                          {client.name}
+                        </Link>
                       </td>
 
                       <td className="p-3.5 text-gray-600 whitespace-nowrap">
@@ -170,39 +208,11 @@ export default function ClientsListPage({ params }) {
                       <td className="p-3.5 text-gray-600 whitespace-nowrap">
                         {client.contact_info?.phone || client.phone || "-"}
                       </td>
-
-                      <td className="p-3.5 text-right pr-5 whitespace-nowrap">
-                        <Link
-                          href={`/${orgId}/dashboard/clients/${client.id}`}
-                          title="View Client Details"
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="w-4 h-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                        </Link>
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center p-8 text-gray-500">
+                    <td colSpan="4" className="text-center p-8 text-gray-500">
                       No clients match the search criteria.
                     </td>
                   </tr>
@@ -210,6 +220,19 @@ export default function ClientsListPage({ params }) {
               </tbody>
             </table>
           </div>
+          {hasNextPage && (
+            <div ref={ref} className="p-4 text-center">
+              {isFetchingNextPage ? (
+                <span className="text-sm text-gray-500">
+                  Loading more clients...
+                </span>
+              ) : (
+                <span className="text-sm text-gray-400">
+                  Scroll down to load more
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

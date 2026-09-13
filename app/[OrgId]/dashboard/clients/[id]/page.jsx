@@ -22,6 +22,7 @@ import {
   MessageSquare,
   FileText,
   IdCard,
+  ExternalLink,
 } from "lucide-react";
 import {
   getStakeholders,
@@ -235,6 +236,8 @@ export default function ClientProfilePage({ params: paramsPromise }) {
   const industryName = clientData.industry?.name || "-";
   const phone = clientData.contact_info?.phone || clientData.phone || "-";
   const email = clientData.contact_info?.email || clientData.email || "-";
+  const website = clientData.contact_info?.website || clientData.website || "-";
+
   const whatsapp =
     clientData.contact_info?.whatsapp || clientData.whatsapp || "-";
   const fullAddress =
@@ -556,6 +559,24 @@ export default function ClientProfilePage({ params: paramsPromise }) {
                     <span className="font-medium text-gray-800">{email}</span>
                   </div>
                 </div>
+                <a
+                  href={
+                    website?.startsWith("http") ? website : `https://${website}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-gray-600 hover:opacity-80 transition-opacity cursor-pointer group"
+                >
+                  <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500 shrink-0 transition-colors" />
+                  <div>
+                    <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">
+                      Website
+                    </span>
+                    <span className="font-medium text-gray-800 group-hover:text-blue-600 group-hover:underline transition-colors">
+                      {website}
+                    </span>
+                  </div>
+                </a>
               </div>
             </div>
 
