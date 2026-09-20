@@ -8,7 +8,6 @@ import OverviewTab from "./OverviewTab";
 import VersionsTab from "./VersionsTab";
 import FeaturesTab from "./FeaturesTab";
 import ExpensesTab from "./ExpensesTab";
-
 import MeetingsTab from "./MeetingsTab";
 
 
