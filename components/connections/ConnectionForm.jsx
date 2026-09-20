@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   X,
   Check,
@@ -17,12 +18,8 @@ import {
 import {
   createConnection,
   updateConnection,
-  updateConnectionStage,
 } from "@/actions/connectionActions";
-import { getProducts } from "@/actions/services/productsService";
-import { getChannels } from "@/actions/services/channelService";
-import { getMembers } from "@/actions/services/membersAction";
-import { getCampaigns } from "@/actions/campaigns";
+import { useConnectionSelects } from "@/hooks/useConnectionSelects"; // قم بتعديل مسار الهوك حسب مشروعك
 
 export default function ConnectionModal({
   clientId,
@@ -32,15 +29,20 @@ export default function ConnectionModal({
   onSuccess,
   editingConnection = null,
 }) {
-  const [products, setProducts] = useState([]);
-  const [channels, setChannels] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
-  const [loadingLists, setLoadingLists] = useState(true);
+  const queryClient = useQueryClient();
+
+  /* ── 1. جلب البيانات باستخدام الهوك المخصص ── */
+  const {
+    products,
+    channels,
+    members,
+    campaigns,
+    isLoading: loadingLists,
+  } = useConnectionSelects(orgId, isOpen);
 
   const [formData, setFormData] = useState({
     productId: "",
-    stage: "lead", // قيمة افتراضية للباك إند عند الإنشاء
+    stage: "lead",
     channelId: "",
     assigneeId: "",
     campaignId: "",
@@ -49,49 +51,77 @@ export default function ConnectionModal({
   });
 
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
 
   const isEditing = !!editingConnection;
 
-  /* ── Fetch Products, Channels, Members & Campaigns ── */
+  // لمعالجة أخطاء الباك إند وتعيينها للحقول
+  const handleBackendErrors = (result) => {
+    if (result?.errors) {
+      const map = {
+        product_id: "productId",
+        channel_id: "channelId",
+        campaign_id: "campaignId",
+        assignee_id: "assigneeId",
+        initiated_by: "initiatedBy",
+        deal_value: "dealValue",
+      };
+      const be = {};
+      Object.entries(result.errors).forEach(([k, v]) => {
+        be[map[k] || k] = Array.isArray(v) ? v[0] : v;
+      });
+      setErrors(be);
+    } else {
+      setGlobalError(result?.message || "An error occurred while saving");
+    }
+  };
+
+  /* ── 2. Mutation لعملية الحفظ/التعديل ── */
+  const submitMutation = useMutation({
+    mutationFn: async (data) => {
+      let result;
+      if (isEditing) {
+        result = await updateConnection(
+          editingConnection.id,
+          data,
+          orgId,
+          clientId
+        );
+      } else {
+        result = await createConnection(clientId, data, orgId);
+      }
+      return result;
+    },
+    onSuccess: (result) => {
+      if (result?.success) {
+        queryClient.invalidateQueries({ queryKey: ["connections"] });
+        onSuccess?.(result.data);
+        onClose();
+      } else {
+        handleBackendErrors(result);
+      }
+    },
+    onError: (err) => {
+      if (err?.errors) {
+        handleBackendErrors(err);
+      } else {
+        setGlobalError(
+          err?.message || "Unable to connect to the server. Please try again."
+        );
+      }
+    },
+  });
+
+  /* ── تعبئة النموذج عند فتح المودال أو التعديل ── */
   useEffect(() => {
     if (!isOpen) return;
-
-    if (!orgId) {
-      console.error("orgId is missing in ConnectionModal");
-      return;
-    }
-
-    async function fetchLists() {
-      setLoadingLists(true);
-      try {
-        const [prodRes, chanRes, memRes, campRes] = await Promise.all([
-          getProducts(orgId),
-          getChannels(orgId),
-          getMembers(orgId),
-          getCampaigns(orgId),
-        ]);
-
-        if (prodRes?.success) setProducts(prodRes.data || []);
-        if (chanRes?.success) setChannels(chanRes.data || []);
-        if (memRes?.success) setMembers(memRes.data || []);
-        if (campRes?.success) setCampaigns(campRes.data || []);
-      } catch (err) {
-        console.error("Exception loading lists:", err);
-      }finally{
-        setLoadingLists(false);
-      }
-    }
-
-    fetchLists();
 
     if (editingConnection) {
       setFormData({
         productId: String(
           editingConnection.product_id || editingConnection.productId || ""
         ),
-        stage: editingConnection.stage || "lead", // حفظ الحالة القادمة من الباك إند
+        stage: editingConnection.stage || "lead",
         channelId: String(
           editingConnection.channel_id || editingConnection.channelId || ""
         ),
@@ -108,7 +138,7 @@ export default function ConnectionModal({
     } else {
       setFormData({
         productId: "",
-        stage: "lead", // حالة افتراضية للإنشاء الجديد
+        stage: "lead",
         channelId: "",
         assigneeId: "",
         campaignId: "",
@@ -119,14 +149,13 @@ export default function ConnectionModal({
 
     setErrors({});
     setGlobalError("");
-  }, [isOpen, editingConnection, orgId]);
+  }, [isOpen, editingConnection]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
 
-      // تحديث dealValue تلقائياً بناءً على سعر المنتج المختار
       if (name === "productId") {
         const selectedProd = products.find(
           (p) => String(p.id) === String(value)
@@ -147,7 +176,7 @@ export default function ConnectionModal({
     if (globalError) setGlobalError("");
   };
 
-  /* ── Local Validation ── */
+  /* ── التحقق المحلي ── */
   const validate = () => {
     const newErrors = {};
     if (!formData.productId) newErrors.productId = "Product is required";
@@ -156,61 +185,15 @@ export default function ConnectionModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-
-    setLoading(true);
     setGlobalError("");
-
-    try {
-      let result;
-
-      if (isEditing) {
-        result = await updateConnection(
-          editingConnection.id,
-          formData,
-          orgId,
-          clientId
-        );
-      } else {
-        result = await createConnection(clientId, formData, orgId);
-      }
-
-      if (result?.success) {
-        onSuccess?.(result.data);
-        onClose();
-      } else {
-        if (result?.errors) {
-          const map = {
-            product_id: "productId",
-            channel_id: "channelId",
-            campaign_id: "campaignId",
-            assignee_id: "assigneeId",
-            initiated_by: "initiatedBy",
-            deal_value: "dealValue",
-          };
-          const be = {};
-          Object.entries(result.errors).forEach(([k, v]) => {
-            be[map[k] || k] = Array.isArray(v) ? v[0] : v;
-          });
-          setErrors(be);
-        } else {
-          setGlobalError(result?.message || "An error occurred while saving");
-        }
-      }
-    } catch (err) {
-      setGlobalError(
-        err?.message || "Unable to connect to the server. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
+    submitMutation.mutate(formData);
   };
 
   if (!isOpen) return null;
 
-  // التحقق من حالة الفوز لإظهار حقل deal_value
   const isWonStage =
     String(formData.stage).toLowerCase() === "win" ||
     String(formData.stage).toLowerCase() === "won";
@@ -279,7 +262,7 @@ export default function ConnectionModal({
             )}
           </div>
 
-          {/* Deal Value (يظهر فقط في حال كانت الحالة win/won ولا يمكن التعديل عليه) */}
+          {/* Deal Value */}
           {isWonStage && (
             <div className="flex flex-col gap-1.5 animate-in fade-in duration-150">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -413,16 +396,16 @@ export default function ConnectionModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitMutation.isPending}
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all disabled:opacity-50"
             >
-              {loading ? (
+              {submitMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Check className="w-4 h-4 stroke-[3]" />
               )}
               <span>
-                {loading
+                {submitMutation.isPending
                   ? "Saving..."
                   : isEditing
                     ? "Update"

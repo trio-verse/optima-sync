@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use } from "react";
 import {
   Link2,
   Pencil,
@@ -20,37 +20,19 @@ import {
   deleteConnection,
   updateConnectionStage,
 } from "@/actions/connectionActions";
+import { useConnectionSelects } from "@/hooks/useConnectionSelects"; // ✅ استيراد الـ hook بدل getProducts مباشرة
 import ConnectionModal from "@/components/connections/ConnectionForm";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
 
 const STAGES = {
-  lead: {
-    label: "Lead",
-    color: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  conected: {
-    label: "Contacted",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  missing_info: {
-    label: "Missing Info",
-    color: "bg-purple-100 text-purple-700 border-purple-200",
-  },
-  intrested: {
-    label: "Interested",
-    color: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  },
-  not_intrested: {
-    label: "Not Interested",
-    color: "bg-gray-100 text-gray-700 border-gray-200",
-  },
-  win: {
-    label: "Won",
-    color: "bg-green-100 text-green-700 border-green-200",
-  },
-  closed: { 
-    label: "Closed", 
-    color: "bg-red-100 text-red-700 border-red-200" 
-  },
+  lead: { label: "Lead", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  conected: { label: "Contacted", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  missing_info: { label: "Missing Info", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  intrested: { label: "Interested", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  not_intrested: { label: "Not Interested", color: "bg-gray-100 text-gray-700 border-gray-200" },
+  win: { label: "Won", color: "bg-green-100 text-green-700 border-green-200" },
+  closed: { label: "Closed", color: "bg-red-100 text-red-700 border-red-200" },
 };
 
 const INITIATED_LABELS = {
@@ -61,11 +43,18 @@ const INITIATED_LABELS = {
 export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
   const orgId = params.OrgId;
+  const queryClient = useQueryClient();
 
-  const [connections, setConnections] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // 1. حالات الفلترة والبحث
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStage, setSelectedStage] = useState("");
+  const [filters, setFilters] = useState({
+    clientName: "",
+    stage: "",
+    product_id: "",
+  });
+
+  // ✅ جلب المنتجات (مع الكاش) عبر الـ hook المشترك بدل نداء منفصل
+  const { products, loadingProducts } = useConnectionSelects(orgId);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingConnection, setEditingConnection] = useState(null);
@@ -73,21 +62,68 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   const [updatingStageId, setUpdatingStageId] = useState(null);
   const [toast, setToast] = useState(null);
 
-  /* ── Fetch Organization Connections ── */
-  const fetchAllConnectionsData = useCallback(async () => {
-    setLoading(true);
-    const res = await getAllConnections(orgId);
-    console.log("=== Connections Data in Page ===", res?.data);
-    if (res?.success) {
-      setConnections(res.data || []);
-    }
-    setLoading(false);
-  }, [orgId]);
+  const { ref, inView } = useInView({ threshold: 0.2 });
 
+  // Debounce للبحث - ما بيرسل الريكويست فوراً أثناء الكتابة
   useEffect(() => {
-    if (!orgId) return;
-    fetchAllConnectionsData();
-  }, [fetchAllConnectionsData]);
+    const timer = setTimeout(() => {
+      setFilters((prev) => ({
+        ...prev,
+        clientName: searchTerm.trim(),
+      }));
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // 2. إعداد useInfiniteQuery مع أسماء الباراميترز المتوافقة مع الباك إند
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loading,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["connections-infinite", orgId, filters],
+    queryFn: ({ pageParam = 1 }) =>
+      getAllConnections(orgId, {
+        clientName: filters.clientName,
+        stage: filters.stage || "all",
+        product_id: filters.product_id || "",
+        page: pageParam,
+        per_page: 15,
+        sort: "created_at",
+        order: "desc",
+      }),
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage?.meta || {};
+      const currentPage = meta.current_page || 1;
+      const lastPageNum = meta.last_page || 1;
+      return currentPage < lastPageNum ? currentPage + 1 : undefined;
+    },
+    enabled: !!orgId,
+  });
+
+  // 3. مراقبة الـ Scroll لجلب الصفحة التالية تلقائياً
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // تجميع البيانات من جميع الصفحات
+  const connections = data?.pages?.flatMap((page) => page?.data || []) || [];
+
+  const handleStageFilterChange = (e) => {
+    const value = e.target.value;
+    setFilters((prev) => ({ ...prev, stage: value }));
+  };
+
+  const handleProductFilterChange = (e) => {
+    const value = e.target.value;
+    setFilters((prev) => ({ ...prev, product_id: value }));
+  };
 
   /* ── Update Stage Directly ── */
   const handleStageChange = async (conn, newStage) => {
@@ -106,17 +142,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     const res = await updateConnectionStage(conn.id, payload, orgId, clientId);
 
     if (res?.success) {
-      setConnections((prev) =>
-        prev.map((c) =>
-          c.id === conn.id
-            ? {
-                ...c,
-                stage: newStage,
-                ...(res.data?.deal_value && { deal_value: res.data.deal_value }),
-              }
-            : c
-        )
-      );
+      refetch();
       setToast({ type: "success", message: "Stage updated successfully!" });
     } else {
       setToast({ type: "error", message: res?.message || "Failed to update stage" });
@@ -126,17 +152,12 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  /* ── Success Handler ── */
-  const handleSuccess = (updatedConnection) => {
+  const handleSuccess = () => {
     setToast({ type: "success", message: "Connection updated successfully!" });
     setTimeout(() => setToast(null), 3000);
-
-    setConnections((prev) =>
-      prev.map((c) =>
-        c.id === updatedConnection?.id ? { ...c, ...updatedConnection } : c
-      )
-    );
+    refetch();
     setEditingConnection(null);
+    setIsModalOpen(false);
   };
 
   const handleEdit = (conn) => {
@@ -153,27 +174,14 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       conn.client_id || conn.client?.id
     );
     if (res?.success) {
-      setConnections((prev) => prev.filter((c) => c.id !== conn.id));
       setToast({ type: "success", message: "Deleted successfully" });
+      refetch();
     } else {
       setToast({ type: "error", message: res?.message || "Delete failed" });
     }
     setDeletingId(null);
     setTimeout(() => setToast(null), 3000);
   };
-
-  /* ── Data Filtering ── */
-  const filteredConnections = connections.filter((conn) => {
-    const clientName = conn.client?.name || "";
-    const productName = conn.product?.name || "";
-    const matchesSearch =
-      clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      productName.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStage = selectedStage ? conn.stage === selectedStage : true;
-
-    return matchesSearch && matchesStage;
-  });
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6" dir="ltr">
@@ -209,39 +217,55 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
 
       {/* Filters & Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center gap-4">
-        {/* Search Input */}
+        {/* Search Input - يبحث باسم الكلاينت فقط */}
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by client or product name..."
+            placeholder="Search by client name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white transition-all"
           />
         </div>
 
+        {/* Product Filter Select */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Package className="w-4 h-4 text-slate-400 shrink-0" />
+          <select
+            value={filters.product_id}
+            onChange={handleProductFilterChange}
+            disabled={loadingProducts}
+            className="w-full sm:w-48 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-700 cursor-pointer"
+          >
+            <option value="">All Products</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Stage Filter Select */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
           <select
-            value={selectedStage}
-            onChange={(e) => setSelectedStage(e.target.value)}
-            className="w-full sm:w-48 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-700"
+            value={filters.stage}
+            onChange={handleStageFilterChange}
+            className="w-full sm:w-48 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-700 cursor-pointer"
           >
             <option value="">All Stages</option>
-            {Object.entries(STAGES)
-              .slice(0, 7)
-              .map(([key, { label }]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
+            {Object.entries(STAGES).map(([key, { label }]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
-      {/* Connections List */}
+      {/* Connections List Area */}
       {loading ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
@@ -249,7 +273,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
             Loading connections log...
           </p>
         </div>
-      ) : filteredConnections.length === 0 ? (
+      ) : connections.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
             <Link2 className="w-6 h-6" />
@@ -263,7 +287,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {filteredConnections.map((conn) => {
+          {connections.map((conn) => {
             const rawStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
             const stageInfo = STAGES[rawStage] || STAGES.lead;
             const clientName = conn.client?.name || "Unknown Client";
@@ -275,13 +299,13 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                 className="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all group"
               >
                 <div className="flex flex-col gap-2 flex-1">
-                  {/* Top Bar: Client Name, Dynamic Stage Dropdown & Initiator */}
+                  {/* Top Bar */}
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-bold text-slate-900 text-base bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
                       {clientName}
                     </span>
 
-                    {/* Stage Selector Dropdown */}
+                    {/* Stage Dropdown */}
                     <div className="relative flex items-center">
                       {updatingStageId === conn.id ? (
                         <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200">
@@ -303,7 +327,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                       )}
                     </div>
 
-                    {/* Deal Value Badge if Stage is Won */}
                     {isWon && (conn.deal_value || conn.product?.price) && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <DollarSign className="w-3.5 h-3.5" />
@@ -314,8 +337,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                     {conn.initiated_by && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200">
                         <ArrowRightLeft className="w-3 h-3" />
-                        {INITIATED_LABELS[conn.initiated_by] ||
-                          conn.initiated_by}
+                        {INITIATED_LABELS[conn.initiated_by] || conn.initiated_by}
                       </span>
                     )}
                   </div>
@@ -372,7 +394,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                   </p>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Actions */}
                 <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleEdit(conn)}
@@ -397,10 +419,26 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
               </div>
             );
           })}
+
+          {/* Infinite Scroll Trigger Indicator */}
+          {hasNextPage && (
+            <div ref={ref} className="p-4 text-center">
+              {isFetchingNextPage ? (
+                <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  <span>Loading more connections...</span>
+                </div>
+              ) : (
+                <span className="text-sm text-slate-400">
+                  Scroll down to load more
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Edit Modal (reusing ConnectionModal) */}
+      {/* Edit Modal */}
       {editingConnection && (
         <ConnectionModal
           clientId={editingConnection.client_id || editingConnection.client?.id}

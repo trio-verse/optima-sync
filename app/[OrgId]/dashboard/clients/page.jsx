@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
 import { getClients } from "@/actions/clientActions";
 import { useClientLookups } from "@/hooks/useClientLookups";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
 
 export default function ClientsListPage({ params }) {
   const resolvedParams = params ? use(params) : null;
@@ -22,10 +23,11 @@ export default function ClientsListPage({ params }) {
     type: "",
     page: 1,
   });
-
+  const { ref, inView } = useInView({ threshold: 0.2 });
   useEffect(() => {
     const timer = setTimeout(() => {
-      const hasSearchText = searchName.trim().length > 0 || searchContact.trim().length > 0;
+      const hasSearchText =
+        searchName.trim().length > 0 || searchContact.trim().length > 0;
       setFilters((prev) => ({
         ...prev,
         searchName: searchName,
@@ -38,27 +40,51 @@ export default function ClientsListPage({ params }) {
     return () => clearTimeout(timer);
   }, [searchName, searchContact]);
 
-  const { data: clientsData, isLoading: loading } = useQuery({
-    queryKey: ["clients", orgId, filters],
-    queryFn: () => getClients(filters, orgId).then((res) => res),
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loading,
+  } = useInfiniteQuery({
+    queryKey: ["clients-infinite", orgId, filters],
+    queryFn: ({ pageParam = 1 }) =>
+      getClients({ ...filters, page: pageParam, perPage: 15 }, orgId),
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage?.meta || {};
+      const currentPage = meta.current_page || 1;
+      const lastPageNum = meta.last_page || 1;
+      return currentPage < lastPageNum ? currentPage + 1 : undefined;
+    },
     enabled: !!orgId,
   });
 
-  const clients = clientsData?.data || [];
-  const meta = clientsData?.meta || {};
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const clients = data?.pages?.flatMap((page) => page?.data || []) || [];
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value, page: 1 }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 w-full max-w-7xl mx-auto" dir="ltr">
+    <div
+      className="p-4 sm:p-6 space-y-4 sm:space-y-6 w-full max-w-7xl mx-auto"
+      dir="ltr"
+    >
       {/* Header & Add Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Client Management</h1>
-          <p className="text-xs text-gray-500 mt-0.5 sm:hidden">Manage and filter your client list</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+            Client Management
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5 sm:hidden">
+            Manage and filter your client list
+          </p>
         </div>
         <Link
           href={`/${orgId}/dashboard/clients/create`}
@@ -143,7 +169,9 @@ export default function ClientsListPage({ params }) {
                   <th className="p-3.5 whitespace-nowrap">Type</th>
                   <th className="p-3.5 whitespace-nowrap">City</th>
                   <th className="p-3.5 whitespace-nowrap">Contact</th>
-                  <th className="p-3.5 text-right pr-5 whitespace-nowrap">Details</th>
+                  <th className="p-3.5 text-right pr-5 whitespace-nowrap">
+                    Details
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -210,6 +238,19 @@ export default function ClientsListPage({ params }) {
               </tbody>
             </table>
           </div>
+          {hasNextPage && (
+            <div ref={ref} className="p-4 text-center">
+              {isFetchingNextPage ? (
+                <span className="text-sm text-gray-500">
+                  Loading more clients...
+                </span>
+              ) : (
+                <span className="text-sm text-gray-400">
+                  Scroll down to load more
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

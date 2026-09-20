@@ -1,4 +1,5 @@
 "use client";
+import { FolderKanban } from "lucide-react";
 
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, use } from "react";
@@ -58,6 +59,8 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("product");
     } else if (pathname.includes("/marketing")) {
       setActiveTab("marketing");
+    } else if (pathname.includes("/projects")) {
+      setActiveTab("projects");
     } else {
       setActiveTab("");
     }
@@ -223,7 +226,25 @@ export default function DashboardLayout({ children, params }) {
                 <Building2 className="w-4 h-4 flex-shrink-0" />
                 {isSidebarExpanded && <span className="hidden lg:inline">Industries</span>}
               </button>
+              
             </Link>
+                
+              <Link href={`${basePath}/projects`}>
+                  <button
+                onClick={() => setActiveTab("projects")}
+                className={`flex items-center ${
+                  isSidebarExpanded ? "justify-center lg:justify-start lg:px-4" : "justify-center px-0"
+                } gap-3 w-full py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
+                  activeTab === "Project-Management"
+                    ? "bg-zinc-900 text-white shadow-sm"
+                    : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
+                }`}
+                title="Project Management"
+              >
+                <FolderKanban className="w-4 h-4 flex-shrink-0" />
+                {isSidebarExpanded && <span className="hidden lg:inline">Project Management</span>}
+              </button>
+              </Link>
 
             <Link href={`${basePath}/cities`}>
               <button

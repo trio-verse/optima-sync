@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api/client";
 
+// connectionActions.js
 export async function getAllConnections(orgId, params = {}) {
   try {
     if (!orgId) {
@@ -14,7 +15,12 @@ export async function getAllConnections(orgId, params = {}) {
     const token = cookieStore.get("token")?.value;
     if (!token) return { success: false, message: "Unauthorized", data: [] };
 
-    const query = new URLSearchParams(params).toString();
+    // تنظيف البارامترات الفارغة قبل تحويلها إلى Query String
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== "" && value !== null && value !== undefined)
+    );
+
+    const query = new URLSearchParams(cleanParams).toString();
     const endpoint = `/connections${query ? `?${query}` : ""}`;
 
     const resdata = await api.get(endpoint, {
@@ -37,7 +43,6 @@ export async function getAllConnections(orgId, params = {}) {
     };
   }
 }
-
 export async function getConnections(clientId, orgId) {
   try {
     if (!clientId || !orgId) {
