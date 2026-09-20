@@ -3,6 +3,7 @@ import { getProducts } from "@/actions/services/productsService";
 import { getChannels } from "@/actions/services/channelService";
 import { getMembers } from "@/actions/services/membersAction";
 import { getCampaigns } from "@/actions/campaigns";
+import { getClients } from "@/actions/clientActions";
 
 export function useConnectionSelects(orgId, enabled = true) {
   const results = useQueries({
@@ -43,10 +44,19 @@ export function useConnectionSelects(orgId, enabled = true) {
         enabled: enabled && !!orgId,
         staleTime: 5 * 60 * 1000,
       },
+      {
+        queryKey: ["clients", orgId],
+        queryFn: async () => {
+          const res = await getClients({}, orgId);
+          return res?.success ? res.data || [] : [];
+        },
+        enabled: enabled && !!orgId,
+        staleTime: 5 * 60 * 1000,
+      },
     ],
   });
 
-  const [productsQuery, channelsQuery, membersQuery, campaignsQuery] = results;
+  const [productsQuery, channelsQuery, membersQuery, campaignsQuery , clientsQuery] = results;
 
   const isLoading = results.some((q) => q.isLoading);
 
@@ -55,10 +65,12 @@ export function useConnectionSelects(orgId, enabled = true) {
     channels: channelsQuery.data || [],
     members: membersQuery.data || [],
     campaigns: campaignsQuery.data || [],
+    clients: clientsQuery.data || [],
     loadingProducts: productsQuery.isLoading,
     loadingChannels: channelsQuery.isLoading,
     loadingMembers: membersQuery.isLoading,
     loadingCampaigns: campaignsQuery.isLoading,
+    loadingClients: clientsQuery.isLoading,
     isLoading,
   };
 }
