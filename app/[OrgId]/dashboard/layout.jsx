@@ -16,6 +16,7 @@ import {
   User,
   LogOut,
   Package,
+  BriefcaseBusiness,
 } from "lucide-react";
 import LogOutButton from "../../../actions/auth";
 
@@ -48,6 +49,8 @@ export default function DashboardLayout({ children, params }) {
       setIsSettingsOpen(true);
     } else if (pathname.includes("/member")) {
       setActiveTab("member");
+    } else if (pathname.includes("/workspace")) {
+      setActiveTab("employees");
     } else if (pathname.includes("/sales")) {
       setActiveTab("sales");
     } else if (pathname.includes("/product")) {
@@ -72,6 +75,7 @@ export default function DashboardLayout({ children, params }) {
     { id: "product", label: "Product", href: `${basePath}/product`, icon: Package },
     { id: "marketing", label: "Marketing", href: `${basePath}/marketing`, icon: Megaphone },
     { id: "clients", label: "Clients", href: `${basePath}/clients`, icon: Users },
+    { id: "employees", label: "Employees", href: `${basePath}/workspace`, icon: BriefcaseBusiness },
     { id: "reference-data", label: "Reference Data", href: `${basePath}/reference-data`, icon: Database },
   ];
 
@@ -81,23 +85,14 @@ export default function DashboardLayout({ children, params }) {
       <aside
         className={`
           relative h-full bg-zinc-100 flex flex-col  items-start justify-between border-r border-zinc-200 shadow-sm z-20 flex-shrink-0
-          transition-all duration-300 ease-in-out
-         
+          transition-all duration-800 ease-in-out 
+         ${isSidebarExpanded? 'w-64':'w-16'}
         `}
       >
         <div className="p-2 flex-1 overflow-y-auto overflow-x-hidden">
           {/* Brand Header & Toggle Button */}
           <div className="flex items-center justify-between  mb-6">
-            {isSidebarExpanded && (
-              <div className="hidden lg:flex items-center gap-2 overflow-hidden">
-                <div className="h-3 w-3 rounded-full bg-blue-600 animate-pulse flex-shrink-0"></div>
-                <h2 className="text-xl font-bold tracking-tight text-zinc-900 truncate">
-                  Optima Sync
-                </h2>
-              </div>
-            )}
-
-            <div className="hidden lg:block mx-auto lg:mx-0">
+             <div className="hidden lg:block mx-auto lg:mx-0">
               <button
                 onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
                 className="text-zinc-500 hover:text-zinc-900 rounded-lg p-2 px-3 hover:bg-zinc-200 transition cursor-pointer flex items-center justify-center"
@@ -107,6 +102,16 @@ export default function DashboardLayout({ children, params }) {
                 {isSidebarExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 " />}
               </button>
             </div>
+            {isSidebarExpanded && (
+              <div className="hidden lg:flex items-center gap-2 overflow-hidden">
+                <div className="h-3 w-3 rounded-full bg-blue-600 animate-pulse flex-shrink-0"></div>
+                <h2 className="text-xl font-bold tracking-tight text-zinc-900 truncate">
+                  Optima Sync
+                </h2>
+              </div>
+            )}
+
+           
           </div>
 
           <nav className={`flex flex-col justify-start transition-all gap-1.5
@@ -129,9 +134,9 @@ export default function DashboardLayout({ children, params }) {
                   title={item.label}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
-                  {isSidebarExpanded && (
-                    <span className="hidden lg:inline lg:ml-3 truncate">{item.label}</span>
-                  )}
+                 
+                    <span className={`lg:ml-3 truncate transition-all duration-300 ease-in
+                       ${isSidebarExpanded ? 'inline':'hidden'}`}>{item.label}</span>
                 </Link>
               );
             })}

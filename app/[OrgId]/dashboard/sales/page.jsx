@@ -90,7 +90,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     fetchAllConnectionsData();
   }, [fetchAllConnectionsData]);
 
-  /* ── استخراج قائمة العملاء لاستخدامها في الـ Modal ── */
   const clientsList = useMemo(() => {
     const map = new Map();
     connections.forEach((conn) => {

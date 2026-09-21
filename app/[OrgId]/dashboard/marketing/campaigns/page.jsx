@@ -6,6 +6,7 @@ export default async function CampaignsPage({ params }) {
   const resolvedParams = await params;
   const orgId = resolvedParams?.OrgId;
   const response = await getEffectiveCampaigns(orgId);
+     console.log("############" , response);
   const campaigns = response.success ? response.data : [];
   if(response.success){
     console.log("hccccccccccc",response.data);
