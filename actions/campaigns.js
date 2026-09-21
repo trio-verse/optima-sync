@@ -102,7 +102,9 @@ export async function createCampaign(formData, orgId) {
     });
     //console.log(resdata);
 
-    revalidatePath(`/${orgId}/dashboard/marketing/campaigns`);
+
+      revalidatePath(`/${orgId}/dashboard/marketing/campaigns`);
+
     return {
       success: true,
       message: resdata?.message || "The campaign created successfully",
@@ -252,50 +254,61 @@ export async function getMarketingAnalytics(orgId) {
   }
 }
 
-export async function getEffectiveCampaigns(orgId) {
+// actions/campaigns.js
+
+export async function getEffectiveCampaigns(orgId, { page = 1, perPage = 15, status = "all", sort = "cpl" } = {}) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
-    if (!token) {
-      return {
-        success: false,
-        message: "Unauthorized",
-        data: [],
-      };
+    if (!token || !orgId) {
+      return { success: false, message: "Unauthorized or missing Org ID", data: [], meta: {} };
     }
 
-    if (!orgId) {
-      return {
-        success: false,
-        message: "Organization ID is missing.",
-        data: [],
-      };
+    const params = new URLSearchParams({
+      page: String(page),
+      per_page: String(perPage),
+    });
+
+    if (status && status !== "all") {
+      params.append("status", status);
+    }
+    if (sort) {
+      params.append("sort", sort); 
     }
 
-    const response = await api.get(
-      "/marketing/analytics/effective-campaigns",
-      {
-        token,
-        headers: { "X-Organization-ID": orgId },
-        cache: "no-store",
-      }
-    );
+    const response = await api.get(`/marketing/analytics/effective-campaigns?${params.toString()}`, {
+      token,
+      headers: { "X-Organization-ID": orgId },
+      cache: "no-store",
+    });
+
+    const rawData = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response?.data?.data)
+      ? response.data.data
+      : Array.isArray(response)
+      ? response
+      : [];
+
+    const metaData = response?.data?.meta || response?.meta || {
+      current_page: page,
+      has_more: rawData.length === perPage,
+    };
 
     return {
       success: true,
-      data: response?.data?.data || response?.data || [],
-      message: response?.data?.message || "Success",
+      data: rawData,
+      meta: metaData,
+      message: "Success",
     };
   } catch (error) {
     console.error("getEffectiveCampaigns Error:", error);
     return {
       success: false,
-      message:
-        error?.data?.message ||
-        error?.message ||
-        "Failed to fetch effective campaigns",
+      message: error?.data?.message || error?.message || "Failed to fetch effective campaigns",
       data: [],
+      meta: {},
     };
   }
 }

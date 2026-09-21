@@ -1,4 +1,5 @@
 "use client";
+import { FolderKanban } from "lucide-react";
 
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, use } from "react";
@@ -57,6 +58,8 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("product");
     } else if (pathname.includes("/marketing")) {
       setActiveTab("marketing");
+    } else if (pathname.includes("/projects")) {
+      setActiveTab("projects");
     } else if (pathname === basePath || pathname === `${basePath}/`) {
       setActiveTab("home");
     } else {
