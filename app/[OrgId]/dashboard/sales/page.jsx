@@ -22,7 +22,7 @@ import {
   deleteConnection,
   updateConnectionStage,
 } from "@/actions/connectionActions";
-import { useConnectionSelects } from "@/hooks/useConnectionSelects"; // ✅ استيراد الـ hook بدل getProducts مباشرة
+import { useConnectionSelects } from "@/hooks/useConnectionSelects";
 import ConnectionModal from "@/components/connections/ConnectionForm";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
@@ -76,7 +76,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     product_id: "",
   });
 
-  // ✅ جلب المنتجات (مع الكاش) عبر الـ hook المشترك بدل نداء منفصل
+  // ✅ جلب المنتجات (مع الكاش) عبر الـ hook المشترك
   const { products, loadingProducts } = useConnectionSelects(orgId);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -87,7 +87,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
 
   const { ref, inView } = useInView({ threshold: 0.2 });
 
-  // Debounce للبحث - ما بيرسل الريكويست فوراً أثناء الكتابة
+  // Debounce للبحث
   useEffect(() => {
     const timer = setTimeout(() => {
       setFilters((prev) => ({
@@ -99,7 +99,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // 2. إعداد useInfiniteQuery مع أسماء الباراميترز المتوافقة مع الباك إند
+  // 2. إعداد useInfiniteQuery
   const {
     data,
     fetchNextPage,
@@ -127,15 +127,9 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     },
     enabled: !!orgId,
   });
-  /* ── Fetch Organization Connections ── */
-  const fetchAllConnectionsData = useCallback(async () => {
-    setLoading(true);
-    const res = await getAllConnections(orgId);
-    if (res?.success) {
-      setConnections(res.data || []);
-    }
-    setLoading(false);
-  }, [orgId]);
+
+  // تجميع البيانات من جميع الصفحات
+  const connections = data?.pages?.flatMap((page) => page?.data || []) || [];
 
   // 3. مراقبة الـ Scroll لجلب الصفحة التالية تلقائياً
   useEffect(() => {
@@ -143,9 +137,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  // تجميع البيانات من جميع الصفحات
-  const connections = data?.pages?.flatMap((page) => page?.data || []) || [];
 
   const handleStageFilterChange = (e) => {
     const value = e.target.value;
@@ -156,18 +147,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     const value = e.target.value;
     setFilters((prev) => ({ ...prev, product_id: value }));
   };
-
-  /* ── استخراج قائمة العملاء لاستخدامها في الـ Modal ── */
-  const clientsList = useMemo(() => {
-    const map = new Map();
-    connections.forEach((conn) => {
-      const client = conn.client;
-      if (client?.id && !map.has(client.id)) {
-        map.set(client.id, client);
-      }
-    });
-    return Array.from(map.values());
-  }, [connections]);
 
   /* ── Update Stage Directly ── */
   const handleStageChange = async (conn, newStage) => {
@@ -192,19 +171,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
 
     if (res?.success) {
       refetch();
-      setConnections((prev) =>
-        prev.map((c) =>
-          c.id === conn.id
-            ? {
-                ...c,
-                stage: newStage,
-                ...(res.data?.deal_value && {
-                  deal_value: res.data.deal_value,
-                }),
-              }
-            : c,
-        ),
-      );
       setToast({ type: "success", message: "Stage updated successfully!" });
     } else {
       setToast({
@@ -218,7 +184,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   };
 
   /* ── Success Handler (إنشاء/تعديل) ── */
-  const handleSuccess = (savedConnection) => {
+  const handleSuccess = () => {
     setToast({
       type: "success",
       message: editingConnection
@@ -227,7 +193,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     });
     setTimeout(() => setToast(null), 3000);
 
-    fetchAllConnectionsData();
+    refetch();
     setIsModalOpen(false);
     setEditingConnection(null);
   };
@@ -265,7 +231,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-5 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 rounded-xl shadow-lg text-sm font-bold animate-in fade-in slide-in-from-top-2 ${
+          className={`fixed top-5 left-1/2 -translate-x-1/2 z-60 px-6 py-3 rounded-xl shadow-lg text-sm font-bold animate-in fade-in slide-in-from-top-2 ${
             toast.type === "success"
               ? "bg-emerald-600 text-white"
               : "bg-red-600 text-white"
@@ -277,7 +243,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
 
       {/* Header */}
       <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0">
-        {/* Left Info Section */}
         <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg sm:text-xl border border-slate-200/60 shrink-0">
             <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -294,7 +259,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
           </div>
         </div>
 
-        {/* Add Connection Button */}
         <button
           type="button"
           onClick={handleCreateNew}
@@ -304,9 +268,9 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
           <span>Add Connection</span>
         </button>
       </div>
+
       {/* Filters & Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center gap-4">
-        {/* Search Input - يبحث باسم الكلاينت فقط */}
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -318,7 +282,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
           />
         </div>
 
-        {/* Product Filter Select */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Package className="w-4 h-4 text-slate-400 shrink-0" />
           <select
@@ -336,8 +299,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
           </select>
         </div>
 
-        {/* Stage Filter Select */}
-        <div className="flex items-center gap-2 w-full xs:max-w-[120px] sm:max-w-xs">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
           <select
             value={filters.stage}
@@ -377,8 +339,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       ) : (
         <div className="flex flex-col gap-3">
           {connections.map((conn) => {
-            const rawStage = conn.stage ? String(conn.stage).toLowerCase() : "lead";
-          {filteredConnections.map((conn) => {
             const rawStage = conn.stage
               ? String(conn.stage).toLowerCase()
               : "lead";
@@ -393,7 +353,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                 className="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all group"
               >
                 <div className="flex flex-col gap-2 flex-1">
-                  {/* Top Bar */}
                   <div className="flex items-center gap-3 flex-wrap">
                     {client?.id ? (
                       <Link
@@ -411,12 +370,11 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                       </span>
                     )}
 
-                    {/* Stage Selector Dropdown Container */}
-                    <div className="relative flex items-center shrink-0 max-w-[100px] xs:max-w-[120px] sm:max-w-xs">
+                    <div className="relative flex items-center shrink-0">
                       {updatingStageId === conn.id ? (
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] sm:text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap w-full justify-center">
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] sm:text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap justify-center">
                           <Loader2 className="w-3 h-3 animate-spin shrink-0" />
-                          <span className="truncate">Updating...</span>
+                          <span>Updating...</span>
                         </div>
                       ) : (
                         <select
@@ -424,7 +382,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                           onChange={(e) =>
                             handleStageChange(conn, e.target.value)
                           }
-                          className={`w-full cursor-pointer px-1.5 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold border outline-none transition-all block truncate ${stageInfo.color}`}
+                          className={`cursor-pointer px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold border outline-none transition-all block ${stageInfo.color}`}
                         >
                           {Object.entries(STAGES).map(([key, { label }]) => (
                             <option
@@ -449,12 +407,12 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                     {conn.initiated_by && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200">
                         <ArrowRightLeft className="w-3 h-3" />
-                        {INITIATED_LABELS[conn.initiated_by] || conn.initiated_by}
+                        {INITIATED_LABELS[conn.initiated_by] ||
+                          conn.initiated_by}
                       </span>
                     )}
                   </div>
 
-                  {/* Details Bar */}
                   <div className="flex items-center gap-4 text-sm text-slate-600 flex-wrap mt-1">
                     {conn.product?.name && (
                       <span className="flex items-center gap-1.5">
@@ -468,7 +426,9 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                       <span className="flex items-center gap-1.5">
                         <Tag className="w-3.5 h-3.5 text-slate-400" />
                         <span
-                          style={{ color: conn.channel?.color || "#2563eb" }}
+                          style={{
+                            color: conn.channel?.color || "#2563eb",
+                          }}
                           className="font-semibold"
                         >
                           {conn.channel.name}
@@ -491,7 +451,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                     )}
                   </div>
 
-                  {/* Date */}
                   <p className="text-xs text-slate-400 mt-1">
                     {conn.created_at
                       ? new Date(conn.created_at).toLocaleDateString("en-US", {
@@ -506,7 +465,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                   </p>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleEdit(conn)}
@@ -550,8 +508,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
         </div>
       )}
 
-      {/* Edit Modal */}
-      {editingConnection && (
       {/* Modal Connection Form */}
       {isModalOpen && (
         <ConnectionModal
