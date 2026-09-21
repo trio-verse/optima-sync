@@ -88,6 +88,7 @@ export default function ReferenceDataPage({ params }) {
     queryKey: ["cities", orgId],
     queryFn: async () => {
       const res = await getcities(orgId);
+    console.log("@@@@@@@@@@@@@@@@@@@@" , res);
       if (res?.success) return res?.data || [];
       throw new Error(res?.message || "Failed to load cities");
     },
@@ -99,6 +100,7 @@ export default function ReferenceDataPage({ params }) {
     queryKey: ["industries", orgId],
     queryFn: async () => {
       const res = await getindustries(orgId);
+       console.log("############" , res);
       if (res?.success) return res?.data || [];
       throw new Error(res?.message || "Failed to load industries");
     },
@@ -110,6 +112,7 @@ export default function ReferenceDataPage({ params }) {
     queryKey: ["channels", orgId],
     queryFn: async () => {
       const res = await getChannels(orgId);
+       console.log("*************" , res);
       if (res?.success) return res?.data || [];
       throw new Error(res?.message || "Failed to load channels");
     },
