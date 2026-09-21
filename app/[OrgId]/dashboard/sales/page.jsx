@@ -68,7 +68,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   const orgId = params.OrgId;
   const queryClient = useQueryClient();
 
-  // 1. حالات الفلترة والبحث
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     clientName: "",
@@ -76,7 +75,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     product_id: "",
   });
 
-  // ✅ جلب المنتجات (مع الكاش) عبر الـ hook المشترك
   const { products, loadingProducts } = useConnectionSelects(orgId);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -99,7 +97,6 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // 2. إعداد useInfiniteQuery
   const {
     data,
     fetchNextPage,
@@ -116,8 +113,8 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
         product_id: filters.product_id || "",
         page: pageParam,
         per_page: 15,
-        sort: "created_at",
-        order: "desc",
+        order: "created_at",
+        sort: "desc",
       }),
     getNextPageParam: (lastPage) => {
       const meta = lastPage?.meta || {};
