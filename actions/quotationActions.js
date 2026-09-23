@@ -3,38 +3,74 @@ import { api } from "@/lib/api/client";
 import { cookies } from "next/headers";
 
 // 1. دالة جلب Preview HTML
-export async function previewQuotation(projectId, orgId) {
+export async function previewQuotation(orgId, projectId, versionId) {
+    if (!versionId) {
+        return { success: false, message: "Version ID is required" };
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    
+
     try {
-        const response = await api.get(`projects/${projectId}/quotation/preview`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "X-Organization-Id": orgId,
+        // نداء الـ Endpoint الجديد مع إرسال رقم المشروع ورقم النسخة
+        const response = await api.get(
+            `projects/${projectId}/versions/${versionId}/quotations/preview`, 
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "X-Organization-Id": orgId,
+                }
             }
-        });
-        return { success: true, html: response.data.html || response.data };
+        );
+
+        // بناءً على شكل استجابة الباك إند، الـ html موجود داخل data.html
+        return { 
+            success: true, 
+            html: response.data.data.html 
+        };
     } catch (error) {
-        return { success: false, message: error?.response?.data?.message || "Failed to preview quotation" };
+        console.error("Preview Quotation Error:", error);
+        return { 
+            success: false, 
+            message: error?.response?.data?.message || "Failed to fetch quotation preview" 
+        };
     }
 }
 
 // 2. دالة توليد PDF (والتي ستقوم بعمل Freeze تلقائياً في الباك إند)
-export async function generateQuotationPdf(projectId, orgId) {
+// أضف هذه الدالة في نفس ملف quotationActions.js
+
+export async function generateQuotationPdf(orgId, projectId, versionId) {
+    if (!versionId) {
+        return { success: false, message: "Version ID is required" };
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    
+
     try {
-        const response = await api.post(`projects/${projectId}/quotation/generate-pdf`, {}, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "X-Organization-Id": orgId,
+        // نداء الـ Endpoint الخاص بتوليد الـ PDF (POST Request)
+        const response = await api.post(
+            `projects/${projectId}/versions/${versionId}/quotations/generate-pdf`,
+            {}, // Body فارغ
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "X-Organization-Id": orgId,
+                }
             }
-        });
-        // الباك إند يجب أن يرجع رابط الـ PDF (مثلاً pdf_url)
-        return { success: true, pdf_url: response.data.pdf_url };
+        );
+
+        // إرجاع رابط الـ PDF بناءً على الرد القادم من الباك-إند
+        return { 
+            success: true, 
+            pdf_url: response.data.data.pdf_url 
+        };
     } catch (error) {
-        return { success: false, message: error?.response?.data?.message || "Failed to generate PDF" };
+        console.error("Generate PDF Error:", error);
+        return { 
+            success: false, 
+            message: error?.response?.data?.message || "Failed to generate PDF" 
+        };
     }
 }

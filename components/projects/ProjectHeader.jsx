@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Building2, Calendar, Plus, ArrowLeft, Loader2, Eye, FileDown } from "lucide-react";
-//import { Eye, FileDown, Loader2 } from "lucide-react";
-//import { previewQuotation, generateQuotationPdf } from "@/actions/quotationActions";
+// إضافة استيراد دالة generateQuotationPdf هنا 👇
+import { previewQuotation, generateQuotationPdf } from "@/actions/quotationActions"; 
+
 export default function ProjectHeader({
     project = {},
     currentVersion = {},
@@ -12,8 +14,9 @@ export default function ProjectHeader({
     selectedVersionId,
     setSelectedVersionId
 }) {
-    //const [previewing, setPreviewing] = useState(false);
-    //const [generating, setGenerating] = useState(false);
+    const [previewing, setPreviewing] = useState(false);
+    const [generating, setGenerating] = useState(false); // ✅ تفعيل حالة تحميل الـ PDF
+
     const allVersions = [...(versionsData || [])];
     
     if (currentVersion?.id && !allVersions.find(v => v.id === currentVersion.id)) {
@@ -29,38 +32,62 @@ export default function ProjectHeader({
             year: 'numeric', month: 'short', day: 'numeric'
         });
     };
-    // const handlePreview = async () => {
-    //     setPreviewing(true);
-    //     const res = await previewQuotation(projectId, orgId);
-    //     setPreviewing(false);
-        
-    //     if (res.success && res.html) {
-    //         // فتح شاشة جديدة لعرض الـ HTML
-    //         const newWindow = window.open("", "_blank");
-    //         newWindow.document.write(res.html);
-    //         newWindow.document.close();
-    //     } else {
-    //         alert(res.message);
-    //     }
-    // };
 
-    // const handleGeneratePDF = async () => {
-    //     setGenerating(true);
-    //     const res = await generateQuotationPdf(projectId, orgId);
-    //     setGenerating(false);
-        
-    //     if (res.success && res.pdf_url) {
-    //         // فتح أو تحميل الـ PDF
-    //         window.open(res.pdf_url, "_blank");
-    //         // إذا كنت تريد إعادة تحميل الصفحة لتحديث حالة الـ Version بعد الـ Freeze:
-    //         // router.refresh();
-    //     } else {
-    //         alert(res.message);
-    //     }
-    //};
+    // دالة التعامل مع الـ Preview
+    const handlePreview = async () => {
+        if (!selectedVersionId) {
+            alert("Please select a version first.");
+            return;
+        }
+
+        setPreviewing(true);
+        try {
+            const res = await previewQuotation(orgId, project.id, selectedVersionId);
+            
+            if (res.success && res.html) {
+                const newWindow = window.open("", "_blank");
+                if (newWindow) {
+                    newWindow.document.write(res.html);
+                    newWindow.document.close();
+                } else {
+                    alert("Please allow pop-ups for this site to view the preview.");
+                }
+            } else {
+                alert(res.message || "Failed to load preview");
+            }
+        } catch (error) {
+            alert("Something went wrong while loading preview");
+        } finally {
+            setPreviewing(false);
+        }
+    };
+
+    // ✅ دالة التعامل مع توليد الـ PDF
+    const handleGeneratePDF = async () => {
+        if (!selectedVersionId) {
+            alert("Please select a version first.");
+            return;
+        }
+
+        setGenerating(true);
+        try {
+            const res = await generateQuotationPdf(orgId, project.id, selectedVersionId);
+            
+            if (res.success && res.pdf_url) {
+                // فتح رابط الـ PDF في نافذة جديدة ليتمكن المستخدم من عرضه أو تحميله
+                window.open(res.pdf_url, "_blank");
+            } else {
+                alert(res.message || "Failed to generate PDF");
+            }
+        } catch (error) {
+            alert("Something went wrong while generating PDF");
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     return (
         <div className="space-y-4">
-            {/* الشريط العلوي: زر العودة + أزرار الإجراءات الرئيسية */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <Link
                     href={`/${orgId}/dashboard/projects`}
@@ -70,34 +97,38 @@ export default function ProjectHeader({
                     Back to Projects
                 </Link>
 
-                {/* أزرار عرض السعر (Quotation Actions) */}
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
-                        // onClick={handlePreview}
-                        // disabled={previewing}
+                        onClick={handlePreview}
+                        disabled={previewing || generating}
                         className="flex-1 sm:flex-none justify-center px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 hover:border-slate-300 hover:text-blue-600 flex items-center gap-2 transition shadow-sm disabled:opacity-50 group"
                     >
-                        {/* {previewing ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Eye className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />} */}
-                        <Eye className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                        {previewing ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                        ) : (
+                            <Eye className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                        )}
                         <span>Preview Quotation</span>
                     </button>
 
+                    {/* ✅ زر توليد الـ PDF مفعل الآن */}
                     <button
-                        // onClick={handleGeneratePDF}
-                        // disabled={generating}
+                        onClick={handleGeneratePDF}
+                        disabled={generating || previewing}
                         className="flex-1 sm:flex-none justify-center px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 flex items-center gap-2 transition shadow-sm disabled:opacity-50"
                     >
-                        {/* {generating ? <Loader2 className="w-4 h-4 animate-spin text-white/70" /> : <FileDown className="w-4 h-4" />} */}
-                        <FileDown className="w-4 h-4" />
+                        {generating ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-white/70" />
+                        ) : (
+                            <FileDown className="w-4 h-4" />
+                        )}
                         <span>Generate PDF</span>
                     </button>
                 </div>
             </div>
 
-            {/* بطاقة معلومات المشروع الرئيسية (Main Card) */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 
-                {/* القسم الأيسر: معلومات المشروع والعميل */}
                 <div className="flex items-start gap-4 w-full lg:w-auto">
                     <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 text-blue-600 rounded-2xl border border-blue-100/50 shadow-sm shrink-0">
                         <Building2 className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -126,7 +157,6 @@ export default function ProjectHeader({
                     </div>
                 </div>
 
-                {/* القسم الأيمن: القائمة المنسدلة للنسخ */}
                 <div className="flex items-center lg:justify-end border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 w-full lg:w-auto shrink-0">
                     <div className="w-full sm:w-auto bg-slate-50/50 p-3 rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
