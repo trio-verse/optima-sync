@@ -72,3 +72,76 @@ export async function createEmployee(formData, orgId) {
     };
   }
 }
+
+
+export async function getProjectEmployees(projectId, orgId) {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        const res = await api.get(`/projects/${projectId}/employees`, {
+            token,
+            headers: {
+                "X-Organization-Id": orgId
+            }
+        });
+        return res.data;
+    } catch (error) {
+        console.error("Error fetching project employees:", error);
+        throw error;
+    }
+}
+
+// إضافة موظف إلى المشروع
+export async function createProjectEmployee(projectId, orgId, payload) {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        const res = await api.post(`/projects/${projectId}/employees`, payload, {
+          token,
+            headers: {
+                "X-Organization-Id": orgId
+            }
+        });
+        return res.data;
+    } catch (error) {
+        throw error?.response?.data || error;
+    }
+}
+
+// تعديل موظف في المشروع
+export async function updateProjectEmployee(projectId, memberId, orgId, payload) {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        const res = await api.put(`/projects/${projectId}/employees/${memberId}`, payload, {
+          token,
+            headers: {
+                "X-Organization-Id": orgId
+            }
+        });
+        return res.data;
+    } catch (error) {
+        throw error?.response?.data || error;
+    }
+}
+
+// حذف موظف من المشروع
+export async function deleteProjectEmployee(projectId, memberId, orgId) {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        const res = await api.delete(`/projects/${projectId}/employees/${memberId}`, {
+          token,
+            headers: {
+                "X-Organization-Id": orgId
+            }
+        });
+        return res.data;
+    } catch (error) {
+        throw error?.response?.data || error;
+    }
+}

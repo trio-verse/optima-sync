@@ -94,6 +94,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       }));
     }, 500);
 
+<<<<<<< HEAD
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
@@ -144,6 +145,18 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     const value = e.target.value;
     setFilters((prev) => ({ ...prev, product_id: value }));
   };
+=======
+  const clientsList = useMemo(() => {
+    const map = new Map();
+    connections.forEach((conn) => {
+      const client = conn.client;
+      if (client?.id && !map.has(client.id)) {
+        map.set(client.id, client);
+      }
+    });
+    return Array.from(map.values());
+  }, [connections]);
+>>>>>>> 5fbf3759b64293f8c0cad9a9cf49e306271376f3
 
   /* ── Update Stage Directly ── */
   const handleStageChange = async (conn, newStage) => {

@@ -1,5 +1,5 @@
 "use client";
-import { FolderKanban } from "lucide-react";
+
 
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, use } from "react";
@@ -18,6 +18,7 @@ import {
   LogOut,
   Package,
   BriefcaseBusiness,
+  FolderKanban
 } from "lucide-react";
 import LogOutButton from "../../../actions/auth";
 
@@ -80,6 +81,7 @@ export default function DashboardLayout({ children, params }) {
     { id: "clients", label: "Clients", href: `${basePath}/clients`, icon: Users },
     { id: "employees", label: "Employees", href: `${basePath}/workspace`, icon: BriefcaseBusiness },
     { id: "reference-data", label: "Reference Data", href: `${basePath}/reference-data`, icon: Database },
+      { id: "projects", label: "Projects", href: `${basePath}/projects`, icon: FolderKanban},
   ];
 
   return (

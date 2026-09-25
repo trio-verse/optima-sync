@@ -8,7 +8,7 @@ import OverviewTab from "./OverviewTab";
 import VersionsTab from "./VersionsTab";
 import FeaturesTab from "./FeaturesTab";
 import ExpensesTab from "./ExpensesTab";
-
+import TeamTab from "./TeamTab";
 import MeetingsTab from "./MeetingsTab";
 
 
@@ -164,13 +164,12 @@ export default function ProjectDetailsView({ initialData, orgId, projectId }) {
                 />
             )}
 
-            {/* TAB 5: TEAM / EMPLOYEES */}
-            {activeTab === "team" && (
-                <TeamTab
-                    projectId={projectId}
-                    orgId={orgId}
-                    activeVersionObj={activeVersionObj}
-                    isEditingAllowed={isEditingAllowed}
+{activeTab === "team" && (
+                <TeamTab 
+                    projectId={projectId} 
+                    orgId={orgId} 
+                    activeVersionObj={activeVersionObj} 
+                    isEditingAllowed={isEditingAllowed} 
                 />
             )}
 
