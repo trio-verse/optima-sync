@@ -18,7 +18,8 @@ import {
   LogOut,
   Package,
   BriefcaseBusiness,
-  FolderKanban
+  FolderKanban,
+  ListTodo
 } from "lucide-react";
 import LogOutButton from "../../../actions/auth";
 
@@ -61,6 +62,8 @@ export default function DashboardLayout({ children, params }) {
       setActiveTab("marketing");
     } else if (pathname.includes("/projects")) {
       setActiveTab("projects");
+    } else if (pathname.includes("/workspace")) {
+      setActiveTab("workspace");
     } else if (pathname === basePath || pathname === `${basePath}/`) {
       setActiveTab("home");
     } else {
@@ -79,9 +82,10 @@ export default function DashboardLayout({ children, params }) {
     { id: "product", label: "Product", href: `${basePath}/product`, icon: Package },
     { id: "marketing", label: "Marketing", href: `${basePath}/marketing`, icon: Megaphone },
     { id: "clients", label: "Clients", href: `${basePath}/clients`, icon: Users },
-    { id: "employees", label: "Employees", href: `${basePath}/workspace`, icon: BriefcaseBusiness },
+    { id: "workspace", label: "workspace", href: `${basePath}/workspace`, icon: BriefcaseBusiness },
     { id: "reference-data", label: "Reference Data", href: `${basePath}/reference-data`, icon: Database },
       { id: "projects", label: "Projects", href: `${basePath}/projects`, icon: FolderKanban},
+
   ];
 
   return (

@@ -9,7 +9,7 @@ import {
     updateProjectEmployee, 
     deleteProjectEmployee 
 } from "@/actions/employeeActions";
-import { getEmployees } from "@/actions/employees"; // لجلب موظفي المنظمة للقائمة المنسدلة
+import { getEmployees } from "@/actions/employees"; //[cite: 11]
 
 export default function TeamTab({
     projectId,
@@ -19,7 +19,7 @@ export default function TeamTab({
 }) {
     const router = useRouter();
     const [teamList, setTeamList] = useState([]);
-    const [orgEmployees, setOrgEmployees] = useState([]); // لتخزين موظفي المنظمة
+    const [orgEmployees, setOrgEmployees] = useState([]); 
     const [isLoadingData, setIsLoadingData] = useState(false);
 
     const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
@@ -66,6 +66,17 @@ export default function TeamTab({
         fetchProjectEmployees();
         fetchOrgEmployees();
     }, [fetchProjectEmployees, fetchOrgEmployees]);
+
+    // تصفية الموظفين بحيث لا يظهر الموظف المضاف مسبقاً في القائمة (إلا إذا كنا نعدل نفس العضو)
+    const availableOrgEmployees = orgEmployees.filter((emp) => {
+        if (editingTeamId) {
+            const currentMember = teamList.find((m) => m.id === editingTeamId);
+            if (currentMember && Number(currentMember.employee_id) === Number(emp.id)) {
+                return true;
+            }
+        }
+        return !teamList.some((m) => Number(m.employee_id) === Number(emp.id));
+    });
 
     const handleOpenAddModal = () => {
         setEditingTeamId(null);
@@ -161,7 +172,7 @@ export default function TeamTab({
     };
 
     return (
-        <div className="space-y-4 w-full">
+        <div className="space-y-4 w-full" dir="ltr">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
                 <div>
                     <h3 className="text-sm font-bold text-slate-900">
@@ -334,7 +345,7 @@ export default function TeamTab({
 
                         <form onSubmit={handleSubmitForm} className="p-4 sm:p-5 space-y-4 text-xs">
                             
-                            {/* قائمة منسدلة لاختيار الموظف من المنظمة */}
+                            {/* قائمة منسدلة لاختيار الموظف (تمت تصفيتها لإخفاء المضافين مسبقاً) */}
                             <div className="space-y-1">
                                 <label className="font-semibold text-slate-700">Select Employee *</label>
                                 <select
@@ -344,7 +355,7 @@ export default function TeamTab({
                                     required
                                 >
                                     <option value="" disabled>-- Choose an Employee --</option>
-                                    {orgEmployees.map((emp) => (
+                                    {availableOrgEmployees.map((emp) => (
                                         <option key={emp.id} value={emp.id}>
                                             {emp.name} - {emp.position}
                                         </option>
@@ -352,18 +363,20 @@ export default function TeamTab({
                                 </select>
                             </div>
 
+                            {/* حقل الاسم (Readonly) */}
                             <div className="space-y-1">
                                 <label className="font-semibold text-slate-700">Member Full Name</label>
                                 <input
                                     type="text"
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs"
+                                    readOnly
+                                    className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-slate-500 cursor-not-allowed text-xs"
                                     required
                                 />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {/* حقل البريد الإلكتروني (Readonly) */}
                                 <div className="space-y-1">
                                     <label className="font-semibold text-slate-700">Email Address</label>
                                     <div className="relative">
@@ -371,25 +384,27 @@ export default function TeamTab({
                                         <input
                                             type="email"
                                             value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full pl-8 bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs"
+                                            readOnly
+                                            className="w-full pl-8 bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-slate-500 cursor-not-allowed text-xs"
                                             required
                                         />
                                     </div>
                                 </div>
+                                {/* حقل المنصب (Readonly) */}
                                 <div className="space-y-1">
                                     <label className="font-semibold text-slate-700">Position / Role</label>
                                     <input
                                         type="text"
                                         value={position}
-                                        onChange={(e) => setPosition(e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs"
+                                        readOnly
+                                        className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-slate-500 cursor-not-allowed text-xs"
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-3 gap-3">
+                                {/* حقل النقاط الإجمالية (قابل للتعديل / Editable) */}
                                 <div className="space-y-1">
                                     <label className="font-semibold text-slate-700">Total Points *</label>
                                     <input
@@ -397,30 +412,29 @@ export default function TeamTab({
                                         min="1"
                                         value={totalPoints}
                                         onChange={(e) => setTotalPoints(e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs border-blue-200 bg-blue-50/30"
+                                        className="w-full bg-blue-50/30 border border-blue-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs font-bold text-blue-700"
                                         required
                                     />
                                 </div>
+                                {/* حقل التكلفة بالساعة (Readonly) */}
                                 <div className="space-y-1">
                                     <label className="font-semibold text-slate-700">Cost / Hour ($)</label>
                                     <input
                                         type="number"
-                                        min="0"
                                         value={costPerHour}
-                                        onChange={(e) => setCostPerHour(e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs"
+                                        readOnly
+                                        className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-slate-500 cursor-not-allowed text-xs"
                                         required
                                     />
                                 </div>
+                                {/* حقل الساعات لكل نقطة (Readonly) */}
                                 <div className="space-y-1">
                                     <label className="font-semibold text-slate-700">Hrs / Point</label>
                                     <input
                                         type="number"
-                                        min="0"
-                                        step="0.5"
                                         value={hoursPerPoint}
-                                        onChange={(e) => setHoursPerPoint(e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs"
+                                        readOnly
+                                        className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-slate-500 cursor-not-allowed text-xs"
                                         required
                                     />
                                 </div>
