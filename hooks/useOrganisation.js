@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getOrganisationById } from "../actions/organisationActions";
-
+import { getOrganisationById } from "@/actions/getActions";
 export function useOrganisation() {
   const [organisationId, setOrganisationId] = useState(null);
   const [organisationData, setOrganisationData] = useState(null);
