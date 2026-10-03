@@ -33,7 +33,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "components/ui/card.jsx", "components/ui/chart.jsx"  ],
   "exclude": [
     "node_modules"
   ]
