@@ -152,11 +152,14 @@ OptimaSync/
 │   ├── mockProjectActions.js
 │   ├── mockprojectDetailsActions.js
 │   ├── projectAction.js
+│   ├── projectAnalytics.js
 │   ├── projectDetailsAction.js
+│   ├── projectQueryActions.js
 │   ├── publicProjectActions.js
 │   ├── quotationActions.js
 │   ├── registerUser.js
 │   ├── versionActions.js
+│   ├── workspace.js
 │   └── services/
 │       ├── channelService.js
 │       ├── cityService.js
@@ -169,38 +172,109 @@ OptimaSync/
 │   ├── layout.js
 │   ├── page.jsx
 │   ├── create-profile/
+│   │   └── page.jsx
 │   ├── organizations/
+│   │   └── page.jsx
 │   ├── register/
+│   │   └── page.jsx
 │   ├── request-project/
+│   │   └── [reqId]/
+│   │       └── page.jsx
 │   └── [OrgId]/
 │       ├── dashboard/
+│       │   ├── analytics/
+│       │   │   └── projects/
+│       │   │       └── page.tsx
 │       │   ├── clients/
+│       │   │   ├── [id]/
+│       │   │   │   └── page.jsx
+│       │   │   ├── create/
+│       │   │   │   └── page.jsx
+│       │   │   └── page.jsx
 │       │   ├── marketing/
+│       │   │   ├── campaigns/
+│       │   │   │   ├── [id]/
+│       │   │   │   │   ├── content/
+│       │   │   │   │   │   └── page.jsx
+│       │   │   │   │   └── page.jsx
+│       │   │   │   └── page.jsx
+│       │   │   └── page.jsx
 │       │   ├── member/
+│       │   │   └── page.jsx
 │       │   ├── product/
+│       │   │   └── page.jsx
 │       │   ├── projects/
+│       │   │   ├── [projectId]/
+│       │   │   │   └── page.jsx
+│       │   │   └── page.jsx
 │       │   ├── reference-data/
+│       │   │   └── page.jsx
 │       │   ├── sales/
+│       │   │   └── page.jsx
 │       │   ├── settings/
+│       │   │   └── profile/
+│       │   │       └── page.jsx
 │       │   ├── workspace/
+│       │   │   └── page.jsx
 │       │   ├── layout.jsx
 │       │   └── page.jsx
 │       └── upload-logo/
+│           └── page.jsx
 ├── components/
 │   ├── campaigns/
+│   │   ├── [id]/
+│   │   │   ├── CampaignAnalyticsView.jsx
+│   │   │   ├── ContentForm.jsx
+│   │   │   └── ContentKanban.jsx
+│   │   ├── CampaignModal.jsx
+│   │   └── CampaignsTable.jsx
 │   ├── connections/
+│   │   ├── ActivityList.jsx
+│   │   ├── ActivityModal.jsx
+│   │   ├── ConnectionForm.jsx
+│   │   └── ConnectionsTimeline.jsx
 │   ├── marketing/
+│   │   └── MarketingAnalyticsDashboard.jsx
 │   ├── projects/
+│   │   ├── query-builder/
+│   │   │   ├── ProjectAnalyticsDashboard.jsx
+│   │   │   ├── ProjectQueryBuilder.jsx
+│   │   │   └── ProjectQueryResultsTable.jsx
+│   │   ├── ExpensesTab.jsx
+│   │   ├── FeaturesTab.jsx
+│   │   ├── MeetingsTab.jsx
+│   │   ├── OverviewTab.jsx
+│   │   ├── ProjectAnalyticsDashboard.jsx
+│   │   ├── ProjectDeatails.jsx
+│   │   ├── ProjectHeader.jsx
+│   │   ├── ProjectIntakeForm.jsx
+│   │   ├── ProjectModal.jsx
+│   │   ├── ProjectTableRow.jsx
+│   │   ├── TeamTab.jsx
+│   │   └── VersionsTab.jsx
+│   ├── ui/
+│   │   ├── BaseCard.jsx
+│   │   ├── KanbanColumn.jsx
+│   │   ├── Model.jsx
+│   │   ├── Select.jsx
+│   │   └── Table.jsx
 │   ├── workspace/
+│   │   ├── EmployeeForm.jsx
+│   │   ├── EmployeeView.jsx
+│   │   ├── TaskCard.jsx
+│   │   ├── TaskForm.jsx
+│   │   ├── TeamTaskCenter.jsx
+│   │   └── WorkspaceTabs.jsx
 │   ├── ClientForm.jsx
 │   ├── EmailStep.jsx
 │   ├── LogoUploader.jsx
+│   ├── MultiSelectCheckbox.jsx
 │   ├── OtpStep.jsx
 │   ├── OrganisationForm.jsx
 │   ├── OrganisationsList.jsx
-│   ├── registerForm.jsx
 │   ├── SystemGateway.jsx
 │   ├── WelcomeNoOrg.jsx
+│   ├── registerForm.jsx
 │   └── ...
 ├── hooks/
 │   ├── useClientLookups.js
@@ -210,14 +284,21 @@ OptimaSync/
 ├── lib/
 │   ├── api/
 │   │   └── client.js
+│   ├── dto/
+│   │   └── ProjectQueryBuilderDTO.js
 │   ├── mock/
 │   │   └── campaignDetailsData.js
-│   └── validations/
-│       ├── campaignSchema.js
-│       └── clientSchema.js
+│   ├── utils.ts
+│   ├── utils/
+│   │   └── queryBuilderSerializer.js
+│   ├── validations/
+│   │   ├── campaignSchema.js
+│   │   └── clientSchema.js
+│   └── ...
 ├── providers/
 │   └── Providers.jsx
 ├── public/
+├── types/
 ├── README.md
 ├── eslint.config.mjs
 ├── jsconfig.json
@@ -255,10 +336,12 @@ This is the UI layer. It contains page-level and reusable components grouped by 
 
 Important groups:
 - `components/projects/` -> project listing, details, modals, tabs, header
+- `components/projects/query-builder/` -> project analytics query builder and result table
 - `components/campaigns/` -> campaigns list, campaign modal, content form, analytics view
 - `components/connections/` -> connection activity, activity timeline, forms
 - `components/marketing/` -> marketing analytics dashboard
 - `components/workspace/` -> employee view, employee form, tasks
+- `components/ui/` -> shared UI building blocks such as cards, tables, select, kanban, and modal layout
 - `components/ClientForm.jsx` and `components/OrganisationForm.jsx` -> core forms
 - `components/registerForm.jsx` -> registration and OTP UI
 
@@ -273,8 +356,11 @@ Important files:
 - `actions/getMyOrgs.js` -> fetch organizations for the current user
 - `actions/clientActions.js` -> CRUD for clients
 - `actions/projectAction.js` -> CRUD for projects
+- `actions/projectAnalytics.js` -> project analytics and reporting actions
+- `actions/projectQueryActions.js` -> query-builder project analytics actions
 - `actions/campaigns.js` -> campaigns and marketing analytics
 - `actions/connectionActions.js` -> CRM pipeline connection management
+- `actions/workspace.js` -> workspace/task operations
 - `actions/services/membersAction.js` -> org member CRUD
 - `actions/services/productsService.js`, `cityService.js`, `industryService.js`, `channelService.js` -> reference data services
 
@@ -286,6 +372,9 @@ The shared library layer.
 
 Important files:
 - `lib/api/client.js` -> single source for fetch-based API communication, auth token refresh, and error handling
+- `lib/dto/ProjectQueryBuilderDTO.js` -> DTO for project analytics query-builder payloads
+- `lib/utils.ts` -> shared TypeScript helper exports
+- `lib/utils/queryBuilderSerializer.js` -> serialization utilities for project query filters
 - `lib/validations/clientSchema.js` -> client validation schema
 - `lib/validations/campaignSchema.js` -> campaign validation schema
 - `lib/mock/campaignDetailsData.js` -> mock data fixture for campaign detail demos
@@ -305,8 +394,14 @@ Important files:
 #### `public/`
 A standard Next.js public asset folder. The workspace listing does not show specific files under it, so its current contents are not fully defined in this repository snapshot.
 
+#### `types/`
+This folder exists in the project root and is part of the TypeScript configuration footprint. The current workspace snapshot shows the directory exists, but it does not currently contain custom type declarations or exported interfaces in this repository state.
+
 #### `actions/services/`
 This folder contains domain reference-data services (cities, industries, channels, products, members, stakeholders). It is intentionally separated from the main `actions` folder to keep business-data APIs organized.
+
+#### `lib/utils.ts`
+A root utility file that currently exports the shared `cn` helper from `cn`, showing the project includes a TypeScript utility layer alongside the JavaScript codebase.
 
 #### `app/[OrgId]/dashboard/`
 This is the multi-tenant dashboard shell and route root for a specific organization. It includes route segments for clients, projects, marketing, sales, workspace, member management, product data, and settings.
@@ -323,7 +418,8 @@ Framework:
 
 Language:
 - JavaScript is the dominant language (`.js` and `.jsx` files)
-- Some files use `.tsx` (`app/[OrgId]/dashboard/workspace/page.tsx`)
+- TypeScript is enabled in the project and used in files such as `app/[OrgId]/dashboard/analytics/projects/page.tsx` and `lib/utils.ts`
+- A root `types/` directory exists in the workspace, although no custom TS declaration files are currently present under it in this snapshot
 
 Styling:
 - Tailwind CSS v4 (`@import "tailwindcss"` in `app/globals.css`)
