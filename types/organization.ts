@@ -14,7 +14,7 @@ export interface IOrganization {
 
 export interface IOrgMember {
   id: string;
-  organization_id: string;
+  organization_id?: string;
   user_id: string;
   name: string;
   email: string;
@@ -32,7 +32,7 @@ export interface ICreateOrganizationPayload {
 }
 
 export interface IAddMemberPayload {
-  organization_id: string;
+  organization_id?: string;
   email: string;
   role: MemberRole;
 }

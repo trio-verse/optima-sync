@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, use } from "react";
+import type { SyntheticEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -28,7 +29,7 @@ import {
 
 import {
   getindustries,
-  creatIndustry,
+  createIndustry,
   updateIndustry,
   deleteIndustry,
 } from "@/actions/services/industryService";
@@ -39,7 +40,31 @@ import {
   updateChannel,
   deleteChannel,
 } from "@/actions/services/channelService";
+import type { City, Industry, Channel } from "@/types/reference";
 
+type ReferenceTab = "cities" | "industries" | "channels";
+interface PageProps {
+  params: Promise<{
+    OrgId: string;
+  }>;
+}
+type ReferenceItem = City | Industry | Channel;
+
+type ReferenceActionResult = {
+  success: boolean;
+  message?: string;
+  data?: ReferenceItem;
+  id?: number;
+};
+interface ReferenceMutationInput {
+  name: string;
+  color: string;
+}
+interface UpdateReferenceInput {
+  id: number;
+  name: string;
+  color: string;
+}
 const PRESET_COLORS = [
   "#2563eb",
   "#7c3aed",
@@ -50,28 +75,28 @@ const PRESET_COLORS = [
   "#4b5563",
 ];
 
-export default function ReferenceDataPage({ params }) {
-  const [activeTab, setActiveTab] = useState("cities");
+export default function ReferenceDataPage({ params }: PageProps) {
+  const [activeTab, setActiveTab] = useState<ReferenceTab>("cities");
   const queryClient = useQueryClient();
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId;
 
   // Form & Action states
-  const [isAdding, setIsAdding] = useState(false);
-  const [newName, setNewName] = useState("");
+  const [isAdding, setIsAdding] = useState<boolean>(false);
+  const [newName, setNewName] = useState<string>("");
   const [newColor, setNewColor] = useState("#2563eb");
-  const [addError, setAddError] = useState("");
-  const [search, setSearch] = useState("");
+  const [addError, setAddError] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
 
-  const [editingId, setEditingId] = useState(null);
-  const [editingName, setEditingName] = useState("");
-  const [editingColor, setEditingColor] = useState("");
+  const [editingId, setEditingId] = useState<string |number| null>(null);
+  const [editingName, setEditingName] = useState<string>("");
+  const [editingColor, setEditingColor] = useState<string>("");
 
-  const [deletingItem, setDeletingItem] = useState(null);
-  const [deleteError, setDeleteError] = useState("");
+  const [deletingItem, setDeletingItem] = useState<ReferenceItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string>("");
 
   // Reset form states on tab change
-  const handleTabChange = (tab) => {
+  const handleTabChange = (tab: ReferenceTab) => {
     setActiveTab(tab);
     setIsAdding(false);
     setNewName("");
@@ -84,37 +109,37 @@ export default function ReferenceDataPage({ params }) {
   };
 
   // 1. Queries
-  const citiesQuery = useQuery({
+  const citiesQuery = useQuery<City[]>({
     queryKey: ["cities", orgId],
     queryFn: async () => {
       const res = await getcities(orgId);
     console.log("@@@@@@@@@@@@@@@@@@@@" , res);
-      if (res?.success) return res?.data || [];
-      throw new Error(res?.message || "Failed to load cities");
+      if (res.success) return res.data || [];
+      throw new Error(res.message || "Failed to load cities");
     },
     enabled: !!orgId && activeTab === "cities",
     staleTime: 1000 * 60 * 5,
   });
 
-  const industriesQuery = useQuery({
+  const industriesQuery = useQuery<Industry[]>({
     queryKey: ["industries", orgId],
     queryFn: async () => {
       const res = await getindustries(orgId);
        console.log("############" , res);
-      if (res?.success) return res?.data || [];
-      throw new Error(res?.message || "Failed to load industries");
+      if (res.success) return res.data || [];
+      throw new Error(res.message || "Failed to load industries");
     },
     enabled: !!orgId && activeTab === "industries",
     staleTime: 1000 * 60 * 5,
   });
 
-  const channelsQuery = useQuery({
+  const channelsQuery = useQuery<Channel[]>({
     queryKey: ["channels", orgId],
     queryFn: async () => {
       const res = await getChannels(orgId);
        console.log("*************" , res);
-      if (res?.success) return res?.data || [];
-      throw new Error(res?.message || "Failed to load channels");
+      if (res.success) return res.data || [];
+      throw new Error(res.message || "Failed to load channels");
     },
     enabled: !!orgId && activeTab === "channels",
     staleTime: 1000 * 60 * 5,
@@ -136,10 +161,10 @@ export default function ReferenceDataPage({ params }) {
       : channelsQuery.isLoading;
 
   // 2. Mutations
-  const addMutation = useMutation({
+  const addMutation = useMutation<ReferenceActionResult, Error, ReferenceMutationInput>({
     mutationFn: ({ name, color }) => {
       if (activeTab === "cities") return createCity(name, color, orgId);
-      if (activeTab === "industries") return creatIndustry(name, color, orgId);
+      if (activeTab === "industries") return createIndustry(name, color, orgId);
       return createChannel(name, color, orgId);
     },
     onSuccess: (result) => {
@@ -156,7 +181,7 @@ export default function ReferenceDataPage({ params }) {
     },
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useMutation<ReferenceActionResult, Error, UpdateReferenceInput>({
     mutationFn: ({ id, name, color }) => {
       if (activeTab === "cities") return updateCity(id, name, color, orgId);
       if (activeTab === "industries") return updateIndustry(id, name, color, orgId);
@@ -175,7 +200,7 @@ export default function ReferenceDataPage({ params }) {
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useMutation<ReferenceActionResult, Error, number>({
     mutationFn: (id) => {
       if (activeTab === "cities") return deleteCity(id, orgId);
       if (activeTab === "industries") return deleteIndustry(id, orgId);
@@ -197,7 +222,7 @@ export default function ReferenceDataPage({ params }) {
     addMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   // Handlers
-  const handleAddItem = (e) => {
+  const handleAddItem = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newName.trim()) {
       setAddError("Name is required.");
@@ -213,7 +238,7 @@ export default function ReferenceDataPage({ params }) {
     addMutation.mutate({ name: newName.trim(), color: newColor });
   };
 
-  const handleSaveEdit = (id) => {
+  const handleSaveEdit = (id:number) => {
     if (!editingName.trim()) return;
     const isDuplicate = currentData.some(
       (item) =>
@@ -237,11 +262,30 @@ export default function ReferenceDataPage({ params }) {
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const tabConfig = {
-    cities: { title: "Cities", icon: MapPin, singular: "City" },
-    industries: { title: "Industries", icon: Building2, singular: "Industry" },
-    channels: { title: "Channels", icon: Radio, singular: "Channel" },
-  };
+  const tabConfig: Record<
+  ReferenceTab,
+  {
+    title: string;
+    icon: typeof MapPin;
+    singular: string;
+  }
+> = {
+  cities: {
+    title: "Cities",
+    icon: MapPin,
+    singular: "City",
+  },
+  industries: {
+    title: "Industries",
+    icon: Building2,
+    singular: "Industry",
+  },
+  channels: {
+    title: "Channels",
+    icon: Radio,
+    singular: "Channel",
+  },
+};
 
   const CurrentIcon = tabConfig[activeTab].icon;
 
@@ -275,7 +319,7 @@ export default function ReferenceDataPage({ params }) {
 
         {/* Navigation Tabs */}
        <div className="flex items-center gap-1 sm:gap-2 bg-zinc-200/60 p-1.5 rounded-2xl border border-zinc-200/80 overflow-x-auto">
-          {Object.keys(tabConfig).map((tabKey) => {
+          {(Object.keys(tabConfig)as ReferenceTab[]).map((tabKey) => {
             const Icon = tabConfig[tabKey].icon;
             const isActive = activeTab === tabKey;
             return (

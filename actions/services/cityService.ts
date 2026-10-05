@@ -2,12 +2,10 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { api } from "@/lib/api/client";
+import { api , getErrorMessage, getStatusMessage} from "@/lib/api/client";
+import type { City , CreateCityDTO  } from "@/types/reference";
 
-/**
- * جلب قائمة المدن
- */
-export async function getcities(orgId) {
+export async function getcities(orgId?:string): Promise<{ success: boolean; message?: string; data: City[] }> {
     try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -22,7 +20,16 @@ export async function getcities(orgId) {
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
-
+      if (resdata.status >= 400) {
+      return {
+        success: false,
+        message: getStatusMessage(
+          resdata.status,
+          getErrorMessage(resdata.data, "Failed to fetch cities")
+        ),
+        data: [],
+      };
+    }
     return {
       success: true,
       data: resdata?.data?.data || [],
@@ -31,16 +38,14 @@ export async function getcities(orgId) {
     console.error("DEBUG getCity Error:", error);
     return {
       success: false,
-      message: error.data?.message || error.message || "Failed to fetch cities",
+      message: getErrorMessage(error, "Failed to fetch cities"),
       data: [],
     };
   }
 }
 
-/**
- * إنشاء مدينة جديدة
- */
-export async function createCity(newName, newColor,orgId) {
+
+export async function createCity(newName:string, newColor:string,orgId?:string): Promise<{ success: boolean; message?: string; data?: City; id?: number }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -50,15 +55,26 @@ export async function createCity(newName, newColor,orgId) {
       return { success: false, message: "Unauthorized" };
     }
 
-    const payload = {
+    const payload: CreateCityDTO = {
       name: newName,
       color: newColor,
     };
+
 
     const resdata = await api.post("/cities", payload, {
       token,
       headers: { "X-Organization-ID": orgId },
     });
+    
+     if (resdata.status >= 400) {
+      return {
+        success: false,
+        message: getStatusMessage(
+          resdata.status,
+          getErrorMessage(resdata.data, "Failed to create city")
+        ),
+      };
+    } 
 
     revalidatePath("/dashboard/clients");
 
@@ -71,15 +87,13 @@ export async function createCity(newName, newColor,orgId) {
     console.error("DEBUG createCity Error:", error);
     return {
       success: false,
-      message: error.data?.message || error.message || "Failed to create city",
+      message: getErrorMessage(error, "Failed to create city"),
     };
   }
 }
 
-/**
- * تحديث بيانات مدينة
- */
-export async function updateCity(id, newName, newColor,orgId) {
+
+export async function updateCity(id:number, newName:string, newColor:string,orgId?:string): Promise<{ success: boolean; message?: string; data?: City }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -89,7 +103,7 @@ export async function updateCity(id, newName, newColor,orgId) {
       return { success: false, message: "Unauthorized" };
     }
 
-    const payload = {
+    const payload: CreateCityDTO = {
       name: newName,
       color: newColor,
     };
@@ -98,6 +112,15 @@ export async function updateCity(id, newName, newColor,orgId) {
       token,
       headers: { "X-Organization-ID": orgId },
     });
+    if(resdata.status >= 400) {
+      return{
+        success: false,
+        message: getStatusMessage(
+          resdata.status,  
+        getErrorMessage(resdata.data, "Failed to update city")
+        ),
+      }
+    }  
 
     revalidatePath("/dashboard/clients");
 
@@ -109,15 +132,13 @@ export async function updateCity(id, newName, newColor,orgId) {
     console.error("DEBUG updateCity Error:", error);
     return {
       success: false,
-      message: error.data?.message || error.message || "Failed to update city",
+      message:  getErrorMessage(error, "Failed to update city"),
     };
   }
 }
 
-/**
- * حذف مدينة
- */
-export async function deleteCity(id,orgId) {
+
+export async function deleteCity(id:number,orgId?:string): Promise<{ success: boolean; message?: string; data?: City }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -131,6 +152,15 @@ export async function deleteCity(id,orgId) {
       headers: { "X-Organization-ID": orgId },
     });
 
+    if(resdata.status >= 400) {
+      return{
+        success:false,
+        message: getStatusMessage(
+          resdata.status,
+          getErrorMessage(resdata.data, "Failed to delete city")
+        ),
+      }
+    }
     revalidatePath("/dashboard/clients");
 
     return {
@@ -141,7 +171,7 @@ export async function deleteCity(id,orgId) {
     console.error("DEBUG deleteCity Error:", error);
     return {
       success: false,
-      message: error.data?.message || error.message || "Failed to delete city",
+      message: getErrorMessage(error, "Failed to delete city"),
     };
   }
 }

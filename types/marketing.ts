@@ -1,46 +1,45 @@
-export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
+export type CampaignStatus = 'active' |'draft' | 'paused' | 'completed' | 'cancelled';
 
 export interface ICampaign {
   id: string;
-  organization_id: string;
+  organization_id?: string;
   name: string;
   description?: string;
-  budget: number;
-  spent?: number;
-  status: CampaignStatus;
   start_date: string;
   end_date?: string;
-  channel_id?: string;
-  created_at: string;
-  updated_at?: string;
+  expected_budget?: number;
+  estimated_content_count?: number;
+  status: CampaignStatus;
+  target: string;
 }
 
 export interface ICampaignContent {
   id: string;
   campaign_id: string;
+  channel_id: string;
   title: string;
-  content_type: 'image' | 'video' | 'copy' | 'link';
-  status: 'idea' | 'in_production' | 'approved' | 'published';
-  media_url?: string;
-  scheduled_at?: string;
-  created_at: string;
+  type:  string ;
+  script: string;
+  cost: number;      
+  status: 'draft' | 'in_review' | 'approved' |'rejected'| 'published';
+  published_at?: string;
+  description?: string;
+  assigned_by?: number;
 }
 
 export interface IMarketingAnalytics {
   total_campaigns: number;
   active_campaigns: number;
-  total_budget: number;
   total_spent: number;
   total_connections: number;
-  total_wins: number;
   total_revenue: number;
-  cpl: number; // Cost Per Lead
-  roi: number; // Return On Investment
-  win_rate: number;
+  overall_CPL: number; // Cost Per Lead
+  overall_percentage_ROI: number; // Return On Investment
+  total_wins: number;
 }
 
 export interface ICreateCampaignPayload {
-  organization_id: string;
+  organization_id?: string;
   name: string;
   description?: string;
   budget: number;
