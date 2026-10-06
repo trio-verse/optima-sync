@@ -88,7 +88,7 @@ export default function ReferenceDataPage({ params }: PageProps) {
   const [addError, setAddError] = useState<string>("");
   const [search, setSearch] = useState<string>("");
 
-  const [editingId, setEditingId] = useState<string |number| null>(null);
+  const [editingId, setEditingId] = useState<string | number | null>(null);
   const [editingName, setEditingName] = useState<string>("");
   const [editingColor, setEditingColor] = useState<string>("");
 
@@ -113,7 +113,7 @@ export default function ReferenceDataPage({ params }: PageProps) {
     queryKey: ["cities", orgId],
     queryFn: async () => {
       const res = await getcities(orgId);
-    console.log("@@@@@@@@@@@@@@@@@@@@" , res);
+      console.log("@@@@@@@@@@@@@@@@@@@@", res);
       if (res.success) return res.data || [];
       throw new Error(res.message || "Failed to load cities");
     },
@@ -125,7 +125,7 @@ export default function ReferenceDataPage({ params }: PageProps) {
     queryKey: ["industries", orgId],
     queryFn: async () => {
       const res = await getindustries(orgId);
-       console.log("############" , res);
+      console.log("############", res);
       if (res.success) return res.data || [];
       throw new Error(res.message || "Failed to load industries");
     },
@@ -137,7 +137,7 @@ export default function ReferenceDataPage({ params }: PageProps) {
     queryKey: ["channels", orgId],
     queryFn: async () => {
       const res = await getChannels(orgId);
-       console.log("*************" , res);
+      console.log("*************", res);
       if (res.success) return res.data || [];
       throw new Error(res.message || "Failed to load channels");
     },
@@ -150,18 +150,22 @@ export default function ReferenceDataPage({ params }: PageProps) {
     activeTab === "cities"
       ? citiesQuery.data || []
       : activeTab === "industries"
-      ? industriesQuery.data || []
-      : channelsQuery.data || [];
+        ? industriesQuery.data || []
+        : channelsQuery.data || [];
 
   const isFetching =
     activeTab === "cities"
       ? citiesQuery.isLoading
       : activeTab === "industries"
-      ? industriesQuery.isLoading
-      : channelsQuery.isLoading;
+        ? industriesQuery.isLoading
+        : channelsQuery.isLoading;
 
   // 2. Mutations
-  const addMutation = useMutation<ReferenceActionResult, Error, ReferenceMutationInput>({
+  const addMutation = useMutation<
+    ReferenceActionResult,
+    Error,
+    ReferenceMutationInput
+  >({
     mutationFn: ({ name, color }) => {
       if (activeTab === "cities") return createCity(name, color, orgId);
       if (activeTab === "industries") return createIndustry(name, color, orgId);
@@ -176,15 +180,22 @@ export default function ReferenceDataPage({ params }: PageProps) {
         setAddError("");
         setIsAdding(false);
       } else {
-        setAddError(result?.message || "Could not save item, please try again.");
+        setAddError(
+          result?.message || "Could not save item, please try again.",
+        );
       }
     },
   });
 
-  const updateMutation = useMutation<ReferenceActionResult, Error, UpdateReferenceInput>({
+  const updateMutation = useMutation<
+    ReferenceActionResult,
+    Error,
+    UpdateReferenceInput
+  >({
     mutationFn: ({ id, name, color }) => {
       if (activeTab === "cities") return updateCity(id, name, color, orgId);
-      if (activeTab === "industries") return updateIndustry(id, name, color, orgId);
+      if (activeTab === "industries")
+        return updateIndustry(id, name, color, orgId);
       return updateChannel(id, name, color, orgId);
     },
     onSuccess: (result) => {
@@ -213,13 +224,17 @@ export default function ReferenceDataPage({ params }: PageProps) {
         setDeletingItem(null);
         setDeleteError("");
       } else {
-        setDeleteError("Cannot delete this item because it is linked to existing records.");
+        setDeleteError(
+          "Cannot delete this item because it is linked to existing records.",
+        );
       }
     },
   });
 
   const loading =
-    addMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+    addMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
 
   // Handlers
   const handleAddItem = (e: SyntheticEvent<HTMLFormElement>) => {
@@ -229,7 +244,7 @@ export default function ReferenceDataPage({ params }: PageProps) {
       return;
     }
     const isDuplicate = currentData.some(
-      (item) => item.name.toLowerCase() === newName.trim().toLowerCase()
+      (item) => item.name.toLowerCase() === newName.trim().toLowerCase(),
     );
     if (isDuplicate) {
       setAddError("An item with this name already exists.");
@@ -238,18 +253,22 @@ export default function ReferenceDataPage({ params }: PageProps) {
     addMutation.mutate({ name: newName.trim(), color: newColor });
   };
 
-  const handleSaveEdit = (id:number) => {
+  const handleSaveEdit = (id: number) => {
     if (!editingName.trim()) return;
     const isDuplicate = currentData.some(
       (item) =>
         item.id !== id &&
-        item.name.toLowerCase() === editingName.trim().toLowerCase()
+        item.name.toLowerCase() === editingName.trim().toLowerCase(),
     );
     if (isDuplicate) {
       alert("An item with this name already exists.");
       return;
     }
-    updateMutation.mutate({ id, name: editingName.trim(), color: editingColor });
+    updateMutation.mutate({
+      id,
+      name: editingName.trim(),
+      color: editingColor,
+    });
   };
 
   const confirmDelete = () => {
@@ -259,33 +278,33 @@ export default function ReferenceDataPage({ params }: PageProps) {
   };
 
   const filteredData = currentData.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
+    item.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const tabConfig: Record<
-  ReferenceTab,
-  {
-    title: string;
-    icon: typeof MapPin;
-    singular: string;
-  }
-> = {
-  cities: {
-    title: "Cities",
-    icon: MapPin,
-    singular: "City",
-  },
-  industries: {
-    title: "Industries",
-    icon: Building2,
-    singular: "Industry",
-  },
-  channels: {
-    title: "Channels",
-    icon: Radio,
-    singular: "Channel",
-  },
-};
+    ReferenceTab,
+    {
+      title: string;
+      icon: typeof MapPin;
+      singular: string;
+    }
+  > = {
+    cities: {
+      title: "Cities",
+      icon: MapPin,
+      singular: "City",
+    },
+    industries: {
+      title: "Industries",
+      icon: Building2,
+      singular: "Industry",
+    },
+    channels: {
+      title: "Channels",
+      icon: Radio,
+      singular: "Channel",
+    },
+  };
 
   const CurrentIcon = tabConfig[activeTab].icon;
 
@@ -300,7 +319,8 @@ export default function ReferenceDataPage({ params }: PageProps) {
               Reference Data
             </h1>
             <p className="text-zinc-500 text-xs mt-1 font-medium">
-              Manage system lookups including cities, industries, and communication channels.
+              Manage system lookups including cities, industries, and
+              communication channels.
             </p>
           </div>
 
@@ -318,8 +338,8 @@ export default function ReferenceDataPage({ params }: PageProps) {
         </div>
 
         {/* Navigation Tabs */}
-       <div className="flex items-center gap-1 sm:gap-2 bg-zinc-200/60 p-1.5 rounded-2xl border border-zinc-200/80 overflow-x-auto">
-          {(Object.keys(tabConfig)as ReferenceTab[]).map((tabKey) => {
+        <div className="flex items-center gap-1 sm:gap-2 bg-zinc-200/60 p-1.5 rounded-2xl border border-zinc-200/80 overflow-x-auto">
+          {(Object.keys(tabConfig) as ReferenceTab[]).map((tabKey) => {
             const Icon = tabConfig[tabKey].icon;
             const isActive = activeTab === tabKey;
             return (
@@ -333,7 +353,9 @@ export default function ReferenceDataPage({ params }: PageProps) {
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
-                <span className="hidden sm:inline">{tabConfig[tabKey].title}</span>
+                <span className="hidden sm:inline">
+                  {tabConfig[tabKey].title}
+                </span>
               </button>
             );
           })}
@@ -347,7 +369,8 @@ export default function ReferenceDataPage({ params }: PageProps) {
           >
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <span className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Plus className="w-4 h-4 text-blue-600" /> New {tabConfig[activeTab].singular}
+                <Plus className="w-4 h-4 text-blue-600" /> New{" "}
+                {tabConfig[activeTab].singular}
               </span>
               <button
                 type="button"
@@ -379,7 +402,9 @@ export default function ReferenceDataPage({ params }: PageProps) {
                   placeholder={`Enter ${tabConfig[activeTab].singular.toLowerCase()} name...`}
                   autoFocus
                   className={`bg-zinc-50 border text-zinc-900 rounded-xl px-4 py-2.5 text-sm outline-none w-full focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                    addError ? "border-rose-500 bg-rose-50/20" : "border-zinc-200"
+                    addError
+                      ? "border-rose-500 bg-rose-50/20"
+                      : "border-zinc-200"
                   }`}
                 />
               </div>
@@ -426,7 +451,9 @@ export default function ReferenceDataPage({ params }: PageProps) {
             </div>
 
             {addError && (
-              <span className="text-rose-500 text-xs font-medium">{addError}</span>
+              <span className="text-rose-500 text-xs font-medium">
+                {addError}
+              </span>
             )}
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
@@ -455,7 +482,9 @@ export default function ReferenceDataPage({ params }: PageProps) {
                   <Check className="w-4 h-4" />
                 )}
                 <span>
-                  {loading ? "Saving..." : `Save ${tabConfig[activeTab].singular}`}
+                  {loading
+                    ? "Saving..."
+                    : `Save ${tabConfig[activeTab].singular}`}
                 </span>
               </button>
             </div>
@@ -619,7 +648,8 @@ export default function ReferenceDataPage({ params }: PageProps) {
                 No {tabConfig[activeTab].title.toLowerCase()} found.
               </p>
               <p className="text-zinc-400 text-xs">
-                Try adding a new {tabConfig[activeTab].singular.toLowerCase()} or clearing the search filter.
+                Try adding a new {tabConfig[activeTab].singular.toLowerCase()}{" "}
+                or clearing the search filter.
               </p>
             </div>
           )}
@@ -678,7 +708,9 @@ export default function ReferenceDataPage({ params }: PageProps) {
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                <span>{deleteMutation.isPending ? "Deleting..." : "Delete"}</span>
+                <span>
+                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                </span>
               </button>
             </div>
           </div>
