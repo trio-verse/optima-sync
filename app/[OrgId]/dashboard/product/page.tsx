@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, SyntheticEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Package,
@@ -23,29 +23,35 @@ import {
   updateProduct,
   deleteProduct,
 } from "@/actions/services/productsService";
+import { CreateProductDTO, Product } from "@/types/reference";
 
-export default function ProductsPage({ params }) {
+interface ProductsPageProps {
+  params: Promise<{
+    OrgId: string;
+  }>;
+}
+export default function ProductsPage({ params }: ProductsPageProps) {
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({
+  const [search, setSearch] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<CreateProductDTO>({
     name: "",
-    price: "",
+    price: 0,
     description: "",
   });
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deletingProduct, setDeletingProduct] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   const resolvedParams = params ? use(params) : null;
-  const orgId = resolvedParams?.OrgId || resolvedParams?.orgId;
+  const orgId = resolvedParams?.OrgId;
 
   // 1. Fetching Data via React Query
   const {
-    data: products = [],
+    data: products = [] as Product[],
     isLoading,
     isError,
   } = useQuery({
@@ -60,7 +66,7 @@ export default function ProductsPage({ params }) {
 
   // 2. Mutations
   const createMutation = useMutation({
-    mutationFn: (data) => createProduct(data, orgId),
+    mutationFn: (data: CreateProductDTO) => createProduct(data, orgId),
     onSuccess: (result) => {
       if (result?.success) {
         queryClient.invalidateQueries({ queryKey: ["products", orgId] });
@@ -73,7 +79,8 @@ export default function ProductsPage({ params }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data) => updateProduct(editingId, data, orgId),
+    mutationFn: (data: CreateProductDTO) =>
+      updateProduct(editingId, data, orgId),
     onSuccess: (result) => {
       if (result?.success) {
         queryClient.invalidateQueries({ queryKey: ["products", orgId] });
@@ -86,7 +93,7 @@ export default function ProductsPage({ params }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => deleteProduct(id, orgId),
+    mutationFn: (id: number) => deleteProduct(id, orgId),
     onSuccess: (result) => {
       if (result?.success) {
         queryClient.invalidateQueries({ queryKey: ["products", orgId] });
@@ -114,7 +121,7 @@ export default function ProductsPage({ params }) {
       });
     } else {
       setEditingId(null);
-      setFormData({ name: "", price: "", description: "" });
+      setFormData({ name: "", price: 0, description: "" });
     }
     setIsModalOpen(true);
   };
@@ -122,11 +129,11 @@ export default function ProductsPage({ params }) {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ name: "", price: "", description: "" });
+    setFormData({ name: "", price: 0, description: "" });
     setErrorMsg("");
   };
 
-  const handleOpenDeleteModal = (product) => {
+  const handleOpenDeleteModal = (product: Product) => {
     setDeletingProduct(product);
     setIsDeleteModalOpen(true);
   };
@@ -148,7 +155,7 @@ export default function ProductsPage({ params }) {
     return true;
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm()) return;
     setErrorMsg("");
@@ -171,14 +178,12 @@ export default function ProductsPage({ params }) {
     const descMatch = item.description?.toLowerCase().includes(query);
     return nameMatch || descMatch;
   });
-
+  console.log(products);
   const totalProducts = products.length;
   const totalPrices =
     totalProducts > 0
-      ? products
-          .reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0)
-          .toFixed(2)
-      : "0.00";
+      ? products.reduce((acc, curr) => acc + (Number(curr.price)), 0).toFixed(2)
+      : 0;
 
   return (
     <div className="min-h-screen bg-slate-50/60 p-6 md:p-10 flex justify-center">
@@ -194,7 +199,8 @@ export default function ProductsPage({ params }) {
                 <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
               </h1>
               <p className="text-slate-500 text-xs mt-0.5 font-medium">
-                Manage all available products to link them with deals and clients.
+                Manage all available products to link them with deals and
+                clients.
               </p>
             </div>
           </div>
@@ -372,7 +378,8 @@ export default function ProductsPage({ params }) {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>
-                      Product or Service Name <span className="text-rose-500">*</span>
+                      Product or Service Name{" "}
+                      <span className="text-rose-500">*</span>
                     </span>
                   </label>
                   <input
@@ -396,7 +403,10 @@ export default function ProductsPage({ params }) {
                     min="0"
                     value={formData.price}
                     onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
+                      setFormData({
+                        ...formData,
+                        price: Number(e.target.value),
+                      })
                     }
                     placeholder="0.00"
                     className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"

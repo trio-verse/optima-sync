@@ -2,16 +2,15 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { api } from "@/lib/api/client";
+import { api, getErrorMessage, getStatusMessage } from "@/lib/api/client";
+import type { Industry, CreateIndustryDTO } from "@/types/reference";
 
-/**
- * جلب قائمة المجالات (Industries)
- */
-export async function getindustries(orgId) {
+export async function getindustries(
+  orgId?: string,
+): Promise<{ success: boolean; message?: string; data: Industry[] }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
 
     if (!token) {
       return { success: false, message: "Unauthorized", data: [] };
@@ -22,7 +21,16 @@ export async function getindustries(orgId) {
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
-
+    if (resdata.status >= 400) {
+      return {
+        success: false,
+        message: getStatusMessage(
+          resdata.status,
+          getErrorMessage(resdata.data, "Failed to fetch industries"),
+        ),
+        data: [],
+      };
+    }
     return {
       success: true,
       data: resdata?.data?.data || [],
@@ -31,27 +39,31 @@ export async function getindustries(orgId) {
     console.error("DEBUG getIndustry Error:", error);
     return {
       success: false,
-      message:
-        error.data?.message || error.message || "Failed to fetch industries",
+      message: getErrorMessage(error, "Failed to fetch industries"),
       data: [],
     };
   }
 }
 
-/**
- * إنشاء مجال جديد
- */
-export async function createIndustry(newName, newColor,orgId) {
+export async function createIndustry(
+  newName: string,
+  newColor: string,
+  orgId?: string,
+): Promise<{
+  success: boolean;
+  message?: string;
+  data?: Industry;
+  id?: number;
+}> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
     }
 
-    const payload = {
+    const payload:CreateIndustryDTO= {
       name: newName,
       color: newColor,
     };
@@ -60,6 +72,16 @@ export async function createIndustry(newName, newColor,orgId) {
       token,
       headers: { "X-Organization-ID": orgId },
     });
+
+    if (resdata.status >= 400) {
+      return {
+        success: false,
+        message: getStatusMessage(
+          resdata.status,
+          getErrorMessage(resdata.data, "Failed to create industry"),
+        ),
+      };
+    }
 
     revalidatePath("/dashboard/clients");
 
@@ -72,29 +94,26 @@ export async function createIndustry(newName, newColor,orgId) {
     console.error("DEBUG createIndustry Error:", error);
     return {
       success: false,
-      message:
-        error.data?.message || error.message || "Failed to create industry",
+      message: getErrorMessage(error, "Failed to create industry"),
     };
   }
 }
 
-// التوافقية مع الاسم السابق في حال استخدامه بأماكن أخرى
-export const creatIndustry = createIndustry;
-
-/**
- * تحديث بيانات مجال
- */
-export async function updateIndustry(id, newName, newColor,orgId) {
+export async function updateIndustry(
+  id: number,
+  newName: string,
+  newColor: string,
+  orgId?: string,
+): Promise<{ success: boolean; message?: string; data?: Industry }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
 
     if (!token) {
       return { success: false, message: "Unauthorized" };
     }
 
-    const payload = {
+    const payload:CreateIndustryDTO = {
       name: newName,
       color: newColor,
     };
@@ -103,6 +122,16 @@ export async function updateIndustry(id, newName, newColor,orgId) {
       token,
       headers: { "X-Organization-ID": orgId },
     });
+
+    if (resdata.status >= 400) {
+      return {
+        success: false,
+        message: getStatusMessage(
+          resdata.status,
+          getErrorMessage(resdata.data, "Failed to update industry"),
+        ),
+      };
+    }
 
     revalidatePath("/dashboard/clients");
 
@@ -114,16 +143,15 @@ export async function updateIndustry(id, newName, newColor,orgId) {
     console.error("DEBUG updateIndustry Error:", error);
     return {
       success: false,
-      message:
-        error.data?.message || error.message || "Failed to update industry",
+      message: getErrorMessage(error, "Failed to update industry"),
     };
   }
 }
 
-/**
- * حذف مجال
- */
-export async function deleteIndustry(id,orgId) {
+export async function deleteIndustry(
+  id: number,
+  orgId?: string,
+): Promise<{ success: boolean; message?: string; data?: Industry }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -137,6 +165,16 @@ export async function deleteIndustry(id,orgId) {
       headers: { "X-Organization-ID": orgId },
     });
 
+    if (resdata.status >= 400) {
+      return {
+        success: false,
+        message: getStatusMessage(
+          resdata.status,
+          getErrorMessage(resdata.data, "Failed to delete industry"),
+        ),
+      };
+    }
+
     revalidatePath("/dashboard/clients");
 
     return {
@@ -147,8 +185,7 @@ export async function deleteIndustry(id,orgId) {
     console.error("DEBUG deleteIndustry Error:", error);
     return {
       success: false,
-      message:
-        error.data?.message || error.message || "Failed to delete industry",
+      message: getErrorMessage(error, "Failed to delete industry"),
     };
   }
 }
