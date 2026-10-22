@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Building2, Calendar, Plus, ArrowLeft, Loader2, Eye, FileDown } from "lucide-react";
-// إضافة استيراد دالة generateQuotationPdf هنا 👇
+
 import { previewQuotation, generateQuotationPdf } from "@/actions/quotationActions"; 
 import type { Project, ProjectVersion } from "@/types/project";
 export default function ProjectHeader({
@@ -33,7 +33,7 @@ export default function ProjectHeader({
         });
     };
 
-    // دالة التعامل مع الـ Preview
+
     const handlePreview = async () => {
         if (!selectedVersionId) {
             alert("Please select a version first.");
@@ -48,7 +48,9 @@ export default function ProjectHeader({
                 const newWindow = window.open("", "_blank");
                 if (newWindow) {
                     newWindow.document.write(res.html);
+                    newWindow.print();
                     newWindow.document.close();
+                    
                 } else {
                     alert("Please allow pop-ups for this site to view the preview.");
                 }
@@ -61,8 +63,7 @@ export default function ProjectHeader({
             setPreviewing(false);
         }
     };
-
-    // ✅ دالة التعامل مع توليد الـ PDF
+ 
     const handleGeneratePDF = async () => {
         if (!selectedVersionId) {
             alert("Please select a version first.");
@@ -74,7 +75,7 @@ export default function ProjectHeader({
             const res = await generateQuotationPdf(orgId, project.id, selectedVersionId);
             
             if (res.success && res.pdf_url) {
-                // فتح رابط الـ PDF في نافذة جديدة ليتمكن المستخدم من عرضه أو تحميله
+                
                 window.open(res.pdf_url, "_blank");
             } else {
                 alert(res.message || "Failed to generate PDF");
@@ -111,7 +112,7 @@ export default function ProjectHeader({
                         <span>Preview Quotation</span>
                     </button>
 
-                    {/* ✅ زر توليد الـ PDF مفعل الآن */}
+                    
                     <button
                         onClick={handleGeneratePDF}
                         disabled={generating || previewing}
