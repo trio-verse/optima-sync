@@ -10,7 +10,7 @@ export async function sendEmailToBackend(email) {
   try {
     const resdata = await api.post("/register-email", { email });
 
-
+console.log("OTP Response :", JSON.stringify(resdata, null, 2));
 const result = {
       status: resdata?.status,
       data: resdata?.data,

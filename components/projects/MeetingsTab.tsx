@@ -9,12 +9,12 @@ import {
     updateProjectMeeting,
     deleteProjectMeeting
 } from "@/actions/meetingActions";
-
+import type { ProjectMeeting, ProjectVersion, CreateMeetingInput } from "@/types/project";
 export default function MeetingsTab({
     projectId,
     orgId,
     meetings: initialMeetings = [],
-    activeVersionObj = {},
+    activeVersionObj = {} as ProjectVersion,
     isEditingAllowed = false,
 }) {
     const router = useRouter();
@@ -66,11 +66,11 @@ export default function MeetingsTab({
         setIsFormModalOpen(true);
     };
 
-    const handleOpenEditModal = (m) => {
+    const handleOpenEditModal = (m:ProjectMeeting) => {
         setEditingMeeting(m);
         setTitle(m.title || "");
         setDescription(m.description || "");
-        setMeetingUrl(m.meeting_url || m.location || "");
+        setMeetingUrl(m.meeting_url || "");
 
         if (m.meeting_date) {
             const d = new Date(m.meeting_date);
@@ -82,13 +82,13 @@ export default function MeetingsTab({
                 setTime("");
             }
         } else {
-            setDate(m.date || "");
-            setTime(m.time || "");
+        setDate((m as any).date || "");
+        setTime((m as any).time || "");
         }
         setIsFormModalOpen(true);
     };
 
-    const handleSubmitForm = async (e) => {
+    const handleSubmitForm = async (e: React.SyntheticEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
@@ -160,7 +160,7 @@ export default function MeetingsTab({
         }
     };
 
-    const formatMeetingDateTime = (dateStr) => {
+    const formatMeetingDateTime = (dateStr:string) => {
         if (!dateStr) return { date: "N/A", time: "N/A" };
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return { date: dateStr, time: "" };

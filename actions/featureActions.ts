@@ -3,8 +3,14 @@
 import { api } from "@/lib/api/client";
 import { cookies } from "next/headers";
 
+import type {
+    ProjectFeature,
+    CreateFeatureInput,
+    UpdateFeatureInput,
+    FeatureStatus
+} from "@/types/project";
 
-export async function getProjectFeatures(projectId, orgId) {
+export async function getProjectFeatures(projectId:number, orgId:string): Promise<{ success: boolean; message?: string; data?: ProjectFeature[] }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -35,7 +41,7 @@ export async function getProjectFeatures(projectId, orgId) {
 }
 
 
-export async function createProjectFeature(projectId, orgId, featureData) {
+export async function createProjectFeature(projectId:number, orgId:string, featureData: CreateFeatureInput): Promise<{ success: boolean; message?: string; data?: ProjectFeature }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -70,7 +76,7 @@ export async function createProjectFeature(projectId, orgId, featureData) {
     }
 }
 
-export async function updateProjectFeature(projectId, featureId, orgId, featureData) {
+export async function updateProjectFeature(projectId:number, featureId:number, orgId:string, featureData: UpdateFeatureInput): Promise<{ success: boolean; message?: string; data?: ProjectFeature }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -106,7 +112,7 @@ export async function updateProjectFeature(projectId, featureId, orgId, featureD
 }
 
 
-export async function deleteProjectFeature(projectId, featureId, orgId) {
+export async function deleteProjectFeature(projectId:number, featureId:number, orgId:string): Promise<{ success: boolean; message?: string }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -135,7 +141,7 @@ export async function deleteProjectFeature(projectId, featureId, orgId) {
         throw error?.response?.data || error;
     }
 }
-export async function updateProjectFeatureStatus(projectId, featureId, orgId, status) {
+export async function updateProjectFeatureStatus(projectId:number, featureId:number, orgId:string, status: FeatureStatus): Promise<{ success: boolean; message?: string; data?: ProjectFeature }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 

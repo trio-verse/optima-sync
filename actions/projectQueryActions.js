@@ -11,6 +11,11 @@ export async function getProjectQueryBuilderSchema(orgId) {
       method: "GET",
       orgId,
     });
+const sourceField = structureResponse?.data?.data?.fields?.find((f) => f.key === 'source');
+
+if (sourceField && sourceField.options) {
+    console.log("خيارات حقل الـ Source من السيرفر بالتفصيل:", sourceField.options);
+}
     return {
       success: true,
       data: response.data || response,

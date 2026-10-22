@@ -139,7 +139,6 @@ export async function apiFetch(
     params,
     ...customConfig
   } = options;
-
   const cookieStore = await cookies();
   let token = customToken || cookieStore.get("token")?.value;
 

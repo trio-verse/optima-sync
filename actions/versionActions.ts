@@ -1,8 +1,8 @@
 "use server"
 import { cookies } from "next/headers";
 import { api } from "@/lib/api/client";
-
-async function getAuthContext(orgId) {
+import type { ProjectVersion } from "@/types/project";
+async function getAuthContext(orgId:string) {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -15,7 +15,7 @@ async function getAuthContext(orgId) {
     return { token };
 }
 
-export async function getVersions(projectId, orgId) {
+export async function getVersions(projectId:number, orgId:string): Promise<{ success: boolean; message?: string; data?: ProjectVersion[] }> {
     const { token, error } = await getAuthContext(orgId);
     if (error) return error;
 
@@ -33,7 +33,7 @@ export async function getVersions(projectId, orgId) {
     }
 }
 
-export async function getVersionById(projectId, versionId, orgId) {
+export async function getVersionById(projectId:number, versionId:number, orgId:string) {
     const { token, error } = await getAuthContext(orgId);
     if (error) return error;
 
@@ -51,7 +51,7 @@ export async function getVersionById(projectId, versionId, orgId) {
     }
 }
 
-export async function updateVersion(projectId, versionId, orgId, formData) {
+export async function updateVersion(projectId:number, versionId:number, orgId:string, formData: any): Promise<{ success: boolean; message?: string; data?: ProjectVersion }> {
     const { token, error } = await getAuthContext(orgId);
     if (error) return error;
 
@@ -77,7 +77,7 @@ export async function updateVersion(projectId, versionId, orgId, formData) {
     }
 }
 
-export async function freezeVersion(projectId, versionId, orgId) {
+export async function freezeVersion(projectId:number, versionId:number, orgId:string): Promise<{ success: boolean; message?: string; data?: ProjectVersion }> {
     const { token, error } = await getAuthContext(orgId);
     if (error) return error;
 
@@ -99,7 +99,7 @@ export async function freezeVersion(projectId, versionId, orgId) {
     }
 }
 
-export async function deleteVersion(projectId, versionId, orgId) {
+export async function deleteVersion(projectId:number, versionId:number, orgId:string): Promise<{ success: boolean; message?: string ,data?: ProjectVersion }> {
     const { token, error } = await getAuthContext(orgId);
     if (error) return error;
 

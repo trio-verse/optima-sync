@@ -5,17 +5,17 @@ import Link from "next/link";
 import { Building2, Calendar, Plus, ArrowLeft, Loader2, Eye, FileDown } from "lucide-react";
 // إضافة استيراد دالة generateQuotationPdf هنا 👇
 import { previewQuotation, generateQuotationPdf } from "@/actions/quotationActions"; 
-
+import type { Project, ProjectVersion } from "@/types/project";
 export default function ProjectHeader({
-    project = {},
-    currentVersion = {},
+    project = {} as Project,
+    currentVersion = {} as ProjectVersion,
     versionsData = [],
     orgId,
     selectedVersionId,
     setSelectedVersionId
 }) {
     const [previewing, setPreviewing] = useState(false);
-    const [generating, setGenerating] = useState(false); // ✅ تفعيل حالة تحميل الـ PDF
+    const [generating, setGenerating] = useState(false); 
 
     const allVersions = [...(versionsData || [])];
     
@@ -25,7 +25,7 @@ export default function ProjectHeader({
 
     allVersions.sort((a, b) => b.version_number - a.version_number);
 
-    const formatDate = (dateString) => {
+    const formatDate = (dateString?: string | null) => {
         if (!dateString) return "N/A";
         const d = new Date(dateString);
         return isNaN(d.getTime()) ? dateString : d.toLocaleDateString("en-US", {
@@ -143,7 +143,7 @@ export default function ProjectHeader({
                             <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
                                 <span className="font-semibold text-slate-400">Client:</span>
                                 <span className="font-bold text-slate-700 truncate max-w-[150px] sm:max-w-[200px]">
-                                    {project?.client_details?.name || "No Client Assigned"}
+                                    {project?.client?.name || project?.clientName || "No Client Assigned"}
                                 </span>
                             </div>
                             

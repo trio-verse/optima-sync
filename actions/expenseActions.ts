@@ -2,8 +2,13 @@
 
 import { api } from "@/lib/api/client";
 import { cookies } from "next/headers";
+import type {
+    ProjectCost,
+    CreateCostInput,
+    UpdateCostInput
+} from "@/types/project";
 
-export async function createProjectCost(projectId, orgId, costData) {
+export async function createProjectCost(projectId:number, orgId:string, costData: CreateCostInput): Promise<{ success: boolean; message?: string; data?: ProjectCost }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -42,7 +47,7 @@ export async function createProjectCost(projectId, orgId, costData) {
 }
 
 
-export async function updateProjectCost(projectId, costId, orgId, costData) {
+export async function updateProjectCost(projectId:number, costId:number, orgId:string, costData: UpdateCostInput): Promise<{ success: boolean; message?: string; data?: ProjectCost }> {
       const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -81,7 +86,7 @@ export async function updateProjectCost(projectId, costId, orgId, costData) {
 }
 
 
-export async function deleteProjectCost(projectId, costId, orgId) {
+export async function deleteProjectCost(projectId:number, costId:number, orgId:string): Promise<{ success: boolean; message?: string }> {
       const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -112,7 +117,7 @@ export async function deleteProjectCost(projectId, costId, orgId) {
         throw error?.response?.data || error;
     }
 }
-export async function getProjectCosts(projectId, orgId) {
+export async function getProjectCosts(projectId:number, orgId:string): Promise<{ success: boolean; message?: string; data?: ProjectCost[] }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 

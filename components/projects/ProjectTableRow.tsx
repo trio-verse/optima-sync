@@ -25,15 +25,36 @@ import {
     Trash2,
 } from "lucide-react";
 
-// استيراد الأكشنز والـ Lookups
+
 import { getProjects, createProject, updateProject, deleteProject } from "@/actions/projectAction"; 
 import { getClients, createClient } from "@/actions/clientActions";
 import { useClientLookups } from "@/hooks/useClientLookups";
+import type { Project, CreateProjectInput, UpdateProjectInput } from "@/types/project";
+import type { Client, CreateClientInput } from "@/types/crm";
 
-// 👇 استيراد مكون المودال الذي أنشأناه للتو
-import ProjectFormModal from "./ProjectModal"; // عدل المسار إذا لزم الأمر
 
-export default function ProjectsTable({ orgId }) {
+import ProjectFormModal from "./ProjectModal"; 
+interface NewProjectFormState {
+    title: string;
+    description: string;
+    subTotal: string;
+    profitPercentage: string;
+    clientId: string;
+    clientName: string;
+    clientEmail: string;
+    status: string;
+    deadline: string;
+    startDate: string;
+    endDate: string;
+    duration: string;
+    discount: string;
+    validUntilDays: string;
+    paymentTerms: string;
+}
+interface ProjectsTableProps {
+    orgId: string;
+}
+export default function ProjectsTable({ orgId }: ProjectsTableProps) {
     const queryClient = useQueryClient();
 
     const [projects, setProjects] = useState([]);
@@ -41,20 +62,20 @@ export default function ProjectsTable({ orgId }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
 
-    // حالات جلب العملاء مباشرة عبر getClients
-    const [clients, setClients] = useState([]);
+
+    const [clients, setClients] = useState<Client[]>([]);
     const [loadingClients, setLoadingClients] = useState(false);
 
-    // جلب قائمة المدن والصناعات لإضافتها للعميل الجديد
+
     const { cities, industries, loadingLookups } = useClientLookups(orgId);
 
-    // حالات مودال إنشاء وتعديل المشروع
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState(null);
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState("");
     
-    // حالة إضافة عميل جديد داخل النموذج بجميع الحقول لتفادي Validation Fail
+
     const [isAddingNewClient, setIsAddingNewClient] = useState(false);
     const [newClientData, setNewClientData] = useState({ 
         name: "", 
@@ -71,8 +92,7 @@ export default function ProjectsTable({ orgId }) {
         notes: ""
     });
     const [clientAddError, setClientAddError] = useState("");
-
-    const [newProjectForm, setNewProjectForm] = useState({
+const [newProjectForm, setNewProjectForm] = useState({
         title: "",
         description: "",
         subTotal: "",
@@ -133,9 +153,9 @@ export default function ProjectsTable({ orgId }) {
     };
 
     // Mutation لإضافة عميل جديد بكافة الحقول
-    const addClientMutation = useMutation({
-        mutationFn: (clientPayload) => createClient(orgId, clientPayload),
-        onSuccess: (result) => {
+    const addClientMutation = useMutation<any, Error, any>({
+        mutationFn: (clientPayload: any) => createClient(orgId, clientPayload),
+        onSuccess: (result: any) => {
             if (result?.success) {
                 const createdClient = result.data || {};
                 
@@ -171,12 +191,12 @@ export default function ProjectsTable({ orgId }) {
                 setClientAddError(result?.message || "Could not save client. Please check all fields.");
             }
         },
-        onError: (err) => {
+        onError: (err: any) => {
             setClientAddError("An error occurred while creating client.");
         }
     });
 
-    const handleCreateInlineClient = (e) => {
+    const handleCreateInlineClient = (e: React.SyntheticEvent) => {
         e.preventDefault();
         if (!newClientData.name.trim()) {
             setClientAddError("Client name is required.");
@@ -225,37 +245,37 @@ export default function ProjectsTable({ orgId }) {
         setIsCreateModalOpen(true);
     };
 
-   const handleOpenEditModal = (project, e) => {
+   const handleOpenEditModal = (project: Project, e: React.MouseEvent) => {
         e.stopPropagation();
         setEditingProject(project);
         setIsAddingNewClient(false);
         
         // استخراج القيم بأمان مع تغطية جميع مسارات البيانات المحتملة
-        const subTotalVal = project.sub_total || project.current_version?.sub_total || (project.budget ? String(project.budget).replace(/[^0-9.]/g, '') : "") || "";
-        const profitVal = project.profit_percentage || project.current_version?.profit_percentage || "20";
+        const subTotalVal = project.sub_total  || (project.budget ? String(project.budget).replace(/[^0-9.]/g, '') : "") || "";
+        const profitVal = project.profit_percentage ||  "20";
 
         setNewProjectForm({
             title: project.current_version?.title || project.title || "",
             description: project.current_version?.description || project.description || "",
-            subTotal: subTotalVal,
+            subTotal: String(subTotalVal),
             profitPercentage: String(profitVal).replace(/[^0-9.]/g, ''),
-            clientId: String(project.client_id || project.client?.id || project.clientId || ""),
+            clientId: String(project.client_id || project.client?.id  || ""),
             clientName: project.client?.name || project.clientName || "",
-            clientEmail: project.client?.email || project.client?.contact_info?.email || project.clientEmail || "",
+            clientEmail: project.client?.email || project.clientEmail || "",
             status: project.status || "pending",
             deadline: project.deadline || "2026-12-31",
-            startDate: project.current_version?.start_date || project.start_date || project.startDate || "",
-            endDate: project.current_version?.end_date || project.end_date || project.endDate || "",
+            startDate: project.current_version?.start_date || "",
+            endDate: project.current_version?.end_date || project.end_date  || "",
             duration: project.current_version?.duration || project.duration || "",
-            discount: project.discount || "0",
-            validUntilDays: project.valid_until_days || "30",
+            discount: String(project.discount || "0"),
+            validUntilDays: String(project.valid_until_days || "30"),
             paymentTerms: project.payment_terms || "",
         });
         
         setIsCreateModalOpen(true);
     };
 
-    const handleOpenDeleteModal = (project, e) => {
+    const handleOpenDeleteModal = (project: Project, e: React.MouseEvent) => {
         e.stopPropagation();
         setDeletingProject(project);
         setDeleteConfirmationName("");
@@ -264,7 +284,7 @@ export default function ProjectsTable({ orgId }) {
     };
 
  
-    const handleDeleteProject = async (e) => {
+    const handleDeleteProject = async (e: React.SyntheticEvent | React.MouseEvent) => {
         e.preventDefault();
         if (!deletingProject) return;
 
@@ -291,30 +311,33 @@ export default function ProjectsTable({ orgId }) {
         }
     };
 const resetProjectForm = () => {
-    setNewProjectForm({
-        title: "",
-        description: "",
-        subTotal: "",
-        profitPercentage: "20",
-        clientId: "",
-        clientName: "",
-        clientEmail: "",
-        status: "pending",
-        deadline: "2026-12-31",
-        startDate: "",
-        endDate: "",
-        duration: "",
-    });
-};
+        setNewProjectForm({
+            title: "",
+            description: "",
+            subTotal: "",
+            profitPercentage: "20",
+            clientId: "",
+            clientName: "",
+            clientEmail: "",
+            status: "pending",
+            deadline: "2026-12-31",
+            startDate: "",
+            endDate: "",
+            duration: "",
+            discount: "0",
+            validUntilDays: "30",
+            paymentTerms: "",
+        });
+    };
 
-   const handleSaveNewProject = async (e) => {
+   const handleSaveNewProject = async (e: React.SyntheticEvent<HTMLFormElement>,) => {
         e.preventDefault();
         setCreating(true);
         setCreateError("");
 
         try {
             // توحيد مفاتيح البيانات لتشمل camelCase و snake_case لتجنب رفض الباك-إند
-            const formData = {
+            const formData: any = {
                 title: newProjectForm.title,
                 description: newProjectForm.description,
                 status: newProjectForm.status,
@@ -342,10 +365,10 @@ const resetProjectForm = () => {
             };
 
             if (editingProject) {
-                const response = await updateProject(orgId, editingProject.id, formData);
+                const response = await updateProject(orgId, editingProject.id, formData );
 
                 if (response.success) {
-                    const updatedData = response.data || {};
+                    const updatedData = (response.data as Partial<Project>) || {};
                     
                     // تحديث حالة الواجهة (State) بناءً على المدخلات لضمان تغيرها فوراً
                     setProjects(projects.map(p => p.id === editingProject.id ? {
@@ -385,12 +408,13 @@ const resetProjectForm = () => {
                     setCreateError(response.message || "Failed to update project");
                 }
             } else {
-                const response = await createProject(orgId, formData);
+                const response = await createProject(orgId, formData as CreateProjectInput);
 
                 if (response.success) {
-                    const serverData = response.data || {};
-                    const createdProject = {
+                    const serverData = (response.data as any) || {};
+                    const createdProject : Project = {
                         id: serverData.id || Date.now(),
+                        organization_id: serverData.organization_id,
                         title: newProjectForm.title,
                         description: newProjectForm.description,
                         current_version: {
@@ -399,17 +423,17 @@ const resetProjectForm = () => {
                             start_date: serverData.current_version?.start_date ?? newProjectForm.startDate,
                             end_date: serverData.current_version?.end_date ?? newProjectForm.endDate,
                             duration: serverData.current_version?.duration ?? newProjectForm.duration,
-                        },
+                        }as any,
                         client: {
                             name: newProjectForm.clientName || serverData.client?.name || `Client #${newProjectForm.clientId}`,
                             email: newProjectForm.clientEmail || serverData.client?.email
-                        },
+                        }as any,
                         clientName: newProjectForm.clientName || serverData.client?.name || `Client #${newProjectForm.clientId}`,
                         clientEmail: newProjectForm.clientEmail || serverData.client?.email,
                         client_id: newProjectForm.clientId,
                         sub_total: newProjectForm.subTotal,
                         profit_percentage: newProjectForm.profitPercentage,
-                        status: newProjectForm.status,
+                        status: newProjectForm.status as any,
                         budget: `$${Number(calculatedTotal).toLocaleString()}`,
                         total_amount: calculatedTotal,
                         formatted_total_amount: `$${Number(calculatedTotal).toLocaleString()}`,
@@ -626,8 +650,8 @@ const resetProjectForm = () => {
                                 key={project.id} 
                                 project={project} 
                                 orgId={orgId} 
-                                onEdit={(e) => handleOpenEditModal(project, e)}
-                                onDelete={(e) => handleOpenDeleteModal(project, e)}
+                                onEdit={(e: React.MouseEvent<HTMLButtonElement>) => handleOpenEditModal(project, e)}
+                                onDelete={(e: React.MouseEvent<HTMLButtonElement>) => handleOpenDeleteModal(project, e)}
                             />
                         ))}
                     </div>
@@ -638,7 +662,8 @@ const resetProjectForm = () => {
             {/* 👇 استدعاء المكون الجديد هنا كبديل للمودال القديم */}
             {isCreateModalOpen && (
                 <ProjectFormModal
-                    isCreateModalOpen={isCreateModalOpen}
+
+
                     setIsCreateModalOpen={setIsCreateModalOpen}
                     editingProject={editingProject}
                     createError={createError}
@@ -731,7 +756,13 @@ const resetProjectForm = () => {
 }
 
 // مكون الصف لسطح المكتب
-function ProjectTableRow({ project, orgId, onEdit, onDelete }) {
+interface ProjectRowProps {
+    project: Project;
+    orgId: string;
+    onEdit: (e: React.MouseEvent) => void;
+    onDelete: (e: React.MouseEvent) => void;
+}
+function ProjectTableRow({ project, orgId, onEdit, onDelete }: ProjectRowProps) {
     const router = useRouter();
 
     const statusBadges = {
@@ -749,7 +780,7 @@ function ProjectTableRow({ project, orgId, onEdit, onDelete }) {
         router.push(`/${orgId}/dashboard/projects/${project.id}`);
     };
    const getFormattedBudget = () => {
-        const rawBudget = project.formatted_total_amount || project.total_amount || project.budget || project.current_version?.total_amount || project.sub_total || 0;
+        const rawBudget = project.formatted_total_amount || project.total_amount || project.budget || project.sub_total || 0;
         
         // إذا كانت القيمة كنص وتحتوي مسبقاً على $، نعرضها كما هي
         if (typeof rawBudget === 'string' && rawBudget.includes('$')) return rawBudget;
@@ -779,7 +810,7 @@ function ProjectTableRow({ project, orgId, onEdit, onDelete }) {
 
             <td className="py-4 px-4 whitespace-nowrap">
                 <p className="font-semibold text-gray-700">{project.client?.name || project.clientName}</p>
-                <p className="text-[11px] text-gray-400">{project.client?.email || project.client?.contact_info?.email || project.clientEmail}</p>
+                <p className="text-[11px] text-gray-400">{project.client?.email || project.clientEmail}</p>
             </td>
 
             <td className="py-4 px-4 whitespace-nowrap">

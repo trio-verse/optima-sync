@@ -18,9 +18,37 @@ import {
 } from "lucide-react";
 
 import { getPublicIntakeUrl, submitPublicProject } from "@/actions/publicProjectActions";
+interface IntakeFormData {
+    client_name: string;
+    company_name: string;
+    email: string;
+    phone: string;
+    project_title: string;
+    description: string;
+    [key: string]: string;
+}
 
-export default function ProjectIntakeForm({ token }) {
-    const [formData, setFormData] = useState({
+
+interface FormErrors {
+    client_name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    project_title?: string | null;
+    description?: string | null;
+    server?: string | null;
+    [key: string]: string | null | undefined;
+}
+
+interface SubmitSuccessData {
+    reference_number: string;
+    message: string;
+}
+
+interface ProjectIntakeFormProps {
+    token: string;
+}
+export default function ProjectIntakeForm({ token }: ProjectIntakeFormProps) {
+    const [formData, setFormData] = useState<IntakeFormData>({
         client_name: "",
         company_name: "",
         email: "",
@@ -29,13 +57,13 @@ export default function ProjectIntakeForm({ token }) {
         description: "",
     });
 
-    const [attachments, setAttachments] = useState([]);
-    const [errors, setErrors] = useState({});
+    const [attachments, setAttachments] = useState<File[]>([]);
+    const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitSuccess, setSubmitSuccess] = useState(null);
-    const [isLoadingUrl, setIsLoadingUrl] = useState(true);
-    const [urlError, setUrlError] = useState("");
-    const [targetEndpoint, setTargetEndpoint] = useState(null);
+    const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccessData | null>(null);
+    const [isLoadingUrl, setIsLoadingUrl] = useState<boolean>(true);
+    const [urlError, setUrlError] = useState<string | null>(null);
+    const [targetEndpoint, setTargetEndpoint] = useState<string | null>(null);
 
     useEffect(() => {
     let isCancelled = false;
@@ -66,7 +94,7 @@ export default function ProjectIntakeForm({ token }) {
     };
 }, [token]);
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
         if (errors[name]) {
@@ -74,7 +102,7 @@ export default function ProjectIntakeForm({ token }) {
         }
     };
 
-    const handleFileChange = (e) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         const allowedTypes = [
             "application/pdf",
@@ -96,12 +124,12 @@ export default function ProjectIntakeForm({ token }) {
         setAttachments((prev) => [...prev, ...validFiles]);
     };
 
-    const removeAttachment = (index) => {
+    const removeAttachment = (index: number) => {
         setAttachments((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const validate = () => {
-        const newErrors = {};
+    const validate = (): boolean => {
+        const newErrors: FormErrors = {};
         if (!formData.client_name.trim()) newErrors.client_name = "Required";
         if (!formData.email.trim()) newErrors.email = "Required";
         else if (!/\S+@\S+\.\S+/.test(formData.email))
@@ -115,7 +143,7 @@ export default function ProjectIntakeForm({ token }) {
     };
 
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!validate()) return;
 
@@ -140,7 +168,10 @@ export default function ProjectIntakeForm({ token }) {
             const result = await submitPublicProject(targetEndpoint, data);
 
             if (result.success) {
+                console.log("تم إنشاء المشروع بنجاح في المنظمة رقم:", result.data?.organization_id);
+                console.log("اسم المنظمة:", result.data?.organization?.name);
                 setSubmitSuccess({
+                    
                     reference_number: result.data?.reference_number || "PRJ-SUCCESS",
                     message: result.message || "Your project request has been submitted successfully!",
                 });
