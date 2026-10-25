@@ -1,6 +1,6 @@
 export type CampaignStatus = 'active' |'draft' | 'paused' | 'completed' | 'cancelled';
 
-export interface ICampaign {
+export interface Campaign {
   id: string;
   organization_id?: string;
   name: string;

@@ -5,8 +5,8 @@ import { getindustries } from "@/actions/services/industryService";
 import { useQuery } from "@tanstack/react-query";
 import { ClientLookupsData } from "@/types/lookups";
 
-export function useClientLookups(orgId: string) {
-  const { data, isLoading } = useQuery<ClientLookupsData>({
+export function useClientLookups(orgId: string):ClientLookupsData {
+  const { data, isLoading } = useQuery({
     queryKey: ["clientLookups", orgId], 
     queryFn: async () => {
       console.log("🔥 [LOOKUPS API CALL] Fetching cities & industries from server...");

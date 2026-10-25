@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, SyntheticEvent, useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useClientLookups } from "@/hooks/useClientLookups";
 import { Loader2, Plus, UserCheck, X, MapPin, Palette, Building2 } from "lucide-react";
-import { clientSchema } from "@/lib/validations/clientSchema"; // قم بتعديل المسار بحسب مكان ملف السكيما لديك
-import { createCity } from "@/actions/services/cityService"; // عدّل المسار إذا كان مختلف عندك
-import { createIndustry } from "@/actions/services/industryService"; // عدّل المسار إذا كان مختلف عندك
+import { clientSchema } from "@/lib/validations/clientSchema"; 
+import { createCity } from "@/actions/services/cityService"; 
+import { createIndustry } from "@/actions/services/industryService"; 
+import { Client } from "@/types";
 
 const CLIENT_TYPES = [
   { value: "company", label: "Company" },
@@ -25,59 +26,54 @@ const PRESET_COLORS = [
   "#0891b2", // Cyan
   "#4b5563", // Slate
 ];
+type FormFieldName =
+  | "name"
+  | "client_type"
+  | "city_id"
+  | "industry_id"
+  | "phone"
+  | "email"
+  | "whatsapp"
+  | "facebook"
+  | "instagram"
+  | "website"
+  | "address"
+  | "notes";
 
-const INITIAL_FORM_STATE = {
-  name: "",
-  type: "individual",
-  city_id: "",
-  industry_id: "",
-  phone: "",
-  email: "",
-  whatsapp: "",
-  facebook: "",
-  instagram: "",
-  website: "",
-  address: "",
-  notes: "",
-};
-
+type FormErrors = Partial<Record<FormFieldName, string>>;
+interface ClientFormProps {
+  initialData?: Client;
+  onSubmit: (formDataPayload: Client, { actionType, resetForm }) => void;
+  onClose: () => void;
+  isSubmitting: boolean;
+  orgId: string;
+}
 export default function ClientForm({
-  initialData = null,
+  initialData,
   onSubmit,
   onClose,
   isSubmitting,
   orgId,
-}) {
+}:ClientFormProps) {
   const { cities, industries, loadingLookups } = useClientLookups(orgId);
   const queryClient = useQueryClient();
-
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Client>({
+    id:0,
     name: initialData?.name || "",
-    type: initialData?.type || "individual",
-    city_id: String(
-      initialData?.address?.city?.id ||
-        initialData?.city?.id ||
-        initialData?.city_id ||
-        ""
-    ),
-    industry_id: String(
-      initialData?.industry?.id || initialData?.industry_id || ""
-    ),
-    phone: initialData?.contact_info?.phone || initialData?.phone || "",
-    email: initialData?.contact_info?.email || initialData?.email || "",
-    whatsapp:
-      initialData?.contact_info?.whatsapp || initialData?.whatsapp || "",
-    facebook:
-      initialData?.contact_info?.facebook || initialData?.facebook || "",
-    instagram:
-      initialData?.contact_info?.instagram || initialData?.instagram || "",
-    website: initialData?.contact_info?.website || initialData?.website || "",
-    address: initialData?.address?.raw || initialData?.address || "",
+    client_type: initialData?.client_type || "individual",
+    city_id:  initialData?.city_id ,
+    industry_id:  initialData?.industry_id ,
+    phone:  initialData?.phone || "",
+    email:  initialData?.email || "",
+    whatsapp: initialData?.whatsapp || "",
+    facebook: initialData?.facebook || "",
+    instagram: initialData?.instagram || "",
+    website:  initialData?.website || "",
+    address:  initialData?.address || "",
     notes: initialData?.notes || "",
   });
 
-
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
 
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
@@ -95,7 +91,7 @@ export default function ClientForm({
 
 
         if (result.id) {
-          setFormData((prev) => ({ ...prev, city_id: String(result.id) }));
+          setFormData((prev) => ({ ...prev, city_id: Number(result.id) }));
         }
 
         setNewCityName("");
@@ -110,14 +106,14 @@ export default function ClientForm({
     },
   });
 
-  const handleAddCity = (e) => {
+  const handleAddCity = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!newCityName.trim()) {
       setCityModalError("City name is required.");
       return;
     }
     const isDuplicate = cities.some(
-      (c) => c.name.toLowerCase() === newCityName.trim().toLowerCase()
+      (c) => c.name.toLowerCase() === newCityName.trim().toLowerCase(),
     );
     if (isDuplicate) {
       setCityModalError("This city already exists.");
@@ -151,7 +147,7 @@ export default function ClientForm({
 
 
         if (result.id) {
-          setFormData((prev) => ({ ...prev, industry_id: String(result.id) }));
+          setFormData((prev) => ({ ...prev, industry_id: Number(result.id) }));
         }
 
         setNewIndustryName("");
@@ -166,14 +162,14 @@ export default function ClientForm({
     },
   });
 
-  const handleAddIndustry = (e) => {
+  const handleAddIndustry = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!newIndustryName.trim()) {
       setIndustryModalError("Industry name is required.");
       return;
     }
     const isDuplicate = industries.some(
-      (i) => i.name.toLowerCase() === newIndustryName.trim().toLowerCase()
+      (i) => i.name.toLowerCase() === newIndustryName.trim().toLowerCase(),
     );
     if (isDuplicate) {
       setIndustryModalError("This industry already exists.");
@@ -190,13 +186,17 @@ export default function ClientForm({
     setIndustryModalError("");
   };
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLSelectElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-
-
+console.log(name, value);
     if (name === "city_id" && value === "__add_city__") {
       setIsCityModalOpen(true);
-      return; 
+      return;
     }
     if (name === "industry_id" && value === "__add_industry__") {
       setIsIndustryModalOpen(true);
@@ -211,13 +211,16 @@ export default function ClientForm({
   };
 
   const resetForm = () => {
-    setFormData(INITIAL_FORM_STATE);
+    setFormData(initialData);
     setErrors({});
   };
+  //  const submit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  //    console.log("##########");
+  //  };
 
-  const handleSubmit = (e, actionType = "redirect") => {
-    e.preventDefault();
-
+  const handelSubmit = ( actionType = "redirect") => {
+    // e.preventDefault();
+   console.log(formData);
     const result = clientSchema.safeParse(formData);
 
     if (!result.success) {
@@ -230,7 +233,7 @@ export default function ClientForm({
           fieldErrors[issue.path[0]] = issue.message;
         }
       });
-
+console.log(fieldErrors);
       setErrors(fieldErrors);
       return;
     }
@@ -243,7 +246,7 @@ export default function ClientForm({
   return (
     <>
       <form
-        onSubmit={(e) => handleSubmit(e, "redirect")}
+        // onSubmit={(e) => submit(e, "redirect")}
         className="flex flex-col max-w-3xl mx-auto max-h-[85vh] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
         dir="ltr"
       >
@@ -297,11 +300,11 @@ export default function ClientForm({
                 Client Type
               </label>
               <select
-                name="type"
-                value={formData.type}
+                name="client_type"
+                value={formData.client_type}
                 onChange={handleChange}
                 className={`w-full border p-2.5 rounded-xl bg-white text-sm focus:outline-none ${
-                  errors.type
+                  errors.client_type
                     ? "border-red-500 focus:border-red-500"
                     : "border-gray-200 focus:border-blue-500"
                 }`}
@@ -312,8 +315,8 @@ export default function ClientForm({
                   </option>
                 ))}
               </select>
-              {errors.type && (
-                <p className="text-red-500 text-xs mt-1">{errors.type}</p>
+              {errors.client_type && (
+                <p className="text-red-500 text-xs mt-1">{errors.client_type}</p>
               )}
             </div>
 
@@ -540,7 +543,7 @@ export default function ClientForm({
               <button
                 type="button"
                 disabled={isSubmitting}
-                onClick={(e) => handleSubmit(e, "add_another")}
+                onClick={() => handelSubmit( "add_another")}
                 className="w-full sm:w-1/2 bg-white text-gray-700 border border-gray-200 py-2.5 px-4 rounded-xl font-medium text-sm hover:bg-gray-100 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-xs"
               >
                 {isSubmitting ? (
@@ -554,7 +557,7 @@ export default function ClientForm({
               <button
                 type="button"
                 disabled={isSubmitting}
-                onClick={(e) => handleSubmit(e, "redirect")}
+                onClick={() => handelSubmit( "redirect")}
                 className="w-full sm:w-1/2 bg-blue-600 text-white py-2.5 px-4 rounded-xl font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
               >
                 {isSubmitting ? (

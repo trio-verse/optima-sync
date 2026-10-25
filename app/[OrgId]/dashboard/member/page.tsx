@@ -5,6 +5,7 @@ import {
   deleteMember,
   updateMember,
 } from "@/actions/services/membersAction";
+import { MemberRole, OrgMemberRequest } from "@/types";
 import {
   Users,
   Sparkles,
@@ -19,15 +20,19 @@ import {
 } from "lucide-react";
 import { useState, useEffect, use } from "react";
 
-export default function MembersPage({params}) {
+interface MembersPageProps {
+  params: Promise<{ OrgId: string }>;
+}
+
+export default function MembersPage({params}: MembersPageProps  ) {
   const [members, setMembers] = useState([]);
-  const [formData, setFormData] = useState({ email: "", role: "member" });
+  const [formData, setFormData] = useState<OrgMemberRequest>({ email: "", role: "member" });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [editingRole, setEditingRole] = useState("member");
+  const [editingRole, setEditingRole] = useState<MemberRole>("member");
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -328,7 +333,7 @@ export default function MembersPage({params}) {
               <select
                 value={formData.role}
                 onChange={(e) =>
-                  setFormData({ ...formData, role: e.target.value })
+                  setFormData({ ...formData, role: e.target.value as MemberRole })
                 }
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
               >
@@ -421,7 +426,7 @@ export default function MembersPage({params}) {
                 ) : (
                   <tr>
                     <td
-                      colSpan="4"
+                      colSpan={4}
                       className="py-10 text-center text-slate-400 font-medium"
                     >
                       No members found.
@@ -454,7 +459,7 @@ export default function MembersPage({params}) {
                   </label>
                   <select
                     value={editingRole}
-                    onChange={(e) => setEditingRole(e.target.value)}
+                    onChange={(e) => setEditingRole(e.target.value as MemberRole)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
                   >
                     <option value="member">Member</option>

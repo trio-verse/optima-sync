@@ -78,9 +78,13 @@ export interface Project {
   source: ProjectSource;
 
   client_id: number;
-
-  sub_total: string;
-  profit_percentage: string;
+  title: string;
+  description: string;
+  start_date?: string;
+  end_date?: string;
+  duration?: string;
+  sub_total?: number;
+  profit_percentage?: number;
   development_fee: string;
   discount: string;
   tax: string;
@@ -108,40 +112,3 @@ export interface Project {
 // This represents the normalized object used by the UI after
 // the API response has been transformed by the DTO.
 
-export interface ProjectView {
-  id: number;
-  reference_id: string;
-
-  client_id: number;
-
-  title: string;
-  description: string;
-
-  start_date?: string;
-  end_date?: string;
-  duration?: string;
-
-  sub_total?: number;
-  profit_percentage?: number;
-  development_fee?: number;
-  discount?: number;
-  tax?: number;
-  added_costs_total?: number;
-  total_amount?: number;
-
-  issue_date?: string;
-  valid_until?: string;
-
-  payment_terms?: PaymentTerms;
-
-  status: ProjectStatus;
-  source: ProjectSource;
-
-  current_version_id?: number;
-
-  created_by?: number;
-  created_by_user?: ProjectUser;
-
-  created_at?: string;
-  updated_at?: string;
-}

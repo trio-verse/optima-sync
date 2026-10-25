@@ -3,11 +3,13 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api/client";
+import { Stakeholder, StakeholderRequest } from "@/types/stakeholder";
+
 
 /**
  * Fetch stakeholders for a given client
  */
-export async function getStakeholders(orgId, clientId) {
+export async function getStakeholders( clientId: number, orgId?: string) : Promise<{ success: boolean; message?: string; data: Stakeholder [] }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -53,7 +55,7 @@ export async function getStakeholders(orgId, clientId) {
 /**
  * Create a new stakeholder for a client
  */
-export async function createStakeholder(clientId, { name, phone, role }, orgId) {
+export async function createStakeholder(clientId: number, { name, phone, role }: StakeholderRequest, orgId?: string): Promise<{ success: boolean; message?: string; data?: Stakeholder , errors?: Record<string, string[] | string> }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -80,7 +82,7 @@ export async function createStakeholder(clientId, { name, phone, role }, orgId) 
 
     return {
       success: true,
-      message: resdata?.message || "Stakeholder added successfully",
+      message: resdata?.data.message || "Stakeholder added successfully",
       data: resdata?.data?.data || resdata?.data,
     };
   } catch (error) {
@@ -96,7 +98,7 @@ export async function createStakeholder(clientId, { name, phone, role }, orgId) 
 /**
  * Update existing stakeholder information
  */
-export async function updateStakeholder({ stakeholderId, name, phone, role, clientId, orgId }) {
+export async function updateStakeholder({ stakeholderId, name, phone, role, clientId, orgId }: { stakeholderId: number; name: string; phone: string; role: string; clientId: number; orgId?: string }): Promise<{ success: boolean; message?: string; data?: Stakeholder , errors?: Record<string, string[] | string> }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -127,7 +129,7 @@ export async function updateStakeholder({ stakeholderId, name, phone, role, clie
 
     return {
       success: true,
-      message: resdata?.message || "Stakeholder updated successfully",
+      message: resdata?.data.message || "Stakeholder updated successfully",
       data: resdata?.data?.data || resdata?.data,
     };
   } catch (error) {
@@ -171,7 +173,7 @@ export async function deleteStakeholder(orgId, clientId, stakeholderId) {
 
     return {
       success: true,
-      message: resdata?.message || "Stakeholder deleted successfully",
+      message: resdata?.data.message || "Stakeholder deleted successfully",
     };
   } catch (error) {
     console.error("DEBUG deleteStakeholder Error:", error);

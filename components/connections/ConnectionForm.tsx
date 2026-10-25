@@ -26,6 +26,8 @@ import {
 import { createClient } from "@/actions/clientActions";
 import { useConnectionSelects } from "@/hooks/useConnectionSelects";
 import { useClientLookups } from "@/hooks/useClientLookups";
+import { Connection, ConnectionRequest } from "@/types/Connection";
+import { Client, CreateClientInput } from "@/types";
 
 const CLIENT_TYPES = [
   { value: "individual", label: "Individual" },
@@ -34,7 +36,14 @@ const CLIENT_TYPES = [
   { value: "charity", label: "Charity" },
   { value: "agency", label: "Agency" },
 ];
-
+interface ConnectionProps {
+  clientId: number;
+  orgId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: (data: Connection) => void;
+  editingConnection: Connection;
+}
 export default function ConnectionModal({
   clientId: initialClientId,
   orgId,
@@ -42,7 +51,7 @@ export default function ConnectionModal({
   onClose,
   onSuccess,
   editingConnection = null,
-}) {
+}: ConnectionProps) {
   const queryClient = useQueryClient();
 
   const {
@@ -63,34 +72,33 @@ export default function ConnectionModal({
   const [searchName, setSearchName] = useState("");
 
   // Connection Form State
-  const [formData, setFormData] = useState({
-    clientId: initialClientId || "",
-    productId: "",
+  const [formData, setFormData] = useState<ConnectionRequest>({
+    client_id: initialClientId ,
+    product_id: 0,
     stage: "lead",
-    channelId: "",
-    assigneeId: "",
-    campaignId: "",
-    dealValue: "",
-    initiatedBy: "",
+    channel_id: "",
+    assignee_id: "",
+    campaign_id: "",
+    initiated_by: "",
   });
 
   // Simplified New Client State
-  const [newClientData, setNewClientData] = useState({
+  const [newClientData, setNewClientData] = useState<CreateClientInput>({
     name: "",
-    type: "individual",
+    client_type: "individual",
     phone: "",
-    city_id: "",
-    industry_id: "",
+    city_id: 0,
+    industry_id: 0,
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<any>({});
   const [globalError, setGlobalError] = useState("");
 
   const isEditing = !!editingConnection;
 
   // فلترة قائمة العملاء بناءً على حقل البحث
   const filteredClients = clients.filter((c) => {
-    const name = c.name || c.full_name || "";
+    const name = c.name || "";
     return name.toLowerCase().includes(searchName.toLowerCase());
   });
 
@@ -106,7 +114,7 @@ export default function ConnectionModal({
         deal_value: "dealValue",
         name: "client_name",
         phone: "client_phone",
-        type: "client_type",
+        client_type: "client_type",
         industry_id: "client_industry_id",
         city_id: "client_city_id",
       };
@@ -121,8 +129,8 @@ export default function ConnectionModal({
   };
 
   const submitMutation = useMutation({
-    mutationFn: async (data) => {
-      let activeClientId = initialClientId || data.clientId;
+    mutationFn: async (data: ConnectionRequest) => {
+      let activeClientId = initialClientId || data.client_id;
 
       if (!initialClientId && isNewClient) {
         const clientRes = await createClient(newClientData, orgId);
@@ -168,53 +176,37 @@ export default function ConnectionModal({
     if (!isOpen) return;
 
     if (editingConnection) {
+      console.log(editingConnection);
       setFormData({
-        clientId: String(
-          editingConnection.client_id ||
-            editingConnection.client?.id ||
-            initialClientId ||
-            "",
-        ),
-        productId: String(
-          editingConnection.product_id || editingConnection.productId || "",
-        ),
+        client_id: editingConnection.client.id,
+        product_id: editingConnection.product.id,
         stage: editingConnection.stage || "lead",
-        channelId: String(
-          editingConnection.channel_id || editingConnection.channelId || "",
-        ),
-        assigneeId:
-          editingConnection.assignee_id || editingConnection.assigneeId || "",
-        campaignId: String(
-          editingConnection.campaign_id || editingConnection.campaignId || "",
-        ),
-        dealValue:
-          editingConnection.deal_value || editingConnection.dealValue || "",
-        initiatedBy:
-          editingConnection.initiated_by || editingConnection.initiatedBy || "",
+        channel_id: String(editingConnection.channel?.id),
+        assignee_id: editingConnection.assignee?.id,
+        campaign_id: String(editingConnection.campaign_id),
+        initiated_by: editingConnection.initiated_by,
       });
-      setStep(2); // الانتقال المباشر للخطوة الثانية عند التعديل
+      setStep(2);
     } else if (initialClientId) {
       setFormData({
-        clientId: initialClientId,
-        productId: "",
+        client_id: initialClientId,
+        product_id: 0,
         stage: "lead",
-        channelId: "",
-        assigneeId: "",
-        campaignId: "",
-        dealValue: "",
-        initiatedBy: "",
+        channel_id: "",
+        assignee_id: "",
+        campaign_id: "",
+        initiated_by: "",
       });
       setStep(2); // الانتقال المباشر للخطوة الثانية إذا كان العميل محدد مسبقاً
     } else {
       setFormData({
-        clientId: "",
-        productId: "",
+        client_id: 0,
+        product_id: 0,
         stage: "lead",
-        channelId: "",
-        assigneeId: "",
-        campaignId: "",
-        dealValue: "",
-        initiatedBy: "",
+        channel_id: "",
+        assignee_id: "",
+        campaign_id: "",
+        initiated_by: "",
       });
       setStep(1);
     }
@@ -223,10 +215,10 @@ export default function ConnectionModal({
     setSearchName("");
     setNewClientData({
       name: "",
-      type: "individual",
+      client_type: "individual",
       phone: "",
-      city_id: "",
-      industry_id: "",
+      city_id: 0,
+      industry_id: 0,
     });
     setErrors({});
     setGlobalError("");
@@ -236,14 +228,6 @@ export default function ConnectionModal({
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-
-      if (name === "productId") {
-        const selectedProd = products.find(
-          (p) => String(p.id) === String(value),
-        );
-        updated.dealValue = selectedProd?.price || selectedProd?.value || "";
-      }
-
       return updated;
     });
 
@@ -269,7 +253,12 @@ export default function ConnectionModal({
   };
 
   const validateStep1 = () => {
-    const newErrors = {};
+    const newErrors: {
+      client_name?: string;
+      client_industry_id?: string;
+      client_city_id?: string;
+      client_id?: string;
+    } = {};
     if (isNewClient) {
       if (!newClientData.name.trim())
         newErrors.client_name = "Client Name is required";
@@ -277,17 +266,19 @@ export default function ConnectionModal({
       if (!newClientData.industry_id)
         newErrors.client_industry_id = "Industry is required";
     } else {
-      if (!formData.clientId) newErrors.clientId = "Please select a client";
+      if (!formData.client_id) newErrors.client_id = "Please select a client";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validateStep2 = () => {
-   
-    const newErrors = {};
-    if (!formData.productId) newErrors.productId = "Product is required";
-    if (!formData.channelId) newErrors.channelId = "Channel is required";
+    const newErrors: {
+      productId?: string;
+      channelId?: string;
+    } = {};
+    if (!formData.product_id) newErrors.productId = "Product is required";
+    if (!formData.channel_id) newErrors.channelId = "Channel is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -308,12 +299,10 @@ export default function ConnectionModal({
 
   if (!isOpen) return null;
 
-  const isWonStage =
-    String(formData.stage).toLowerCase() === "win" ||
-    String(formData.stage).toLowerCase() === "won";
+  const isWonStage = String(formData.stage).toLowerCase() === "win";
 
   const selectedClientObject = clients.find(
-    (c) => String(c.id) === String(formData.clientId),
+    (c) => String(c.id) === String(formData.client_id),
   );
   const handleClose = () => {
     setErrors({});
@@ -323,7 +312,7 @@ export default function ConnectionModal({
 
     onClose();
   };
- 
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
       <div
@@ -447,7 +436,7 @@ export default function ConnectionModal({
                         {loadingLists ? (
                           <tr>
                             <td
-                              colSpan="4"
+                              colSpan={4}
                               className="p-4 text-center text-slate-400"
                             >
                               Loading clients...
@@ -456,15 +445,13 @@ export default function ConnectionModal({
                         ) : filteredClients.length > 0 ? (
                           filteredClients.map((c) => {
                             const isSelected =
-                              String(formData.clientId) === String(c.id);
-                            const clientName =
-                              c.name || c.full_name || `Client #${c.id}`;
+                              String(formData.client_id) === String(c.id);
                             return (
                               <tr
                                 key={c.id}
                                 onClick={() =>
                                   handleChange({
-                                    target: { name: "clientId", value: c.id },
+                                    target: { name: "client_id", value: c.id },
                                   })
                                 }
                                 className={`cursor-pointer transition-colors ${
@@ -490,10 +477,10 @@ export default function ConnectionModal({
                                   />
                                 </td>
                                 <td className="p-2.5 text-slate-800 font-medium truncate max-w-[180px]">
-                                  {clientName}
+                                  {c.name}
                                 </td>
                                 <td className="p-2.5 text-slate-500 capitalize">
-                                  {c.type || c.client_type || "-"}
+                                  {c.client_type || "-"}
                                 </td>
                               </tr>
                             );
@@ -501,7 +488,7 @@ export default function ConnectionModal({
                         ) : (
                           <tr>
                             <td
-                              colSpan="4"
+                              colSpan={4}
                               className="p-4 text-center text-slate-400"
                             >
                               No matching clients found.
@@ -551,7 +538,7 @@ export default function ConnectionModal({
                       </label>
                       <select
                         name="type"
-                        value={newClientData.type}
+                        value={newClientData.client_type}
                         onChange={handleNewClientChange}
                         className="border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-blue-500 bg-white"
                       >
@@ -665,10 +652,8 @@ export default function ConnectionModal({
                       </span>
                       <p className="text-xs font-bold text-slate-800">
                         {isNewClient
-                          ? newClientData.name || "New Client"
-                          : selectedClientObject?.name ||
-                            selectedClientObject?.full_name ||
-                            `Client #${formData.clientId}`}
+                          ? newClientData.name
+                          : selectedClientObject?.name}
                       </p>
                     </div>
                   </div>
@@ -689,8 +674,8 @@ export default function ConnectionModal({
                   Product <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="productId"
-                  value={formData.productId}
+                  name="product_id"
+                  value={formData.product_id}
                   onChange={handleChange}
                   disabled={loadingLists}
                   className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 transition-all bg-white ${
@@ -712,25 +697,6 @@ export default function ConnectionModal({
                   </span>
                 )}
               </div>
-
-              {/* Deal Value */}
-              {isWonStage && (
-                <div className="flex flex-col gap-1.5 animate-in fade-in duration-150">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-                    Deal Value
-                  </label>
-                  <input
-                    type="number"
-                    name="dealValue"
-                    value={formData.dealValue}
-                    readOnly
-                    placeholder="Product price"
-                    className="border border-slate-200 bg-slate-50 text-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none cursor-not-allowed select-none font-semibold"
-                  />
-                </div>
-              )}
-
               {/* Channel */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -738,8 +704,8 @@ export default function ConnectionModal({
                   Channel <span className="text-red-500">*</span>
                 </label>
                 <select
-                  name="channelId"
-                  value={formData.channelId}
+                  name="channel_id"
+                  value={formData.channel_id}
                   onChange={handleChange}
                   disabled={loadingLists}
                   className={`border rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 transition-all bg-white ${
@@ -769,8 +735,8 @@ export default function ConnectionModal({
                   Campaign
                 </label>
                 <select
-                  name="campaignId"
-                  value={formData.campaignId}
+                  name="campaign_id"
+                  value={formData.campaign_id}
                   onChange={handleChange}
                   disabled={loadingLists}
                   className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
@@ -791,8 +757,8 @@ export default function ConnectionModal({
                   Assignee
                 </label>
                 <select
-                  name="assigneeId"
-                  value={formData.assigneeId}
+                  name="assignee_id"
+                  value={formData.assignee_id}
                   onChange={handleChange}
                   disabled={loadingLists}
                   className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
@@ -800,7 +766,7 @@ export default function ConnectionModal({
                   <option value="">Select assignee...</option>
                   {members.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.user?.name || m.user?.full_name || m.user?.email}
+                      {m.user.name}
                     </option>
                   ))}
                 </select>
@@ -814,8 +780,8 @@ export default function ConnectionModal({
                 </label>
                 <input
                   type="text"
-                  name="initiatedBy"
-                  value={formData.initiatedBy || ""}
+                  name="initiated_by"
+                  value={formData.initiated_by || ""}
                   onChange={handleChange}
                   placeholder="Enter who initiated this..."
                   className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"

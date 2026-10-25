@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { MessageSquare, User, Calendar, Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { getActivities, createActivity, updateActivity, deleteActivity } from "@/actions/activityActions"; 
 import ActivityModal from "./ActivityModal";
+import { Activity } from "@/types/Connection";
 
 export default function ActivityList({ connectionId, orgId, clientId, connectionName }) {
-    const [activities, setActivities] = useState([]);
+    const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingActivity, setEditingActivity] = useState(null);
+    const [editingActivity, setEditingActivity] = useState<Activity| null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState(null);
 

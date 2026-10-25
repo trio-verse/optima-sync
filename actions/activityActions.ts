@@ -10,11 +10,10 @@ import {
 import {
     api
 } from "@/lib/api/client";
+import { Activity } from "@/types/Connection";
+import { PaginationMeta } from "@/types/api";
 
-// ============================================
-// 📥 جلب النشاطات
-// ============================================
-export async function getActivities(connectionId, orgId) {
+export async function getActivities(connectionId: number, orgId?: string): Promise<{ success: boolean; message: string; data: Activity[] ; meta?: PaginationMeta }> {
     try {
         if (!connectionId || !orgId) {
             return {
@@ -42,6 +41,7 @@ export async function getActivities(connectionId, orgId) {
 
         return {
             success: true,
+            message: resdata?.data?.message || "Activities fetched successfully",
             data: resdata?.data?.data || [],
             meta: resdata?.data?.meta || {},
         };
@@ -55,10 +55,7 @@ export async function getActivities(connectionId, orgId) {
     }
 }
 
-// ============================================
-// ➕ إضافة نشاط
-// ============================================
-export async function createActivity(connectionId, content, orgId, clientId) {
+export async function createActivity(connectionId:number, content: string, orgId?: string, clientId?: string): Promise<{ success: boolean; message: string; data?: Activity ; errors?: Record<string, string[] | string> }> {
     try {
         if (!connectionId || !orgId) {
             return {
@@ -112,15 +109,15 @@ export async function createActivity(connectionId, content, orgId, clientId) {
     }
 }
 
-export async function updateActivity(connectionId, activityId, content, orgId, clientId) {
+export async function updateActivity(connectionId: number, activityId: number, content: string, orgId?: string, clientId?: string): Promise<{ success: boolean; message: string; data?: Activity ; errors: Record<string, string[] | string> }> {
     try {
         if (!connectionId || !activityId || !orgId) {
-            return { success: false, message: "Missing required IDs" };
+            return { success: false, message: "Missing required IDs", errors: {} };
         }
 
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
-        if (!token) return { success: false, message: "Unauthorized" };
+        if (!token) return { success: false, message: "Unauthorized", errors: {} };
 
         const resdata = await api.patch(`/connections/${connectionId}/activities/${activityId}`, 
             { content: content.trim() }, 
@@ -136,17 +133,17 @@ export async function updateActivity(connectionId, activityId, content, orgId, c
             success: true,
             data: resdata?.data?.data,
             message: "Activity updated successfully",
+            errors: {},
         };
     } catch (error) {
         return {
             success: false,
             message: error.data?.message || error.message || "Failed to update activity",
+            errors: error.data?.errors || {},
         };
     }
 }
-
-
-export async function deleteActivity(connectionId, activityId, orgId, clientId) {
+export async function deleteActivity(connectionId: number, activityId: number, orgId?: string, clientId?: string): Promise<{ success: boolean; message: string}> {
     try {
         if (!connectionId || !activityId || !orgId) {
             return { success: false, message: "Missing required IDs" };

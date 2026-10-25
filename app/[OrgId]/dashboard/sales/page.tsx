@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, use, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  use,
+  useCallback,
+  useMemo,
+  ChangeEvent,
+} from "react";
 import {
   Link2,
   Pencil,
@@ -26,46 +33,22 @@ import { useConnectionSelects } from "@/hooks/useConnectionSelects";
 import ConnectionModal from "@/components/connections/ConnectionForm";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
+import { Connection, Stage } from "@/types/Connection";
+import { STAGES } from "@/lib/utils/stages";
 
-const STAGES = {
-  lead: {
-    label: "Lead",
-    color: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  conected: {
-    label: "Contacted",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  missing_info: {
-    label: "Missing Info",
-    color: "bg-purple-100 text-purple-700 border-purple-200",
-  },
-  intrested: {
-    label: "Interested",
-    color: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  },
-  not_intrested: {
-    label: "Not Interested",
-    color: "bg-gray-100 text-gray-700 border-gray-200",
-  },
-  win: {
-    label: "Won",
-    color: "bg-green-100 text-green-700 border-green-200",
-  },
-  closed: {
-    label: "Closed",
-    color: "bg-red-100 text-red-700 border-red-200",
-  },
-};
-
+interface ConnectionPageParams {
+  params: Promise<{ OrgId: string }>;
+}
 const INITIATED_LABELS = {
   CLIENT: "Client",
   SALES_REP: "Sales Rep",
 };
 
-export default function AllSalesConnectionsPage({ params: paramsPromise }) {
-  const params = use(paramsPromise);
-  const orgId = params.OrgId;
+export default function AllSalesConnectionsPage({
+  params,
+}: ConnectionPageParams) {
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
   const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -78,11 +61,17 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   const { products, loadingProducts } = useConnectionSelects(orgId);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingConnection, setEditingConnection] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [updatingStageId, setUpdatingStageId] = useState(null);
-  const [toast, setToast] = useState(null);
-
+  const [editingConnection, setEditingConnection] = useState<Connection | null>(
+    null,
+  );
+  const [deletingId, setDeletingId] = useState<number | string | null>(null);
+  const [updatingStageId, setUpdatingStageId] = useState<
+    number | string | null
+  >(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const { ref, inView } = useInView({ threshold: 0.2 });
 
   // Debounce للبحث
@@ -105,11 +94,12 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     isLoading: loading,
     refetch,
   } = useInfiniteQuery({
+    initialPageParam: 1,
     queryKey: ["connections-infinite", orgId, filters],
     queryFn: ({ pageParam = 1 }) =>
       getAllConnections(orgId, {
         clientName: filters.clientName,
-        stage: filters.stage || "all",
+        stage: (filters.stage || "all") as keyof typeof STAGES | "all",
         product_id: filters.product_id || "",
         page: pageParam,
         per_page: 15,
@@ -135,7 +125,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const handleStageFilterChange = (e) => {
+  const handleStageFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setFilters((prev) => ({ ...prev, stage: value }));
   };
@@ -146,7 +136,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
   };
 
   /* ── Update Stage Directly ── */
-  const handleStageChange = async (conn, newStage) => {
+  const handleStageChange = async (conn: Connection, newStage: Stage) => {
     const rawCurrentStage = conn.stage
       ? String(conn.stage).toLowerCase()
       : "lead";
@@ -154,17 +144,10 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
 
     setUpdatingStageId(conn.id);
 
-    const clientId = conn.client_id || conn.client?.id;
-    const isWon = newStage === "win" || newStage === "won";
-    const payload = {
-      stage: newStage,
-      ...(isWon && {
-        dealValue:
-          conn.product?.price || conn.product?.value || conn.deal_value,
-      }),
-    };
+    const clientId = conn.client.id;
+    const isWon = newStage === "win";
 
-    const res = await updateConnectionStage(conn.id, payload, orgId, clientId);
+    const res = await updateConnectionStage(conn.id, newStage, orgId, clientId);
 
     if (res?.success) {
       refetch();
@@ -200,19 +183,15 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (conn) => {
+  const handleEdit = (conn: Connection) => {
     setEditingConnection(conn);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (conn) => {
+  const handleDelete = async (conn: Connection) => {
     if (!confirm("Are you sure you want to delete this connection?")) return;
     setDeletingId(conn.id);
-    const res = await deleteConnection(
-      conn.id,
-      orgId,
-      conn.client_id || conn.client?.id,
-    );
+    const res = await deleteConnection(conn.id, conn.client.id, orgId);
     if (res?.success) {
       setToast({ type: "success", message: "Deleted successfully" });
       refetch();
@@ -342,7 +321,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
             const stageInfo = STAGES[rawStage] || STAGES.lead;
             const client = conn.client;
             const clientName = client?.name || "Unknown Client";
-            const isWon = rawStage === "win" || rawStage === "won";
+            const isWon = rawStage === "win";
 
             return (
               <div
@@ -377,7 +356,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                         <select
                           value={rawStage}
                           onChange={(e) =>
-                            handleStageChange(conn, e.target.value)
+                            handleStageChange(conn, e.target.value as Stage)
                           }
                           className={`cursor-pointer px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold border outline-none transition-all block ${stageInfo.color}`}
                         >
@@ -432,18 +411,18 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
                         </span>
                       </span>
                     )}
-                    {conn.campaign?.name && (
+                    {conn.campaign_name && (
                       <span className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-lg">
                         <Megaphone className="w-3.5 h-3.5 text-indigo-500" />
                         <span className="font-semibold text-indigo-700">
-                          {conn.campaign.name}
+                          {conn.campaign_name}
                         </span>
                       </span>
                     )}
                     {conn.assignee?.name && (
                       <span className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{conn.assignee.name}</span>
+                        <span>{conn.assignee?.name}</span>
                       </span>
                     )}
                   </div>
@@ -508,9 +487,7 @@ export default function AllSalesConnectionsPage({ params: paramsPromise }) {
       {/* Modal Connection Form */}
       {isModalOpen && (
         <ConnectionModal
-          clientId={
-            editingConnection?.client_id || editingConnection?.client?.id
-          }
+          clientId={editingConnection?.client?.id}
           orgId={orgId}
           isOpen={isModalOpen}
           onClose={() => {

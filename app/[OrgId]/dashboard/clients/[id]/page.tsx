@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import ClientForm from "@/components/ClientForm";
 import ConnectionsTimeline from "@/components/connections/ConnectionsTimeline";
@@ -30,12 +30,18 @@ import {
   updateStakeholder,
   deleteStakeholder,
 } from "@/actions/services/stakeholderService";
+import { Client } from "@/types/crm";
 
-export default function ClientProfilePage({ params: paramsPromise }) {
-  const params = use(paramsPromise);
-  const clientId = params.id;
-  const orgId = params.OrgId || params.orgId;
-  const router = useRouter();
+interface ClientProfilePageProps {
+  params: Promise<{ OrgId: string; id: number }>;
+}
+
+export default function ClientProfilePage({ params }: ClientProfilePageProps) {
+   const resolvedParams = params ? use(params) : null;
+   const orgId = resolvedParams?.OrgId;
+   const clientId = resolvedParams?.id;
+   const clientIdNumber = clientId ? Number(clientId) : NaN;
+   const router = useRouter();
 
   const [clientData, setClientData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -67,12 +73,12 @@ export default function ClientProfilePage({ params: paramsPromise }) {
       try {
         const [clientRes, stakeholderRes] = await Promise.all([
           getClients({}, orgId),
-          getStakeholders(orgId, clientId),
+          getStakeholders(clientId , orgId),
         ]);
 
         if (clientRes?.success) {
           const found = clientRes.data.find(
-            (c) => String(c.id) === String(clientId),
+            (c) => c.id === Number(clientId),
           );
           setClientData(found || null);
         }
@@ -89,7 +95,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
     fetchAllData();
   }, [clientId, orgId]);
 
-  const handleUpdate = async (formDataPayload) => {
+  const handleUpdate = async (formDataPayload: Client) => {
     setIsSubmitting(true);
     setErrorMsg("");
 
@@ -105,7 +111,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
     setIsSubmitting(false);
   };
 
-  const handleAddStakeholder = async (e) => {
+  const handleAddStakeholder = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newData.name.trim() || !newData.phone.trim()) {
       setAddError("Please provide both name and phone number.");
@@ -118,6 +124,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
     const res = await createStakeholder(
       clientId,
       {
+        client_id: clientId,
         name: newData.name.trim(),
         phone: newData.phone.trim(),
         role: newData.role.trim(),
@@ -129,7 +136,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
       if (res.data) {
         setStakeholders((prev) => [...prev, res.data]);
       } else {
-        const fresh = await getStakeholders(orgId, clientId);
+        const fresh = await getStakeholders(clientId, orgId);
         if (fresh?.success) setStakeholders(fresh.data || []);
       }
       setIsAdding(false);
@@ -140,7 +147,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
     setSaving(false);
   };
 
-  const startEdit = (item) => {
+  const startEdit = (item: any) => {
     setEditingId(item.id);
     setEditingData({
       name: item.name || "",
@@ -149,7 +156,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
     });
   };
 
-  const handleSaveEdit = async (id) => {
+  const handleSaveEdit = async (id: number) => {
     if (!editingData.name.trim() || !editingData.phone.trim()) return;
 
     setSaving(true);
@@ -184,7 +191,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
     setSaving(false);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     setSaving(true);
     const res = await deleteStakeholder(orgId, clientId, id);
     if (res?.success) {
@@ -298,8 +305,7 @@ export default function ClientProfilePage({ params: paramsPromise }) {
             initialData={clientData}
             onSubmit={handleUpdate}
             isSubmitting={isSubmitting}
-            orgId={orgId}
-          />
+            orgId={orgId} onClose={undefined}          />
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

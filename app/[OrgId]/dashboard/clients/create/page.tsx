@@ -5,27 +5,33 @@ import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import ClientForm from "@/components/ClientForm";
 import { createClient } from "@/actions/clientActions";
+import { Client } from "@/types";
 
-export default function CreateClientPage({ params }) {
+interface CreateClientPageProps {
+  params: Promise<{ OrgId: string }>;
+}
+
+export default function CreateClientPage({ params }: CreateClientPageProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const resolvedParams = params ? use(params) : null;            
   const orgId = resolvedParams?.OrgId;      
 
-  const handleCreate = async (formDataPayload, { actionType, resetForm }) => {
+  const handleCreate = async (formDataPayload:Client, { actionType, resetForm }) => {
     setIsSubmitting(true);
     setErrorMsg("");
-
+ console.log("DEBUG createClient done:");
     try {
       const res = await createClient(formDataPayload, orgId);
+    
 
       if (res?.success) {
         if (actionType === "add_another") {
           resetForm();
           setIsSubmitting(false);
         } else {
-          const newClientId = res?.data?.id || res?.id;
+          const newClientId = res?.data?.id || res?.data.id;
           if (newClientId) {
             router.push(`/${orgId}/dashboard/clients/${newClientId}`);
           } else {

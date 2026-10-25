@@ -3,11 +3,10 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api/client";
+import { MemberRole, OrgMember, OrgMemberRequest } from "@/types/organization";
 
-/**
- * جلب أعضاء المنظمة
- */
-export async function getMembers(orgId) {
+
+export async function getMembers(orgId:string): Promise<{ success: boolean; message?: string; data: OrgMember[] }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -43,10 +42,8 @@ export async function getMembers(orgId) {
     }
 }
 
-/**
- * إضافة عضو جديد
- */
-export async function createMember(formData, orgId) {
+
+export async function createMember(formData: OrgMemberRequest, orgId: string): Promise<{ success: boolean; message: string; data?: any; errors?: Record<string, string[] | string> }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -73,6 +70,7 @@ export async function createMember(formData, orgId) {
 
     return {
       success: true,
+      message: resdata?.data?.message ,
       data: resdata?.data?.data || resdata?.data,
     };
   } catch (error) {
@@ -90,10 +88,8 @@ export async function createMember(formData, orgId) {
   }
 }
 
-/**
- * تحديث دور عضو
- */
-export async function updateMember(memberId, { role }, orgId) {
+
+export async function updateMember(memberId: string, { role }: { role: MemberRole }, orgId: string): Promise<{ success: boolean; message: string; data?: any; errors?: Record<string, string[] | string> }> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -122,8 +118,8 @@ export async function updateMember(memberId, { role }, orgId) {
     revalidatePath("/dashboard/members");
 
     return {
-      success: resdata?.success ?? true,
-      message: resdata?.message || "Role updated successfully",
+      success: resdata?.data?.success ?? true,
+      message: resdata?.data?.message || "Role updated successfully",
       data: resdata?.data?.data || resdata?.data,
     };
   } catch (error) {
@@ -139,9 +135,7 @@ export async function updateMember(memberId, { role }, orgId) {
   }
 }
 
-/**
- * حذف عضو
- */
+
 export async function deleteMember(memberId, orgId) {
   try {
     const cookieStore = await cookies();

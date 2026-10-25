@@ -19,32 +19,7 @@ import {
 } from "@/actions/connectionActions";
 import ConnectionModal from "@/components/connections/ConnectionForm";
 import ActivityList from "./ActivityList";
-
-/* ── STAGES (Lowercase) ── */
-const STAGES = {
-  lead: {
-    label: "Lead",
-    color: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  conected: {
-    label: "Contacted",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  missing_info: {
-    label: "Missing Info",
-    color: "bg-purple-100 text-purple-700 border-purple-200",
-  },
-  intrested: {
-    label: "Interested",
-    color: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  },
-  not_intrested: {
-    label: "Not Interested",
-    color: "bg-gray-100 text-gray-700 border-gray-200",
-  },
-  win: { label: "Won", color: "bg-green-100 text-green-700 border-green-200" },
-  closed: { label: "Closed", color: "bg-red-100 text-red-700 border-red-200" },
-};
+import {STAGES}  from "@/lib/utils/stages";
 
 const INITIATED_LABELS = {
   CLIENT: "Client",
@@ -91,18 +66,10 @@ export default function ConnectionsTimeline({ clientId, orgId }) {
     setConnections((prev) =>
       prev.map((c) => (c.id === connectionId ? { ...c, stage: newStage } : c))
     );
-
-    const payload = {
-      stage: newStage,
-      dealValue:
-        newStage === "win" || newStage === "won"
-          ? currentConn.product?.price || currentConn.deal_value || 0
-          : undefined,
-    };
-
+    
     const res = await updateConnectionStage(
       connectionId,
-      payload,
+      newStage,
       orgId,
       clientId
     );

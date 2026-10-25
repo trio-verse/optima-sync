@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback, use, ChangeEvent } from "react";
+
 import Link from "next/link";
 import { getClients } from "@/actions/clientActions";
 import { useClientLookups } from "@/hooks/useClientLookups";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
+import { ClientLookupsData } from "@/types/lookups";
 
-export default function ClientsListPage({ params }) {
+interface ClientPageProps {
+  params: Promise<{ OrgId: string }>;
+}
+export default function ClientsListPage({ params }: ClientPageProps) {
   const resolvedParams = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId;
 
@@ -46,10 +51,11 @@ export default function ClientsListPage({ params }) {
     hasNextPage,
     isFetchingNextPage,
     isLoading: loading,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<any, any>({
+    initialPageParam: 1,
     queryKey: ["clients-infinite", orgId, filters],
     queryFn: ({ pageParam = 1 }) =>
-      getClients({ ...filters, page: pageParam, perPage: 15 }, orgId),
+      getClients({ ...filters, page: pageParam as number, perPage: 15 }, orgId),
     getNextPageParam: (lastPage) => {
       const meta = lastPage?.meta || {};
       const currentPage = meta.current_page || 1;
@@ -67,7 +73,7 @@ export default function ClientsListPage({ params }) {
 
   const clients = data?.pages?.flatMap((page) => page?.data || []) || [];
   const totalClients = data?.pages?.[0]?.meta?.total ?? clients.length;
-  const handleFilterChange = (e) => {
+  const handleFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
@@ -212,7 +218,7 @@ export default function ClientsListPage({ params }) {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center p-8 text-gray-500">
+                    <td colSpan={4} className="text-center p-8 text-gray-500">
                       No clients match the search criteria.
                     </td>
                   </tr>
