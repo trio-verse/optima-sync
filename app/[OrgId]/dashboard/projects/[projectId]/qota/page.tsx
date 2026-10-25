@@ -1,12 +1,20 @@
-import React from 'react'
-import PdfPage from '../../../../../../components/PdfPage';
+import React, { use, Suspense } from "react";
+import PdfPage from "../../../../../../components/PdfPage";
 
-const page = () => {
+export default function Page({
+  params,
+}: {
+  params: Promise<{ OrgId: string; projectId: number }>;
+}) {
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
+  const projectId = resolvedParams?.projectId;
+
   return (
-    <div>
-      <PdfPage />
-    </div>
-  )
+    <Suspense
+      fallback={<div className="text-center p-12">Loading quotation...</div>}
+    >
+      <PdfPage orgId={orgId} projectId={projectId} />
+    </Suspense>
+  );
 }
-
-export default page

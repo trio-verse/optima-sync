@@ -10,7 +10,7 @@ export default function QuotationHeader({
       <div className="w-full">
         <div className="flex items-center gap-2 mb-2.5 opacity-85">
           <Image
-            src="/Image/logo.jpg"
+            src="/Image/optima-sync-logo.svg"
             alt="Optima Sync Logo"
             width={160}
             height={50}
