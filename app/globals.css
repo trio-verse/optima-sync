@@ -4,6 +4,46 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@media print{
+  aside, 
+  nav, 
+  header, 
+  button, 
+  .sidebar, 
+  .dashboard-sidebar {
+    display: none !important;
+}
+html, body {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
+* {
+    overflow: visible !important;
+  }
+@page {
+    margin: 15mm;
+    size: A4;
+  }
+  body {
+    background-color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  div.max-w-4xl {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  tr, .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 :root {
   color-scheme: light;
   --background: oklch(1 0 0);

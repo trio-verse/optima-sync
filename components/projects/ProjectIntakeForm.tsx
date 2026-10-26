@@ -1,6 +1,6 @@
 "use client";
 
-import { useState ,useEffect} from "react";
+import { useState } from "react";
 import {
     User,
     Mail,
@@ -11,62 +11,56 @@ import {
     FileCheck,
     Loader2,
     CheckCircle2,
-    Copy,
-    Check,
     Send,
     Sparkles
 } from "lucide-react";
 
-import { getPublicIntakeUrl, submitPublicProject } from "@/actions/publicProjectActions";
+import { sendProjectRequest, CreateProjectRequestBody } from "@/actions/publicProjectActions";
 
-export default function ProjectIntakeForm({ token }) {
-    const [formData, setFormData] = useState({
-        client_name: "",
+interface IntakeFormData {
+    name: string;
+    company_name: string;
+    email: string;
+    phone: string;
+    title: string;
+    description: string;
+}
+
+interface FormErrors {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    title?: string | null;
+    description?: string | null;
+    server?: string | null;
+    [key: string]: string | null | undefined;
+}
+
+interface SubmitSuccessData {
+    message: string;
+}
+
+interface ProjectIntakeFormProps {
+    token: string;
+    orgId?: string;
+}
+
+export default function ProjectIntakeForm({ token, orgId = "" }: ProjectIntakeFormProps) {
+    const [formData, setFormData] = useState<IntakeFormData>({
+        name: "",
         company_name: "",
         email: "",
         phone: "",
-        project_title: "",
+        title: "",
         description: "",
     });
 
-    const [attachments, setAttachments] = useState([]);
-    const [errors, setErrors] = useState({});
+    const [attachments, setAttachments] = useState<File[]>([]);
+    const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitSuccess, setSubmitSuccess] = useState(null);
-    const [isLoadingUrl, setIsLoadingUrl] = useState(true);
-    const [urlError, setUrlError] = useState("");
-    const [targetEndpoint, setTargetEndpoint] = useState(null);
+    const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccessData | null>(null);
 
-    useEffect(() => {
-    let isCancelled = false;
-
-    async function fetchEndpoint() {
-        if (!token) {
-            setUrlError("Invalid or missing token.");
-            setIsLoadingUrl(false);
-            return;
-        }
-
-        setIsLoadingUrl(true);
-        const res = await getPublicIntakeUrl(token);
-
-        if (!isCancelled) {
-            if (res.success && res.endpoint) {
-                setTargetEndpoint(res.endpoint);
-            } else {
-                setUrlError(res.message || "This intake link is invalid or has expired.");
-            }
-            setIsLoadingUrl(false);
-        }
-    }
-    fetchEndpoint();
-
-    return () => {
-        isCancelled = true;
-    };
-}, [token]);
-
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
         if (errors[name]) {
@@ -74,7 +68,7 @@ export default function ProjectIntakeForm({ token }) {
         }
     };
 
-    const handleFileChange = (e) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         const allowedTypes = [
             "application/pdf",
@@ -96,52 +90,75 @@ export default function ProjectIntakeForm({ token }) {
         setAttachments((prev) => [...prev, ...validFiles]);
     };
 
-    const removeAttachment = (index) => {
+    const removeAttachment = (index: number) => {
         setAttachments((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const validate = () => {
-        const newErrors = {};
-        if (!formData.client_name.trim()) newErrors.client_name = "Required";
-        if (!formData.email.trim()) newErrors.email = "Required";
-        else if (!/\S+@\S+\.\S+/.test(formData.email))
-            newErrors.email = "Invalid email";
-        if (!formData.phone.trim()) newErrors.phone = "Required";
-        if (!formData.project_title.trim()) newErrors.project_title = "Required";
-        if (!formData.description.trim()) newErrors.description = "Required";
+    const validate = (): boolean => {
+        const newErrors: FormErrors = {};
+        if (!formData.name.trim()) newErrors.name = "Full name is required";
+        
+        if (formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = "Invalid email address";
+        }
+        
+        if (!formData.phone.trim()) {
+            newErrors.phone = "Phone number is required";
+        }
+
+        if (!formData.title.trim()) newErrors.title = "Project title is required";
+        if (!formData.description.trim()) newErrors.description = "Description is required";
+        if (formData.description.length > 255) {
+            newErrors.description = "Description must not exceed 255 characters";
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!validate()) return;
 
-        if (!targetEndpoint) {
-            setErrors({ server: "Form configuration error. Please refresh the page." });
+        if (!token) {
+            setErrors({ server: "Invalid or missing token. Please check the URL." });
             return;
         }
 
         setIsSubmitting(true);
+        setErrors({});
 
         try {
-            const data = new FormData();
-            Object.keys(formData).forEach((key) => {
-                data.append(key, formData[key]);
-            });
+            // تجهيز البيانات وفق الـ Schema المطلوبة في الـ Body
+            const payload: CreateProjectRequestBody = {
+                name: formData.name,
+                phone: formData.phone,
+                email: formData.email || undefined,
+                title: formData.title,
+                description: formData.description,
+            };
 
-            attachments.forEach((file) => {
-                data.append("attachments[]", file);
-            });
+            // في حال وجود ملفات، يمكن تحويل الـ Body إلى FormData أو ربطه بالأكشن مباشرة
+            let bodyData: any = payload;
+            if (attachments.length > 0) {
+                const data = new FormData();
+                data.append("name", formData.name);
+                data.append("phone", formData.phone);
+                if (formData.email) data.append("email", formData.email);
+                data.append("title", formData.title);
+                data.append("description", formData.description);
+                
+                attachments.forEach((file) => {
+                    data.append("attachments[]", file);
+                });
+                bodyData = data;
+            }
 
-            // إرسال مباشر إلى الـ Endpoint الجاهز
-            const result = await submitPublicProject(targetEndpoint, data);
+            // استدعاء الأكشن sendProjectRequest المباشر
+            const result = await sendProjectRequest(token, orgId, bodyData);
 
             if (result.success) {
                 setSubmitSuccess({
-                    reference_number: result.data?.reference_number || "PRJ-SUCCESS",
                     message: result.message || "Your project request has been submitted successfully!",
                 });
             } else {
@@ -153,23 +170,6 @@ export default function ProjectIntakeForm({ token }) {
             setIsSubmitting(false);
         }
     };
-
-    if (isLoadingUrl) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <p className="text-gray-500 text-sm">Loading request form...</p>
-            </div>
-        );
-    }
-
-    if (urlError) {
-        return (
-            <div className="max-w-md mx-auto my-12 p-6 bg-red-50 border border-red-200 rounded-2xl text-center">
-                <h3 className="text-lg font-bold text-red-700 mb-2">Invalid Link</h3>
-                <p className="text-xs text-red-600">{urlError}</p>
-            </div>
-        );
-    }
 
     // الشاشة التي تظهر بعد نجاح إرسال الفورم
     if (submitSuccess) {
@@ -186,23 +186,11 @@ export default function ProjectIntakeForm({ token }) {
                     <p className="text-gray-500 text-xs max-w-sm mx-auto mb-6 leading-relaxed">
                         {submitSuccess.message}
                     </p>
-
-                    <div className="bg-gray-50/80 border border-gray-100 rounded-2xl p-4 max-w-xs mx-auto mb-6 flex items-center justify-between shadow-inner">
-                        <div className="text-left">
-                            <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                                Reference Number
-                            </span>
-                            <span className="text-base font-extrabold text-gray-800 tracking-wide">
-                                #{submitSuccess.reference_number}
-                            </span>
-                        </div>
-                    </div>
                 </div>
             </div>
         );
     }
 
-    // نموذج إدخال البيانات الرئيسي
     return (
         <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-gray-50/50">
             <div className="w-full max-w-2xl bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8">
@@ -239,19 +227,19 @@ export default function ProjectIntakeForm({ token }) {
                                 </label>
                                 <input
                                     type="text"
-                                    name="client_name"
-                                    value={formData.client_name}
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleChange}
                                     placeholder="John Doe"
                                     className={`w-full border px-3 py-2 rounded-xl text-xs focus:outline-none bg-white transition shadow-2xs ${
-                                        errors.client_name
+                                        errors.name
                                             ? "border-red-400 focus:border-red-500"
                                             : "border-gray-200 focus:border-blue-500"
                                     }`}
                                 />
-                                {errors.client_name && (
+                                {errors.name && (
                                     <p className="text-red-500 text-[10px] mt-0.5">
-                                        {errors.client_name}
+                                        {errors.name}
                                     </p>
                                 )}
                             </div>
@@ -273,7 +261,7 @@ export default function ProjectIntakeForm({ token }) {
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                                        Email *
+                                        Email <span className="text-gray-400 font-normal">(Optional)</span>
                                     </label>
                                     <input
                                         type="email"
@@ -303,7 +291,7 @@ export default function ProjectIntakeForm({ token }) {
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        placeholder="+1 234 567"
+                                        placeholder="+1234567890"
                                         className={`w-full border px-3 py-2 rounded-xl text-xs focus:outline-none bg-white transition shadow-2xs ${
                                             errors.phone
                                                 ? "border-red-400 focus:border-red-500"
@@ -331,19 +319,19 @@ export default function ProjectIntakeForm({ token }) {
                                 </label>
                                 <input
                                     type="text"
-                                    name="project_title"
-                                    value={formData.project_title}
+                                    name="title"
+                                    value={formData.title}
                                     onChange={handleChange}
                                     placeholder="Web Application"
                                     className={`w-full border px-3 py-2 rounded-xl text-xs focus:outline-none bg-white transition shadow-2xs ${
-                                        errors.project_title
+                                        errors.title
                                             ? "border-red-400 focus:border-red-500"
                                             : "border-gray-200 focus:border-blue-500"
                                     }`}
                                 />
-                                {errors.project_title && (
+                                {errors.title && (
                                     <p className="text-red-500 text-[10px] mt-0.5">
-                                        {errors.project_title}
+                                        {errors.title}
                                     </p>
                                 )}
                             </div>
@@ -357,6 +345,7 @@ export default function ProjectIntakeForm({ token }) {
                                     value={formData.description}
                                     onChange={handleChange}
                                     rows={4}
+                                    maxLength={255}
                                     placeholder="Briefly describe project requirements and timeline..."
                                     className={`w-full border px-3 py-2 rounded-xl text-xs focus:outline-none bg-white resize-none transition shadow-2xs ${
                                         errors.description

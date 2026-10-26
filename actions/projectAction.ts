@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import {
     api
 } from "@/lib/api/client";
-
-export async function createProject(orgId, formData) {
+import type { Project, CreateProjectInput, UpdateProjectInput } from "@/types/project";
+export async function createProject(orgId:string, formData:CreateProjectInput):Promise<{ success: boolean; message?: string; data?: Project }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -16,7 +16,7 @@ export async function createProject(orgId, formData) {
         return { success: false, message: "Organization ID is missing." };
     }
 
-    if (!formData.clientId) {
+if (!("clientId" in formData)) {
         return { success: false, message: "Please select a valid client." };
     }
 
@@ -24,15 +24,15 @@ export async function createProject(orgId, formData) {
         const response = await api.post(
             "/projects",
             {
-                client_id: Number(formData.clientId),
+                client_id: Number((formData as any).clientId),
                 title: formData.title,
                 description: formData.description,
-                start_date: formData.startDate || undefined,
-                end_date: formData.endDate || undefined,
+                start_date: (formData as any).startDate,
+                end_date:(formData as any).endDate,
                 duration: formData.duration || undefined,
-                sub_total: formData.subTotal ? Number(formData.subTotal) : undefined,
-                profit_percentage: formData.profitPercentage ? Number(formData.profitPercentage) : undefined,
-                total_amount: formData.totalAmount ? Number(formData.totalAmount) : undefined,
+                sub_total: (formData as any).subTotal ? Number((formData as any).subTotal) : undefined,
+                profit_percentage:(formData as any).profitPercentage? Number((formData as any).profitPercentage) : undefined,
+                total_amount: (formData as any).totalAmount ? Number((formData as any).totalAmount) : undefined,
             },
             {
                 token,
@@ -45,17 +45,16 @@ export async function createProject(orgId, formData) {
             success: true,
             data: response.data.data
         };
-    } catch (error) {
+    } catch (error:any) {
         console.error("createProject validation error:", error.response?.data);
         return {
             success: false,
             message: error.response?.data?.message || error.data?.message || "Failed to create project",
-            errors: error.response?.data?.errors || error.data?.errors || null,
         };
     }
 }
 
-export async function updateProject(orgId, projectId, formData) {
+export async function updateProject(orgId:string, projectId:string, formData:UpdateProjectInput):Promise<{ success: boolean; message?: string; data?: Project }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -79,14 +78,14 @@ export async function updateProject(orgId, projectId, formData) {
                 title: formData.title,
                 description: formData.description,
                 status: formData.status,
-                start_date: formData.startDate || undefined,
-                end_date: formData.endDate || undefined,
-                duration: formData.duration || undefined,
-                sub_total: formData.subTotal,
-                profit_percentage: formData.profitPercentage,
-                total_amount: formData.totalAmount,
-                client_name: formData.clientName,
-                client_email: formData.clientEmail
+                start_date: (formData as any).startDate || undefined,
+                end_date: (formData as any).endDate || undefined,
+                duration: (formData as any).duration || undefined,
+                sub_total: (formData as any).subTotal,
+                profit_percentage: (formData as any).profitPercentage,
+                total_amount: (formData as any).totalAmount,
+                client_name: (formData as any).clientName,
+                client_email: (formData as any).clientEmail
             },
             {
                 token,
@@ -108,7 +107,7 @@ export async function updateProject(orgId, projectId, formData) {
     }
 }
 
-export async function getProjects(orgId) {
+export async function getProjects(orgId:string):Promise<{ success: boolean; message?: string; data?: Project[] }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -125,6 +124,7 @@ export async function getProjects(orgId) {
             message: "Organization ID is missing."
         };
     }
+
     try {
         const response = await api.get('/projects', {
             token,
@@ -132,6 +132,7 @@ export async function getProjects(orgId) {
                 "X-Organization-ID": orgId,
             }
         });
+
         return {
             success: true,
             data: response.data.data
@@ -144,7 +145,7 @@ export async function getProjects(orgId) {
     }
 }
 
-export async function deleteProject(orgId, projectId) {
+export async function deleteProject(orgId:string, projectId:string):Promise<{ success: boolean; message?: string; data?: any }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
