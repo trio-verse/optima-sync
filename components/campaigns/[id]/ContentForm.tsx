@@ -20,7 +20,13 @@ import {
 } from "lucide-react";
 import { createContent, updateContent } from "@/actions/campaignDetails";
 import { getChannels } from "@/actions/services/channelService";
+import { CampaignContent } from "@/types";
 
+interface NewErrors {
+  title: string;
+  type: string;
+  channelId: string;
+}
 const CONTENT_TYPES = [
   { value: "video_script", label: "Video Script" },
   { value: "social_post", label: "Social Media Post" },
@@ -38,18 +44,20 @@ export default function ContentForm({
   const [channels, setChannels] = useState([]);
   const [loadingLists, setLoadingLists] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<NewErrors>({
+    title: "",
+    type: "",
+    channelId: "",
+  });
   const [globalError, setGlobalError] = useState("");
 
   const textareaRef = useRef(null);
   const isEditing = !!editingContent;
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CampaignContent>({
     title: editingContent?.title || "",
     type: editingContent?.type || "",
-    channelId: String(
-      editingContent?.channel_id || editingContent?.channel?.id || ""
-    ),
+    channelId: String(editingContent?.channel_id || ""),
     cost: editingContent?.cost || "",
     publishedAt: editingContent?.published_at
       ? new Date(editingContent.published_at).toISOString().slice(0, 16)
@@ -67,7 +75,7 @@ export default function ContentForm({
         if (res?.success) setChannels(res.data || []);
       } catch (err) {
         console.error("Error loading channels:", err);
-      } finally{
+      } finally {
         setLoadingLists(false);
       }
     }
@@ -108,13 +116,17 @@ export default function ContentForm({
       textarea.focus();
       textarea.setSelectionRange(
         start + prefix.length,
-        start + prefix.length + selectedText.length
+        start + prefix.length + selectedText.length,
       );
     }, 0);
   };
 
   const validate = () => {
-    const newErrors = {};
+    const newErrors: NewErrors = {
+      title: "",
+      type: "",
+      channelId: "",
+    };
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.type) newErrors.type = "Type is required";
     if (!formData.channelId) newErrors.channelId = "Channel is required";
@@ -132,7 +144,7 @@ export default function ContentForm({
     const payload = {
       title: formData.title,
       type: formData.type,
-      channel_id: Number(formData.channelId),
+      channel_id: formData.channelId,
       cost: formData.cost ? Number(formData.cost) : 0,
       published_at: formData.publishedAt || null,
       description: formData.description,
@@ -148,14 +160,12 @@ export default function ContentForm({
         router.push(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
         router.refresh();
       } else {
-        setGlobalError(
-          result?.error || result?.message || "An error occurred while saving"
-        );
+        setGlobalError(result?.message || "An error occurred while saving");
       }
     } catch (err) {
       console.error("Form submission error:", err);
       setGlobalError(
-        err?.message || "Unable to connect to the server. Please try again."
+        err?.message || "Unable to connect to the server. Please try again.",
       );
     } finally {
       setLoading(false);

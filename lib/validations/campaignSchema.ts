@@ -1,9 +1,20 @@
+import { CampaignStatus } from "@/types";
 import {
     z
 } from "zod";
-
+const STATUSES: [CampaignStatus, ...CampaignStatus[]] = [
+  "active", 
+  "draft", 
+  "paused", 
+  "completed", 
+  "cancelled"
+];
 export const campaignSchema = z
     .object({
+         organization_id: z
+            .string().optional(),
+         id: z
+            .string().optional(),
         name: z
             .string()
             .min(3, {
@@ -14,31 +25,21 @@ export const campaignSchema = z
             .min(5, {
                 message: "Description is required"
             }),
-        estimated_content_count: z.coerce
-            .number({
-                invalid_type_error: "Must be a valid number"
-            })
-            .min(1, {
-                message: "Content count must be at least 1"
-            }),
-        expected_budget: z.coerce
-            .number({
-                invalid_type_error: "Must be a valid number"
-            })
+        estimated_content_count: z
+            .number()
+            .optional(),
+        expected_budget: z
+            .number()
             .positive({
                 message: "Budget must be greater than 0"
-            }),
-        status: z.enum(["active", "draft", "paused", "completed", "cancelled"], {
-            errorMap: () => ({
-                message: "Invalid status selected"
-            }),
-        }),
+            }) .optional(),
+        status: z.enum(STATUSES),
         start_date: z.string().min(1, {
             message: "Start date is required"
         }),
         end_date: z.string().min(1, {
             message: "End date is required"
-        }),
+        }).optional(),
         target: z.string().min(1, {
             message: "Target goal is required"
         }),

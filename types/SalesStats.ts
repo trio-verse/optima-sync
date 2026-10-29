@@ -1,5 +1,4 @@
 import { Connection } from "./Connection";
-import { Product } from "./reference";
 
 export interface WinRate{
     percent:number;
@@ -14,7 +13,7 @@ export interface StatItem{
 export interface StatProduct{
     label:string;
     count:number;
-    clientsCount:number;
+    connectionsCount:number;
     price:number;
 }
 export interface SalesStats{

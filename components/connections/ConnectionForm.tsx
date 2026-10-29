@@ -73,7 +73,7 @@ export default function ConnectionModal({
 
   // Connection Form State
   const [formData, setFormData] = useState<ConnectionRequest>({
-    client_id: initialClientId ,
+    client_id: initialClientId,
     product_id: 0,
     stage: "lead",
     channel_id: "",
@@ -744,7 +744,7 @@ export default function ConnectionModal({
                   <option value="">Select campaign...</option>
                   {campaigns.map((camp) => (
                     <option key={camp.id} value={camp.id}>
-                      {camp.name || camp.title || `Campaign #${camp.id}`}
+                      {camp.name || camp.name || `Campaign #${camp.id}`}
                     </option>
                   ))}
                 </select>

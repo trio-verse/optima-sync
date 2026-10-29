@@ -5,16 +5,34 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createCampaign, updateCampaign } from "@/actions/campaigns";
 import { campaignSchema } from "@/lib/validations/campaignSchema"; // تأكدي من مسار الـ Schema الصحيح
+import {
+  Campaign,
+  CampaignRequest,
+  CampaignStats,
+  CampaignStatus,
+} from "@/types";
 
-const AVAILABLE_STATUS = ["active", "draft", "paused", "completed", "cancelled"];
-
+const AVAILABLE_STATUS = [
+  "active",
+  "draft",
+  "paused",
+  "completed",
+  "cancelled",
+];
+interface CampaignModalType {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+  orgId: string;
+  campaignToEdit: CampaignRequest | null;
+}
 export default function CampaignModal({
   isOpen,
   onClose,
   onSuccess,
   orgId,
   campaignToEdit = null,
-}) {
+}: CampaignModalType) {
   const isEditing = Boolean(campaignToEdit);
 
   // تنسيق التاريخ لصيغة YYYY-MM-DD لتناسب مدخلات input type="date"
@@ -32,17 +50,19 @@ export default function CampaignModal({
     reset,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm<CampaignRequest>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       name: "",
       description: "",
-      estimated_content_count: "",
-      expected_budget: "",
+      estimated_content_count: 0,
+      expected_budget: 0,
       status: "draft",
       start_date: "",
       end_date: "",
       target: "",
+      id: "",
+      organization_id: "",
     },
   });
 
@@ -55,8 +75,8 @@ export default function CampaignModal({
         reset({
           name: campaignToEdit.name || "",
           description: campaignToEdit.description || "",
-          estimated_content_count: campaignToEdit.estimated_content_count || "",
-          expected_budget: campaignToEdit.expected_budget || campaignToEdit.budget || "",
+          estimated_content_count: campaignToEdit.estimated_content_count || 0,
+          expected_budget: campaignToEdit.expected_budget || 0,
           status: campaignToEdit.status || "draft",
           start_date: formatDateForInput(campaignToEdit.start_date),
           end_date: formatDateForInput(campaignToEdit.end_date),
@@ -66,8 +86,8 @@ export default function CampaignModal({
         reset({
           name: "",
           description: "",
-          estimated_content_count: "",
-          expected_budget: "",
+          estimated_content_count: 0,
+          expected_budget: 0,
           status: "draft",
           start_date: "",
           end_date: "",
@@ -79,18 +99,12 @@ export default function CampaignModal({
 
   if (!isOpen) return null;
 
-  const onSubmit = async (data) => {
-    // إرسال FormData إلى Server Action
-    const formData = new FormData();
-    Object.keys(data).forEach((key) => {
-      formData.append(key, data[key]);
-    });
-
+  const onSubmit = async (data: CampaignRequest) => {
     let result;
     if (isEditing) {
-      result = await updateCampaign(campaignToEdit.id, formData, orgId);
+      result = await updateCampaign(campaignToEdit.id, data, orgId);
     } else {
-      result = await createCampaign(formData, orgId);
+      result = await createCampaign(data, orgId);
     }
 
     if (result?.success) {
@@ -100,7 +114,8 @@ export default function CampaignModal({
       // إظهار خطأ عام قادم من السيرفر
       setError("root", {
         type: "manual",
-        message: result?.error || result?.message || "An unexpected error occurred",
+        message:
+          result?.error || result?.message || "An unexpected error occurred",
       });
     }
   };
@@ -112,7 +127,10 @@ export default function CampaignModal({
           <h3 className="text-lg font-semibold text-gray-900">
             {isEditing ? "Edit Campaign" : "Create New Campaign"}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             ✕
           </button>
         </div>
@@ -127,19 +145,25 @@ export default function CampaignModal({
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           {/* Campaign Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Campaign Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Campaign Name
+            </label>
             <input
               type="text"
               {...register("name")}
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="e.g. Summer Growth Campaign"
             />
-            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
+            )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Description
+            </label>
             <input
               type="text"
               {...register("description")}
@@ -147,47 +171,63 @@ export default function CampaignModal({
               placeholder="Describe Your Campaign...."
             />
             {errors.description && (
-              <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {errors.description.message}
+              </p>
             )}
           </div>
 
           {/* Estimated Content Count */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Estimated Content Count</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Estimated Content Count
+            </label>
             <input
               type="number"
-              {...register("estimated_content_count")}
+              {...register("estimated_content_count", { valueAsNumber: true })}
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="80"
             />
             {errors.estimated_content_count && (
-              <p className="mt-1 text-xs text-red-500">{errors.estimated_content_count.message}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {errors.estimated_content_count.message}
+              </p>
             )}
           </div>
 
           {/* Expected Budget */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Expected Budget ($)</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Expected Budget ($)
+            </label>
             <input
               type="number"
-              {...register("expected_budget")}
+              {...register("expected_budget", { valueAsNumber: true })}
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="5000"
             />
             {errors.expected_budget && (
-              <p className="mt-1 text-xs text-red-500">{errors.expected_budget.message}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {errors.expected_budget.message}
+              </p>
             )}
           </div>
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status
+            </label>
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_STATUS.map((status) => (
                 <button
                   type="button"
                   key={status}
-                  onClick={() => setValue("status", status, { shouldValidate: true })}
+                  onClick={() =>
+                    setValue("status", status as CampaignStatus, {
+                      shouldValidate: true,
+                    })
+                  }
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                     selectedStatus === status
                       ? "bg-blue-600 text-white"
@@ -198,45 +238,63 @@ export default function CampaignModal({
                 </button>
               ))}
             </div>
-            {errors.status && <p className="mt-1 text-xs text-red-500">{errors.status.message}</p>}
+            {errors.status && (
+              <p className="mt-1 text-xs text-red-500">
+                {errors.status.message}
+              </p>
+            )}
           </div>
 
           {/* Start & End Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Start Date</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Start Date
+              </label>
               <input
                 type="date"
                 {...register("start_date")}
                 className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               />
               {errors.start_date && (
-                <p className="mt-1 text-xs text-red-500">{errors.start_date.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.start_date.message}
+                </p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">End Date</label>
+              <label className="block text-sm font-medium text-gray-700">
+                End Date
+              </label>
               <input
                 type="date"
                 {...register("end_date")}
                 className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               />
               {errors.end_date && (
-                <p className="mt-1 text-xs text-red-500">{errors.end_date.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.end_date.message}
+                </p>
               )}
             </div>
           </div>
 
           {/* Target */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Target</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Target
+            </label>
             <input
               type="text"
               {...register("target")}
               className="mt-1 w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-blue-500"
               placeholder="Enter Your Expected Target"
             />
-            {errors.target && <p className="mt-1 text-xs text-red-500">{errors.target.message}</p>}
+            {errors.target && (
+              <p className="mt-1 text-xs text-red-500">
+                {errors.target.message}
+              </p>
+            )}
           </div>
 
           {/* Actions */}
@@ -258,8 +316,8 @@ export default function CampaignModal({
                   ? "Updating..."
                   : "Creating..."
                 : isEditing
-                ? "Update Campaign"
-                : "Create Campaign"}
+                  ? "Update Campaign"
+                  : "Create Campaign"}
             </button>
           </div>
         </form>

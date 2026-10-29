@@ -2,7 +2,10 @@
 import { getEffectiveCampaigns } from "@/actions/campaigns";
 import CampaignsTable from "@/components/campaigns/CampaignsTable";
 
-export default async function CampaignsPage({ params }) {
+interface CampaignsPageProps {
+  params: Promise<{ OrgId: string }>;
+}
+export default async function CampaignsPage({ params }: CampaignsPageProps) {
   const resolvedParams = await params;
   const orgId = resolvedParams?.OrgId;
   const response = await getEffectiveCampaigns(orgId, { page: 1, perPage: 10 });

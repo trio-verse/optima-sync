@@ -4,8 +4,10 @@ import {
   getAllCampaigns,
 } from "@/actions/campaigns";
 import MarketingAnalyticsDashboard from "@/components/marketing/MarketingAnalyticsDashboard";
-
-export default async function MarketingOverviewPage({ params }) {
+interface MarketingOverviewPageProps {
+  params: Promise<{ OrgId: string }>;
+}
+export default async function MarketingOverviewPage({ params }: MarketingOverviewPageProps) {
   const resolvedParams = await params;
   const orgId = resolvedParams?.OrgId;
 

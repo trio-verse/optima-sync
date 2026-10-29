@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateContentStatus, confirmContentCost } from "@/actions/campaignDetails";
+import { CampaignContent, ContentStatus } from "@/types";
 
 const COLUMNS = [
   { id: "draft", label: "Draft" },
@@ -19,14 +20,22 @@ export default function ContentKanban({
   initialContents,
 }) {
   const router = useRouter();
-  const [contents, setContents] = useState(initialContents || []);
+  const [contents, setContents] = useState<CampaignContent>(initialContents || []);
   const [loadingId, setLoadingId] = useState(null);
 
   /* ── التغيير عبر الـ Endpoint الجديد ── */
-  const handleStatusChange = async (contentId, newStatus) => {
+  const handleStatusChange = async (
+    contentId: number,
+    newStatus: ContentStatus,
+  ) => {
     setLoadingId(contentId);
 
-    const res = await updateContentStatus(contentId, campaignId, orgId, newStatus);
+    const res = await updateContentStatus(
+      contentId,
+      campaignId,
+      orgId,
+      newStatus,
+    );
 
     if (res.success) {
       setContents((prev) =>
@@ -34,14 +43,14 @@ export default function ContentKanban({
           c.id === contentId
             ? {
                 ...c,
-                status: res.data?.status || newStatus,
-                published_at: res.data?.published_at || c.published_at,
+                status: newStatus,
+                published_at: c.published_at,
               }
-            : c
-        )
+            : c,
+        ),
       );
     } else {
-      alert(res.error || "Failed to update status");
+      alert(res.errors || "Failed to update status");
     }
     setLoadingId(null);
   };
@@ -57,14 +66,14 @@ export default function ContentKanban({
           c.id === contentId
             ? {
                 ...c,
-                cost_confirmed_at:
-                  res.data?.cost_confirmed_at || new Date().toISOString(),
+                cost:
+                  res.data?.cost || new Date().toISOString(),
               }
-            : c
-        )
+            : c,
+        ),
       );
     } else {
-      alert(res.error || "Failed to confirm cost");
+      alert(res.errors || "Failed to confirm cost");
     }
     setLoadingId(null);
   };
@@ -72,7 +81,7 @@ export default function ContentKanban({
   /* ── الانتقال لصفحة التعديل (نفس صفحة الإنشاء مع query param) ── */
   const handleCardClick = (contentId) => {
     router.push(
-      `/${orgId}/dashboard/marketing/campaigns/${campaignId}/content?contentId=${contentId}`
+      `/${orgId}/dashboard/marketing/campaigns/${campaignId}/content?contentId=${contentId}`,
     );
   };
 
@@ -145,7 +154,9 @@ export default function ContentKanban({
                             disabled={loadingId === item.id}
                             className="rounded bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50"
                           >
-                            {loadingId === item.id ? "Confirming..." : "Confirm Cost"}
+                            {loadingId === item.id
+                              ? "Confirming..."
+                              : "Confirm Cost"}
                           </button>
                         )}
                       </div>
@@ -158,7 +169,7 @@ export default function ContentKanban({
                         <select
                           value={item.status}
                           onChange={(e) =>
-                            handleStatusChange(item.id, e.target.value)
+                            handleStatusChange(item.id, e.target.value as ContentStatus)
                           }
                           disabled={loadingId === item.id}
                           className="w-full rounded border border-gray-200 p-1 text-xs outline-none bg-gray-50 font-medium"

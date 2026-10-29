@@ -1,6 +1,7 @@
 "use server";
 // actions/campaignDetails.js
 import { api } from "@/lib/api/client";
+import { ApiResponse, CampaignContent, CampaignContentRequest, CampaignStats, ComfirmCost, ContentStatus } from "@/types";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
@@ -18,7 +19,7 @@ async function getAuthContext() {
   };
 }
 
-export async function createContent(campaignId,orgId, formData) {
+export async function createContent(campaignId:number,orgId:string, formData:CampaignContentRequest):Promise<ApiResponse<CampaignContentRequest>> {
   try {
 
      const cookieStore = await cookies();
@@ -35,7 +36,7 @@ const payload = {
       title: formData.title,
       type: formData.type,
       channel_id: formData.channel_id,
-      cost: formData.cost, // ستصل كـ Number جاهز من الفرونت إند
+      cost: formData.cost, 
       status: formData.status,
       published_at: formData.published_at,
       description: formData.description,
@@ -50,19 +51,19 @@ const payload = {
     revalidatePath(`/campaigns/${campaignId}`);
       return {
       success: true,
-      message: resdata?.message || "The content was created successfully",
+      message: resdata?.data.message || "The content was created successfully",
       data: resdata?.data?.data,
     };
   } catch (error) {
     console.log(error);
-    return { success: false, error: error.data?.message || "Failed to create content" };
+    return { success: false, errors: error.data?.message || "Failed to create content" };
   }
 }
 
 /**
  * Update full content or status
  */
-export async function updateContent(contentId, orgId ,formData, campaignId) {
+export async function updateContent(contentId:number, orgId:string ,formData:CampaignContent, campaignId:number):Promise<ApiResponse<CampaignContent>> {
   try {
       const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -75,18 +76,17 @@ export async function updateContent(contentId, orgId ,formData, campaignId) {
       return { success: false, message: "Organization ID is missing." };
     }
     
-    // دعم إرسال FormData أو Object عادي
-    const payload = formData instanceof FormData ? {
-      title: formData.get("title"),
-      type: formData.get("type"),
-      channel_id: formData.get("channel_id"),
-      cost: parseFloat(formData.get("cost")) || 0,
-      status: formData.get("status"),
-      published_at: formData.get("published_at") || null,
-      description: formData.get("description"),
-      script: formData.get("script"),
-    } : formData;
-console.log(payload)
+const payload = {
+      title: formData.title,
+      type: formData.type,
+      channel_id: formData.channel_id,
+      cost: formData.cost, 
+      status: formData.status,
+      published_at: formData.published_at,
+      description: formData.description,
+      script: formData.script,
+    };
+    console.log(payload)
     const res = await api.patch(`/campaigns/${campaignId}/contents/${contentId}`, payload, {
       token,
          headers: { "X-Organization-ID": orgId },
@@ -99,10 +99,10 @@ console.log(payload)
     }
     return { success: true, data: res?.data?.data, };
   } catch (error) {
-    return { success: false, error: error.data?.message || "Failed to update content" };
+    return { success: false, errors: error.data?.message || "Failed to update content" };
   }
 }
-export async function getCampaignContents(campaignId,orgId) {
+export async function getCampaignContents(campaignId:number,orgId:string):Promise<ApiResponse<CampaignContent[]>> {
   try {
       const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -122,25 +122,23 @@ export async function getCampaignContents(campaignId,orgId) {
     });
     return { success: true, data: res.data?.data || res.data || [] };
   } catch (error) {
-    return { success: false, error: error.data?.message || "Failed to fetch contents" };
+    return { success: false, errors: error.data?.message || "Failed to fetch contents" };
   }
 }
 
 /**
  * Confirm Content Cost (Policy Gated)
  */
-export async function confirmContentCost(contentId, campaignId, orgId) {
+export async function confirmContentCost(contentId:number, campaignId:number, orgId:string):Promise<ApiResponse<ComfirmCost>> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
     if (!token) {
-      return { success: false, error: "Unauthorized" };
+      return { success: false, message: "Unauthorized" };
     }
-
-    const targetOrgId = orgId || cookieStore.get("organization_id")?.value;
-    if (!targetOrgId) {
-      return { success: false, error: "Organization ID is missing." };
+     if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
     }
 
 
@@ -149,27 +147,27 @@ export async function confirmContentCost(contentId, campaignId, orgId) {
       {},
       {
         token,
-        headers: { "X-Organization-ID": targetOrgId },
+        headers: { "X-Organization-ID": orgId },
         cache: "no-store",
       }
     );
 
-    revalidatePath(`/${targetOrgId}/dashboard/marketing/campaigns/${campaignId}`);
+    revalidatePath(`/${orgId}/dashboard/marketing/campaigns/${campaignId}`);
 
     return { 
       success: true, 
-      message: res?.data?.message || res?.message || "Cost confirmed successfully",
+      message: res?.data?.message || res?.data.message || "Cost confirmed successfully",
       data: res?.data?.data || res?.data 
     };
   } catch (error) {
     return { 
       success: false, 
-      error: error?.data?.message || error?.message || "Failed to confirm cost" 
+      errors: error?.data?.message || error?.message || "Failed to confirm cost" 
     };
   }
 }
 
-export async function getCampaignAnalytics(campaignId,orgId){
+export async function getCampaignAnalytics(campaignId:number,orgId:string):Promise<ApiResponse<CampaignStats>>{
    try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -205,13 +203,18 @@ export async function getCampaignAnalytics(campaignId,orgId){
 /**
  * Update Content Status Only (New Endpoint)
  */
-export async function updateContentStatus(contentId, campaignId, orgId, status) {
+export async function updateContentStatus(contentId:number, campaignId:number, orgId:string, status:ContentStatus) :Promise<ApiResponse<ContentStatus>> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
-    if (!token) return { success: false, error: "Unauthorized" };
-    if (!orgId) return { success: false, error: "Organization ID is missing." };
+    if (!token) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    if (!orgId) {
+      return { success: false, message: "Organization ID is missing." };
+    }
 
     const res = await api.patch(
       `/campaigns/${campaignId}/contents/${contentId}/status`,
@@ -227,13 +230,13 @@ export async function updateContentStatus(contentId, campaignId, orgId, status) 
 
     return {
       success: true,
-      message: res?.data?.message || res?.message || "Content status changed successfully",
+      message: res?.data?.message || res?.data.message || "Content status changed successfully",
       data: res?.data?.data || res?.data,
     };
   } catch (error) {
     return {
       success: false,
-      error: error?.data?.message || error?.message || "Failed to update status",
+      errors: error?.data?.message || error?.message || "Failed to update status",
     };
   }
 }

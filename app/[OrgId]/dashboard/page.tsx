@@ -486,7 +486,7 @@ export default function SalesDashboardPage({
                     rank={i + 1}
                     name={p.label}
                     count={p.count}
-                    clientsCount={p.clientsCount}
+                    clientsCount={p.connectionsCount}
                     price={p.price}
                     total={topProducts[0]?.count || 1}
                   />

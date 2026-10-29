@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useInfiniteQuery ,useQueryClient} from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
-import { deleteCampaign,  getEffectiveCampaigns } from "@/actions/campaigns";
+import { deleteCampaign, getEffectiveCampaigns } from "@/actions/campaigns";
 import CampaignModal from "./CampaignModal";
 
 import { Pencil, Trash2 } from "lucide-react";
 
-
-export default function CampaignsTable({ orgId }) {
+export default function CampaignsTable({ initialCampaigns , orgId }) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("cpl");
@@ -24,34 +23,31 @@ export default function CampaignsTable({ orgId }) {
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["campaigns-infinite"] });
   };
-const {
-  data,
-  fetchNextPage,
-  hasNextPage,
-  isFetchingNextPage,
-  isLoading: loading,
-} = useInfiniteQuery({
-  queryKey: ["campaigns-infinite", orgId, statusFilter, sortBy],
-  queryFn: ({ pageParam = 1 }) =>
-    getEffectiveCampaigns(
-      orgId,
-      {
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loading,
+  } = useInfiniteQuery({
+    queryKey: ["campaigns-infinite", orgId, statusFilter, sortBy],
+    initialPageParam: 1,
+    queryFn: ({ pageParam = 1 }) =>
+      getEffectiveCampaigns(orgId, {
         status: statusFilter !== "all" ? statusFilter : undefined,
-        sort: sortBy,      
+        sort: sortBy,
         page: pageParam,
-        perPage: 15,         
-      },
-    ),
-  getNextPageParam: (lastPage) => {
-    if (Array.isArray(lastPage)) return undefined;
-    const meta = lastPage?.meta || {};
-    const currentPage = meta.current_page || 1;
-    const lastPageNum = meta.last_page || 1;
-    return currentPage < lastPageNum ? currentPage + 1 : undefined;
-  },
-  enabled: !!orgId,
-});
-
+        perPage: 15,
+      }),
+    getNextPageParam: (lastPage) => {
+      if (Array.isArray(lastPage)) return undefined;
+      const meta = lastPage?.meta || {};
+      const currentPage = meta.current_page || 1;
+      const lastPageNum = meta.last_page || 1;
+      return currentPage < lastPageNum ? currentPage + 1 : undefined;
+    },
+    enabled: !!orgId,
+  });
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -59,22 +55,20 @@ const {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-
   const rawCampaigns =
     data?.pages?.flatMap((page) =>
-      Array.isArray(page) ? page : page?.data || []
+      Array.isArray(page) ? page : page?.data || [],
     ) || [];
 
-
   const campaigns = rawCampaigns.map((campaign) => {
-    const displayName = campaign?.name || campaign?.title || "Campaign without name";
+    const displayName =
+      campaign?.name || campaign?.title || "Campaign without name";
     const budget = Number(campaign?.expected_budget || campaign?.budget || 0);
     const spent = Number(campaign?.current_spent || campaign?.spent || 0);
 
     const connectionsCount = Array.isArray(campaign?.connections)
       ? campaign.connections.length
       : Number(campaign?.connections_count || campaign?.leads_count || 0);
-
 
     let cpl = 0;
     if (campaign?.cpl !== undefined && campaign?.cpl !== null) {
@@ -110,7 +104,7 @@ const {
     setIsModalOpen(true);
   };
 
-const handleDelete = async (id, e) => {
+  const handleDelete = async (id, e) => {
     e.stopPropagation();
     if (confirm("Are you sure you want to delete this campaign?")) {
       const res = await deleteCampaign(id, orgId);
@@ -161,7 +155,7 @@ const handleDelete = async (id, e) => {
               >
                 {status}
               </button>
-            )
+            ),
           )}
         </div>
 
@@ -260,7 +254,7 @@ const handleDelete = async (id, e) => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="7"
+                      colSpan={7}
                       className="px-6 py-8 text-center text-gray-400"
                     >
                       No campaigns found.

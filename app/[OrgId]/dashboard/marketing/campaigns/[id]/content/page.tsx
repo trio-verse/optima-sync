@@ -1,13 +1,14 @@
 import ContentForm from "@/components/campaigns/[id]/ContentForm";
 import { getCampaignContents } from "@/actions/campaignDetails";
 
-export default async function ContentPage({ params, searchParams }) {
+interface ContentPageProps {
+  params: Promise<{ OrgId: string; id: number; contentId:number }>;
+}
+export default async function ContentPage({ params}: ContentPageProps) {
   const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
-
   const campaignId = resolvedParams?.id;
   const orgId = resolvedParams?.OrgId;
-  const contentId = resolvedSearchParams?.contentId ? Number(resolvedSearchParams.contentId) : null;
+  const contentId = resolvedParams?.contentId;
 
   let editingContent = null;
 

@@ -27,6 +27,13 @@ import {
   PolarAngleAxis,
 } from "recharts";
 
+interface RadialGaugeType{
+  label:string,
+  value:number,
+  color:string,
+  domainMax:number,
+  subtitle?:string
+}
 /* ============================================================
    1️⃣ Column Chart - Spent vs Revenue
    ============================================================ */
@@ -121,7 +128,13 @@ function ConnectionsDonutChart({ totalConnections, totalWins }) {
 /* ============================================================
    3️⃣ Radial Gauge - Win Rate & ROI Gauges
    ============================================================ */
-function RadialGauge({ label, value, color, domainMax, subtitle }) {
+function RadialGauge({
+  label,
+  value,
+  color,
+  domainMax,
+  subtitle,
+}: RadialGaugeType) {
   const clamped = Math.max(0, Math.min(value, domainMax));
   const data = [{ value: clamped, fill: color }];
 
@@ -139,8 +152,16 @@ function RadialGauge({ label, value, color, domainMax, subtitle }) {
             startAngle={90}
             endAngle={-270}
           >
-            <PolarAngleAxis type="number" domain={[0, domainMax]} tick={false} />
-            <RadialBar dataKey="value" cornerRadius={8} background={{ fill: "#f1f5f9" }} />
+            <PolarAngleAxis
+              type="number"
+              domain={[0, domainMax]}
+              tick={false}
+            />
+            <RadialBar
+              dataKey="value"
+              cornerRadius={8}
+              background={{ fill: "#f1f5f9" }}
+            />
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -151,7 +172,9 @@ function RadialGauge({ label, value, color, domainMax, subtitle }) {
       </div>
       <span className="text-xs font-semibold text-slate-500">{label}</span>
       {subtitle && (
-        <span className={`text-[11px] font-bold ${color === "#10b981" ? "text-emerald-600" : "text-rose-600"}`}>
+        <span
+          className={`text-[11px] font-bold ${color === "#10b981" ? "text-emerald-600" : "text-rose-600"}`}
+        >
           {subtitle}
         </span>
       )}
@@ -168,7 +191,13 @@ function KpiGauges({ winRate, roi }) {
 
   return (
     <div className="h-56 flex items-center justify-around">
-      <RadialGauge label="Win Rate" value={winRate} color="#8b5cf6" domainMax={100} />
+      <RadialGauge
+        label="Win Rate"
+        value={winRate}
+        color="#8b5cf6"
+        domainMax={100}
+      />
+      
       <RadialGauge
         label="ROI"
         value={displayRoi}

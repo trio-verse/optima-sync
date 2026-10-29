@@ -1,34 +1,28 @@
 "use server";
 
 import { api } from "@/lib/api/client";
+import { ApiResponse, Campaign, CampaignRequest, CampaignStats, CampaignStatus, EffectiveCampaigns, MarketingAnalytics, PaginationMeta } from "@/types";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { promises } from "node:dns";
 
 /**
  * Fetch list of campaigns
  */
-export async function getCampaigns(orgId) {
+export async function getCampaigns(orgId?:string):Promise<ApiResponse<Campaign[]>> {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    if (!token) {
-      return { success: false, message: "Unauthorized" };
-    }
-
     if (!orgId) {
       return { success: false, message: "Organization ID is missing." };
     }
     const resdata = await api.get("/campaigns", {
-      token,
       headers: orgId ? { "X-Organization-ID": orgId } : {},
       cache: "no-store",
     });
-    console.log("@@@@@@@@@@@@@@@@@@@@@@@", resdata);
     return {
       success: true,
       message: "Campaigns data fetched successfully.",
-      data: resdata?.data?.data || [],
-      meta: resdata?.data?.meta || resdata?.meta || {},
+      data: resdata?.data?.data  || [],
+      meta: resdata?.data?.meta || {},
     };
   } catch (error) {
     console.error("DEBUG getCampaign Error:", error);
@@ -43,7 +37,7 @@ export async function getCampaigns(orgId) {
   }
 }
 
-export async function getCampaignById(id ,orgId ) {
+export async function getCampaignById(id:number ,orgId?:string ):Promise<ApiResponse<Campaign>> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -65,7 +59,7 @@ export async function getCampaignById(id ,orgId ) {
   } catch (error) {
     return {
       success: false,
-      error: error.data?.message || "Failed to fetch campaign details",
+      errors: error.data?.message || "Failed to fetch campaign details",
     };
   }
 }
@@ -73,7 +67,7 @@ export async function getCampaignById(id ,orgId ) {
 /**
  * Create a new campaign
  */
-export async function createCampaign(formData, orgId) {
+export async function createCampaign(formData:CampaignRequest, orgId?:string):Promise<ApiResponse<CampaignRequest>> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -86,14 +80,14 @@ export async function createCampaign(formData, orgId) {
       return { success: false, message: "Organization ID is missing." };
     }
     const payload = {
-      name: formData.get("name"),
-      description: formData.get("description"),
-      estimated_content_count: Number(formData.get("estimated_content_count")),
-      expected_budget: Number(formData.get("expected_budget")),
-      start_date: formData.get("start_date"),
-      end_date: formData.get("end_date"),
-      status: formData.get("status"),
-      target: formData.get("target"),
+      name: formData.name,
+      description: formData.description,
+      estimated_content_count: Number(formData.estimated_content_count),
+      expected_budget: Number(formData.expected_budget),
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      status: formData.status,
+      target: formData.target,
     };
     const resdata = await api.post("/campaigns", payload, {
       token,
@@ -107,7 +101,7 @@ export async function createCampaign(formData, orgId) {
 
     return {
       success: true,
-      message: resdata?.message || "The campaign created successfully",
+      message: resdata?.data.message || "The campaign created successfully",
       data: resdata?.data?.data,
     };
   } catch (error) {
@@ -123,7 +117,7 @@ export async function createCampaign(formData, orgId) {
   }
 }
 
-export async function updateCampaign(id, formData, orgId) {
+export async function updateCampaign(id:string, formData:CampaignRequest, orgId?:string):Promise<ApiResponse<CampaignRequest>> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -137,14 +131,14 @@ export async function updateCampaign(id, formData, orgId) {
     }
 
     const payload = {
-      name: formData.get("name"),
-      description: formData.get("description"),
-      estimated_content_count: Number(formData.get("estimated_content_count")),
-      expected_budget: Number(formData.get("expected_budget")),
-      start_date: formData.get("start_date"),
-      end_date: formData.get("end_date"),
-      status: formData.get("status"),
-      target: formData.get("target"),
+      name: formData.name,
+      description: formData.description,
+      estimated_content_count: Number(formData.estimated_content_count),
+      expected_budget: Number(formData.expected_budget),
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      status: formData.status,
+      target: formData.target,
     };
 
     const resdata = await api.patch(`/campaigns/${id}`, payload, {
@@ -177,7 +171,7 @@ export async function updateCampaign(id, formData, orgId) {
 /**
  * Delete a campaign
  */
-export async function deleteCampaign(id, orgId) {
+export async function deleteCampaign(id:number, orgId?:string):Promise<ApiResponse<CampaignRequest>> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -217,7 +211,7 @@ export async function deleteCampaign(id, orgId) {
  * Fetch marketing analytics overview (org-level)
  * GET /marketing/analytics
  */
-export async function getMarketingAnalytics(orgId) {
+export async function getMarketingAnalytics(orgId:string):Promise<ApiResponse<MarketingAnalytics>>{
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -256,7 +250,7 @@ export async function getMarketingAnalytics(orgId) {
 
 // actions/campaigns.js
 
-export async function getEffectiveCampaigns(orgId, { page = 1, perPage = 15, status = "all", sort = "cpl" } = {}) {
+export async function getEffectiveCampaigns(orgId:string, { page = 1, perPage = 15, status="all", sort = "cpl" } = {}) : Promise<ApiResponse<EffectiveCampaigns[]>>{
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -291,7 +285,7 @@ export async function getEffectiveCampaigns(orgId, { page = 1, perPage = 15, sta
       ? response
       : [];
 
-    const metaData = response?.data?.meta || response?.meta || {
+    const metaData = response?.data?.meta || response?.data.meta || {
       current_page: page,
       has_more: rawData.length === perPage,
     };
@@ -312,7 +306,7 @@ export async function getEffectiveCampaigns(orgId, { page = 1, perPage = 15, sta
     };
   }
 }
-export async function getAllCampaigns(orgId) {
+export async function getAllCampaigns(orgId:string):Promise<ApiResponse<Campaign[]>> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
