@@ -1,0 +1,19 @@
+// marketing/campaign/page.jsx
+import { getEffectiveCampaigns } from "@/actions/campaigns";
+import CampaignsTable from "@/components/campaigns/CampaignsTable";
+
+interface CampaignsPageProps {
+  params: Promise<{ OrgId: string }>;
+}
+export default async function CampaignsPage({ params }: CampaignsPageProps) {
+  const resolvedParams = await params;
+  const orgId = resolvedParams?.OrgId;
+  const response = await getEffectiveCampaigns(orgId, { page: 1, perPage: 10 });
+  const campaigns = response.success ? response.data : [];
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto">
+      <CampaignsTable initialCampaigns={campaigns} orgId={orgId} />
+    </div>
+  );
+}

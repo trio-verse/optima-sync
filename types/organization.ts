@@ -11,16 +11,22 @@ export interface IOrganization {
   created_at: string;
   updated_at?: string;
 }
-
-export interface IOrgMember {
+export interface User{
   id: string;
-  organization_id?: string;
-  user_id: string;
   name: string;
   email: string;
-  role: MemberRole;
-  joined_at: string;
 }
+export interface OrgMember {
+  id: string;
+  organization_id?: string;
+  user: User;
+  role: MemberRole;
+}
+
+export interface OrgMemberRequest {
+  role: MemberRole;
+  email: string;
+};
 
 export interface ICreateOrganizationPayload {
   name: string;

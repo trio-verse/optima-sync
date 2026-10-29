@@ -1,31 +1,30 @@
 export type ClientType = 'company' | 'individual' | 'government' | 'charity' | 'agency';
 
-export interface ReferenceItem {
-  id: string;
-  name: string;
-  color?: string;
-}
-
 export interface Client {
-  id: string;
+  id: number;
   name: string;
-  email: string;
+  email?: string;
   phone: string;
   whatsapp?: string;
+  facebook?: string;
+  instagram?: string;
   address?: string;
   website?: string;
   notes?: string;
-
-  city_id?: string;
-  industry_id?: string;
-
-  city?: ReferenceItem;
-  industry?: ReferenceItem;
-
+  city_id?: number;
+  industry_id?: number;
   client_type: ClientType;
   organization_id?: string; 
-  created_at?: string;
-  updated_at?: string;
 }
 
-export type CreateClientInput = Omit<Client, 'id' | 'created_at' | 'updated_at'>;
+export type CreateClientInput = Omit<Client, 'id'>;
+
+export interface ClientFilters {
+  city_id?:  number;
+  industry_id?:  number;
+  client_type?: ClientType;
+  name ?: string;
+  contact_info ?: string;
+  page?: string | number;
+  perPage?: string | number;
+}
