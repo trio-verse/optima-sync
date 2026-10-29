@@ -3,9 +3,13 @@ import {
     api
 } from "@/lib/api/client";
 import { cookies } from "next/headers";
+import type {
+    ProjectEmployee,
+    CreateProjectEmployeeInput,
+    UpdateProjectEmployeeInput
+} from "@/types/project";
 
-
-export async function getProjectEmployees(projectId, orgId) {
+export async function getProjectEmployees(projectId:number, orgId:string) :Promise<{ success: boolean; message?: string; data?: ProjectEmployee[] }>{
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -26,7 +30,7 @@ export async function getProjectEmployees(projectId, orgId) {
 }
 
 
-export async function createProjectEmployee(projectId, orgId, employeeData) {
+export async function createProjectEmployee(projectId:number, orgId:string, employeeData: CreateProjectEmployeeInput): Promise<{ success: boolean; message?: string; data?: ProjectEmployee }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -62,7 +66,7 @@ export async function createProjectEmployee(projectId, orgId, employeeData) {
     }
 }
 
-export async function updateProjectEmployee(projectId, employeeId, orgId, employeeData) {
+export async function updateProjectEmployee(projectId:number, employeeId:number, orgId:string, employeeData: UpdateProjectEmployeeInput): Promise<{ success: boolean; message?: string; data?: ProjectEmployee }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -97,7 +101,7 @@ export async function updateProjectEmployee(projectId, employeeId, orgId, employ
 }
 
 
-export async function deleteProjectEmployee(projectId, employeeId, orgId) {
+export async function deleteProjectEmployee(projectId:number, employeeId:number, orgId:string) :Promise<{ success: boolean; message?: string }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 

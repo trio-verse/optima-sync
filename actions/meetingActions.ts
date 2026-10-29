@@ -1,9 +1,13 @@
 "use server";
 import { api } from "@/lib/api/client";
 import { cookies } from "next/headers";
+import type {
+    ProjectMeeting,
+    CreateMeetingInput,
+    UpdateMeetingInput
+} from "@/types/project";
 
-
-export async function getProjectMeetings(projectId, orgId) {
+export async function getProjectMeetings(projectId:number, orgId:string): Promise<{ success: boolean; message?: string; data?: ProjectMeeting[] }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -25,7 +29,7 @@ export async function getProjectMeetings(projectId, orgId) {
 }
 
 
-export async function createProjectMeeting(projectId, orgId, meetingData) {
+export async function createProjectMeeting(projectId:number, orgId:string, meetingData: CreateMeetingInput): Promise<{ success: boolean; message?: string; data?: ProjectMeeting }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -58,7 +62,7 @@ export async function createProjectMeeting(projectId, orgId, meetingData) {
 }
 
 
-export async function updateProjectMeeting(projectId, meetingId, orgId, meetingData) {
+export async function updateProjectMeeting(projectId:number, meetingId:number, orgId:string, meetingData: UpdateMeetingInput): Promise<{ success: boolean; message?: string; data?: ProjectMeeting }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -91,7 +95,7 @@ export async function updateProjectMeeting(projectId, meetingId, orgId, meetingD
 }
 
 
-export async function deleteProjectMeeting(projectId, meetingId, orgId) {
+export async function deleteProjectMeeting(projectId:number, meetingId:number, orgId:string): Promise<{ success: boolean; message?: string }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 

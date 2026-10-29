@@ -152,14 +152,21 @@ OptimaSync/
 │   ├── mockProjectActions.js
 │   ├── mockprojectDetailsActions.js
 │   ├── projectAction.js
+<<<<<<< HEAD
 │   ├── projectAnalytics.js
 │   ├── projectDetailsAction.js
 │   ├── projectQueryActions.js
+=======
+│   ├── projectDetailsAction.js
+>>>>>>> bba5d98 (project managment)
 │   ├── publicProjectActions.js
 │   ├── quotationActions.js
 │   ├── registerUser.js
 │   ├── versionActions.js
+<<<<<<< HEAD
 │   ├── workspace.js
+=======
+>>>>>>> bba5d98 (project managment)
 │   └── services/
 │       ├── channelService.js
 │       ├── cityService.js
@@ -172,6 +179,7 @@ OptimaSync/
 │   ├── layout.js
 │   ├── page.jsx
 │   ├── create-profile/
+<<<<<<< HEAD
 │   │   └── page.jsx
 │   ├── organizations/
 │   │   └── page.jsx
@@ -275,6 +283,40 @@ OptimaSync/
 │   ├── SystemGateway.jsx
 │   ├── WelcomeNoOrg.jsx
 │   ├── registerForm.jsx
+=======
+│   ├── organizations/
+│   ├── register/
+│   ├── request-project/
+│   └── [OrgId]/
+│       ├── dashboard/
+│       │   ├── clients/
+│       │   ├── marketing/
+│       │   ├── member/
+│       │   ├── product/
+│       │   ├── projects/
+│       │   ├── reference-data/
+│       │   ├── sales/
+│       │   ├── settings/
+│       │   ├── workspace/
+│       │   ├── layout.jsx
+│       │   └── page.jsx
+│       └── upload-logo/
+├── components/
+│   ├── campaigns/
+│   ├── connections/
+│   ├── marketing/
+│   ├── projects/
+│   ├── workspace/
+│   ├── ClientForm.jsx
+│   ├── EmailStep.jsx
+│   ├── LogoUploader.jsx
+│   ├── OtpStep.jsx
+│   ├── OrganisationForm.jsx
+│   ├── OrganisationsList.jsx
+│   ├── registerForm.jsx
+│   ├── SystemGateway.jsx
+│   ├── WelcomeNoOrg.jsx
+>>>>>>> bba5d98 (project managment)
 │   └── ...
 ├── hooks/
 │   ├── useClientLookups.js
@@ -284,6 +326,7 @@ OptimaSync/
 ├── lib/
 │   ├── api/
 │   │   └── client.js
+<<<<<<< HEAD
 │   ├── dto/
 │   │   └── ProjectQueryBuilderDTO.js
 │   ├── mock/
@@ -299,6 +342,16 @@ OptimaSync/
 │   └── Providers.jsx
 ├── public/
 ├── types/
+=======
+│   ├── mock/
+│   │   └── campaignDetailsData.js
+│   └── validations/
+│       ├── campaignSchema.js
+│       └── clientSchema.js
+├── providers/
+│   └── Providers.jsx
+├── public/
+>>>>>>> bba5d98 (project managment)
 ├── README.md
 ├── eslint.config.mjs
 ├── jsconfig.json
@@ -336,12 +389,18 @@ This is the UI layer. It contains page-level and reusable components grouped by 
 
 Important groups:
 - `components/projects/` -> project listing, details, modals, tabs, header
+<<<<<<< HEAD
 - `components/projects/query-builder/` -> project analytics query builder and result table
+=======
+>>>>>>> bba5d98 (project managment)
 - `components/campaigns/` -> campaigns list, campaign modal, content form, analytics view
 - `components/connections/` -> connection activity, activity timeline, forms
 - `components/marketing/` -> marketing analytics dashboard
 - `components/workspace/` -> employee view, employee form, tasks
+<<<<<<< HEAD
 - `components/ui/` -> shared UI building blocks such as cards, tables, select, kanban, and modal layout
+=======
+>>>>>>> bba5d98 (project managment)
 - `components/ClientForm.jsx` and `components/OrganisationForm.jsx` -> core forms
 - `components/registerForm.jsx` -> registration and OTP UI
 
@@ -356,11 +415,16 @@ Important files:
 - `actions/getMyOrgs.js` -> fetch organizations for the current user
 - `actions/clientActions.js` -> CRUD for clients
 - `actions/projectAction.js` -> CRUD for projects
+<<<<<<< HEAD
 - `actions/projectAnalytics.js` -> project analytics and reporting actions
 - `actions/projectQueryActions.js` -> query-builder project analytics actions
 - `actions/campaigns.js` -> campaigns and marketing analytics
 - `actions/connectionActions.js` -> CRM pipeline connection management
 - `actions/workspace.js` -> workspace/task operations
+=======
+- `actions/campaigns.js` -> campaigns and marketing analytics
+- `actions/connectionActions.js` -> CRM pipeline connection management
+>>>>>>> bba5d98 (project managment)
 - `actions/services/membersAction.js` -> org member CRUD
 - `actions/services/productsService.js`, `cityService.js`, `industryService.js`, `channelService.js` -> reference data services
 
@@ -372,9 +436,12 @@ The shared library layer.
 
 Important files:
 - `lib/api/client.js` -> single source for fetch-based API communication, auth token refresh, and error handling
+<<<<<<< HEAD
 - `lib/dto/ProjectQueryBuilderDTO.js` -> DTO for project analytics query-builder payloads
 - `lib/utils.ts` -> shared TypeScript helper exports
 - `lib/utils/queryBuilderSerializer.js` -> serialization utilities for project query filters
+=======
+>>>>>>> bba5d98 (project managment)
 - `lib/validations/clientSchema.js` -> client validation schema
 - `lib/validations/campaignSchema.js` -> campaign validation schema
 - `lib/mock/campaignDetailsData.js` -> mock data fixture for campaign detail demos
@@ -394,6 +461,7 @@ Important files:
 #### `public/`
 A standard Next.js public asset folder. The workspace listing does not show specific files under it, so its current contents are not fully defined in this repository snapshot.
 
+<<<<<<< HEAD
 #### `types/`
 This folder exists in the project root and is part of the TypeScript configuration footprint. The current workspace snapshot shows the directory exists, but it does not currently contain custom type declarations or exported interfaces in this repository state.
 
@@ -403,6 +471,11 @@ This folder contains domain reference-data services (cities, industries, channel
 #### `lib/utils.ts`
 A root utility file that currently exports the shared `cn` helper from `cn`, showing the project includes a TypeScript utility layer alongside the JavaScript codebase.
 
+=======
+#### `actions/services/`
+This folder contains domain reference-data services (cities, industries, channels, products, members, stakeholders). It is intentionally separated from the main `actions` folder to keep business-data APIs organized.
+
+>>>>>>> bba5d98 (project managment)
 #### `app/[OrgId]/dashboard/`
 This is the multi-tenant dashboard shell and route root for a specific organization. It includes route segments for clients, projects, marketing, sales, workspace, member management, product data, and settings.
 
@@ -418,8 +491,12 @@ Framework:
 
 Language:
 - JavaScript is the dominant language (`.js` and `.jsx` files)
+<<<<<<< HEAD
 - TypeScript is enabled in the project and used in files such as `app/[OrgId]/dashboard/analytics/projects/page.tsx` and `lib/utils.ts`
 - A root `types/` directory exists in the workspace, although no custom TS declaration files are currently present under it in this snapshot
+=======
+- Some files use `.tsx` (`app/[OrgId]/dashboard/workspace/page.tsx`)
+>>>>>>> bba5d98 (project managment)
 
 Styling:
 - Tailwind CSS v4 (`@import "tailwindcss"` in `app/globals.css`)

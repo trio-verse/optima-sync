@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import {
     api
 } from "@/lib/api/client";
-
-export async function getProjectById(orgId, projectId) {
+import type { Project } from "@/types/project";
+export async function getProjectById(orgId:string, projectId:number): Promise<{ success: boolean; message?: string; data?: Project }> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 

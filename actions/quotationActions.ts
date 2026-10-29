@@ -1,9 +1,9 @@
 "use server";
 import { api } from "@/lib/api/client";
 import { cookies } from "next/headers";
-
+import type { QuotationPreviewData, QuotationPdfData } from "@/types/project";
 // 1. دالة جلب Preview HTML
-export async function previewQuotation(orgId, projectId, versionId) {
+export async function previewQuotation(orgId:string, projectId:number, versionId:number): Promise<{ success: boolean; message?: string;html?: string; data?: QuotationPreviewData }> {
     if (!versionId) {
         return { success: false, message: "Version ID is required" };
     }
@@ -40,7 +40,7 @@ export async function previewQuotation(orgId, projectId, versionId) {
 // 2. دالة توليد PDF (والتي ستقوم بعمل Freeze تلقائياً في الباك إند)
 // أضف هذه الدالة في نفس ملف quotationActions.js
 
-export async function generateQuotationPdf(orgId, projectId, versionId) {
+export async function generateQuotationPdf(orgId:string, projectId:number, versionId:number): Promise<{ success: boolean; message?: string;pdf_url?: string; data?: QuotationPdfData }> {
     if (!versionId) {
         return { success: false, message: "Version ID is required" };
     }

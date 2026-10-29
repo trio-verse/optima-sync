@@ -294,7 +294,7 @@ const fetchCosts = async () => {
                                         type="number" 
                                         min="1"
                                         value={quantity}
-                                        onChange={(e) => setQuantity(e.target.value)}
+                                        onChange={(e) => setQuantity(e.target.value === '' ? 0 : Number(e.target.value))}
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs"
                                         required
                                     />

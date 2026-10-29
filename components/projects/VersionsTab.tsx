@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Unlock, Loader2, Trash2, Pencil, X } from "lucide-react";
 import { getVersions, getVersionById, updateVersion, freezeVersion, deleteVersion } from "@/actions/versionActions";
-
+import type { ProjectVersion } from "@/types/project";
 export default function VersionsTab({
     projectId,
     orgId,
@@ -18,8 +18,8 @@ export default function VersionsTab({
 
     const [versionsData, setVersionsData] = useState(initialVersionsData);
     const [refreshing, setRefreshing] = useState(false);
-    const [loadingId, setLoadingId] = useState(false);
-    const [fetchingId, setFetchingId] = useState(null);
+    const [loadingId, setLoadingId] = useState<number | string | false>(null);
+    const [fetchingId, setFetchingId] = useState<string>(null);
 
     const [editingVersion, setEditingVersion] = useState(null);
     const [editForm, setEditForm] = useState({ title: "", description: "", changeDescription: "" });
@@ -47,11 +47,11 @@ export default function VersionsTab({
         }
     };
 
-    const handleSelectVersion = async (vId) => {
+    const handleSelectVersion = async (vId: string) => {
         setSelectedVersionId(vId);
         setFetchingId(vId);
         try {
-            await getVersionById(projectId, vId, orgId);
+            await getVersionById(projectId, Number(vId), orgId);
         } catch (err) {
             console.error("Failed to fetch version details", err);
         } finally {
@@ -59,7 +59,7 @@ export default function VersionsTab({
         }
     };
 
-    const handleFreeze = async (versionId) => {
+    const handleFreeze = async (versionId: number) => {
         setLoadingId(versionId);
         try {
             const res = await freezeVersion(projectId, versionId, orgId);
@@ -76,7 +76,7 @@ export default function VersionsTab({
         }
     };
 
-    const handleDelete = async (versionId) => {
+    const handleDelete = async (versionId: number) => {
         if (!window.confirm("Are you sure you want to delete this version?")) return;
         setLoadingId(versionId);
         try {
@@ -94,7 +94,7 @@ export default function VersionsTab({
         }
     };
 
-    const handleOpenEdit = (v, e) => {
+    const handleOpenEdit = (v: ProjectVersion, e: React.MouseEvent) => {
         e.stopPropagation();
         setEditingVersion(v);
         setEditForm({
@@ -105,7 +105,7 @@ export default function VersionsTab({
         setEditError("");
     };
 
-    const handleSaveEdit = async (e) => {
+    const handleSaveEdit = async (e: React.ChangeEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!editingVersion) return;
 

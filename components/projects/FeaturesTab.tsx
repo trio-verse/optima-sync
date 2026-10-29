@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-// 👇 تعديل: تمت إضافة useRouter هنا
+
 import { useRouter } from "next/navigation"; 
 import { Plus, Search, Edit3, Trash2, X, AlertTriangle, Loader2 } from "lucide-react";
 import { 
@@ -11,12 +11,13 @@ import {
     deleteProjectFeature ,
     updateProjectFeatureStatus,
 } from "@/actions/featureActions";
+import type { ProjectFeature, ProjectVersion ,FeatureStatus} from "@/types/project";
 
 export default function FeaturesTab({
     projectId,
     orgId,
     features: initialFeatures = [],
-    activeVersionObj = {},
+    activeVersionObj = {} as ProjectVersion,
     isEditingAllowed = false,
 }) {
 
@@ -37,7 +38,7 @@ export default function FeaturesTab({
     // Form State
     const [featureName, setFeatureName] = useState("");
     const [featureDesc, setFeatureDesc] = useState("");
-    const [featureStatus, setFeatureStatus] = useState("new");
+    const [featureStatus, setFeatureStatus] = useState<FeatureStatus>("new");
 
     const fetchFeatures = useCallback(async () => {
         if (!projectId || !orgId) return;
@@ -46,7 +47,7 @@ export default function FeaturesTab({
             const res = await getProjectFeatures(projectId, orgId);
 
             const data = res?.data || res || [];
-            setFeaturesList(data);
+            setFeaturesList(data as ProjectFeature[]);
         } catch (err) {
             console.error("Error fetching features:", err);
         } finally {
@@ -62,10 +63,10 @@ export default function FeaturesTab({
 
     const currentVersionFeatures = activeVersionObj?.freeze
         ? activeVersionObj?.features_snapshot || []
-        : featuresList.filter(f => Number(f.project_version_id) === Number(activeVersionObj?.id));
+        : featuresList.filter((f: ProjectFeature) => Number(f.project_version_id) === Number(activeVersionObj?.id));
 
-    const filteredFeatures = currentVersionFeatures.filter(f =>
-        (f.name || f.title || "").toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredFeatures = currentVersionFeatures.filter((f: ProjectFeature)=>
+        (f.name || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleOpenAddModal = () => {
@@ -76,15 +77,15 @@ export default function FeaturesTab({
         setIsFormModalOpen(true);
     };
 
-    const handleOpenEditModal = (ft) => {
+    const handleOpenEditModal = (ft: ProjectFeature) => {
         setEditingFeature(ft);
-        setFeatureName(ft.name || ft.title || "");
+        setFeatureName(ft.name || "");
         setFeatureDesc(ft.description || "");
         setFeatureStatus(ft.status || "new");
         setIsFormModalOpen(true);
     };
 
-    const handleSubmitForm = async (e) => {
+    const handleSubmitForm = async (e: React.SyntheticEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
@@ -115,7 +116,7 @@ export default function FeaturesTab({
         }
     };
 
-    const handleInlineStatusChange = async (featureId, newStatus) => {
+    const handleInlineStatusChange = async (featureId: number, newStatus:FeatureStatus) => {
         const targetFeature = featuresList.find(f => f.id === featureId);
         if (!targetFeature) return;
 
@@ -229,7 +230,7 @@ export default function FeaturesTab({
                                         <select
                                             disabled={!isEditingAllowed || updatingStatusId === ft.id}
                                             value={ft.status || "new"}
-                                            onChange={(e) => handleInlineStatusChange(ft.id, e.target.value)}
+                                            onChange={(e) => handleInlineStatusChange(ft.id, e.target.value as FeatureStatus)}
                                             className={`text-[11px] font-bold rounded-lg px-2 py-1 border border-slate-200 focus:outline-none cursor-pointer ${
                                                 ft.status === "completed" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
                                                 ft.status === "in_progress" ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-blue-50 text-blue-600 border-blue-200"
@@ -298,7 +299,7 @@ export default function FeaturesTab({
                                                 <select
                                                     disabled={!isEditingAllowed || updatingStatusId === ft.id}
                                                     value={ft.status || "new"}
-                                                    onChange={(e) => handleInlineStatusChange(ft.id, e.target.value)}
+                                                   onChange={(e) => setFeatureStatus(e.target.value as FeatureStatus)}
                                                     className={`text-[11px] font-bold rounded-lg p-1 border border-slate-200 focus:outline-none cursor-pointer ${
                                                         ft.status === "completed" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
                                                         ft.status === "in_progress" ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-blue-50 text-blue-600 border-blue-200"
@@ -396,7 +397,7 @@ export default function FeaturesTab({
                                 <label className="font-semibold text-slate-700">Status</label>
                                 <select
                                     value={featureStatus}
-                                    onChange={(e) => setFeatureStatus(e.target.value)}
+                                    onChange={(e) => setFeatureStatus(e.target.value as FeatureStatus)}
                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 text-xs"
                                 >
                                     <option value="new">New</option>

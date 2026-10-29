@@ -144,7 +144,7 @@ export default function ProjectFormModal({
                                     setIsAddingNewClient(true);
                                 } else {
                                     setIsAddingNewClient(false);
-                                    const selectedClient = clients.find((c) => String(c.id) === val);
+                                    const selectedClient = clients.find((c: any) => String(c.id) === val);
                                     setNewProjectForm({
                                         ...newProjectForm,
                                         clientId: val,
@@ -157,7 +157,7 @@ export default function ProjectFormModal({
                             className="w-full px-3.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 text-gray-700 font-medium"
                         >
                             <option value="">{loadingClients ? "Loading clients..." : "-- Select Existing Client --"}</option>
-                            {clients.map((client) => (
+                            {clients.map((client: any) => (
                                 <option key={client.id} value={client.id}>
                                     {client.name} {client.email || client.contact_info?.email ? `(${client.email || client.contact_info?.email})` : ''}
                                 </option>
