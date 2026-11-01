@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
@@ -19,7 +18,7 @@ import {
   Package,
   BriefcaseBusiness,
   FolderKanban,
-  ListTodo
+  ListTodo,
 } from "lucide-react";
 import LogOutButton from "../../../actions/auth";
 
@@ -31,7 +30,7 @@ export default function DashboardLayout({ children, params }) {
 
   const [activeTab, setActiveTab] = useState("home");
 
-  const resolvedParams = params ? use(params) : null;
+  const resolvedParams: any = params ? use(params) : null;
   const orgId = resolvedParams?.OrgId;
 
   const basePath = `/${orgId}/dashboard`;
@@ -78,14 +77,48 @@ export default function DashboardLayout({ children, params }) {
   const navItems = [
     { id: "home", label: "Home", href: basePath, icon: Home },
     { id: "sales", label: "Sales", href: `${basePath}/sales`, icon: BarChart3 },
-    { id: "member", label: "Member", href: `${basePath}/member`, icon: UserCheck },
-    { id: "product", label: "Product", href: `${basePath}/product`, icon: Package },
-    { id: "marketing", label: "Marketing", href: `${basePath}/marketing`, icon: Megaphone },
-    { id: "clients", label: "Clients", href: `${basePath}/clients`, icon: Users },
-    { id: "workspace", label: "workspace", href: `${basePath}/workspace`, icon: BriefcaseBusiness },
-    { id: "reference-data", label: "Reference Data", href: `${basePath}/reference-data`, icon: Database },
-      { id: "projects", label: "Projects", href: `${basePath}/projects`, icon: FolderKanban},
-
+    {
+      id: "member",
+      label: "Member",
+      href: `${basePath}/member`,
+      icon: UserCheck,
+    },
+    {
+      id: "product",
+      label: "Product",
+      href: `${basePath}/product`,
+      icon: Package,
+    },
+    {
+      id: "marketing",
+      label: "Marketing",
+      href: `${basePath}/marketing`,
+      icon: Megaphone,
+    },
+    {
+      id: "clients",
+      label: "Clients",
+      href: `${basePath}/clients`,
+      icon: Users,
+    },
+    {
+      id: "workspace",
+      label: "workspace",
+      href: `${basePath}/workspace`,
+      icon: BriefcaseBusiness,
+    },
+    {
+      id: "reference-data",
+      label: "Reference Data",
+      href: `${basePath}/reference-data`,
+      icon: Database,
+    },
+    {
+      id: "projects",
+      label: "Projects",
+      href: `${basePath}/projects`,
+      icon: FolderKanban,
+    },
   ];
 
   return (
@@ -93,22 +126,28 @@ export default function DashboardLayout({ children, params }) {
       {/* Sidebar */}
       <aside
         className={`
-          relative h-full bg-zinc-100 flex flex-col  items-start justify-between border-r border-zinc-200 shadow-sm z-20 flex-shrink-0
+          fixed left-0 top-0 h-screen bg-zinc-100 flex flex-col  items-start justify-between border-r border-zinc-200 shadow-sm z-20 flex-shrink-0
           transition-all duration-800 ease-in-out 
-         ${isSidebarExpanded? 'w-64':'w-16'}
+         ${isSidebarExpanded ? "w-64" : "w-16"}
         `}
       >
         <div className="p-2 flex-1 overflow-y-auto overflow-x-hidden">
           {/* Brand Header & Toggle Button */}
           <div className="flex items-center justify-between  mb-6">
-             <div className="hidden lg:block mx-auto lg:mx-0">
+            <div className="hidden lg:block mx-auto lg:mx-0">
               <button
                 onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
                 className="text-zinc-500 hover:text-zinc-900 rounded-lg p-2 px-3 hover:bg-zinc-200 transition cursor-pointer flex items-center justify-center"
                 aria-label="Toggle menu"
-                title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+                title={
+                  isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"
+                }
               >
-                {isSidebarExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 " />}
+                {isSidebarExpanded ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5 " />
+                )}
               </button>
             </div>
             {isSidebarExpanded && (
@@ -119,12 +158,9 @@ export default function DashboardLayout({ children, params }) {
                 </h2>
               </div>
             )}
-
-           
           </div>
 
-          <nav className={`flex flex-col justify-start transition-all gap-1.5
-            `}>
+          <nav className="flex flex-col justify-start transition-all gap-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -134,7 +170,9 @@ export default function DashboardLayout({ children, params }) {
                   href={item.href}
                   onClick={() => setActiveTab(item.id)}
                   className={`flex transition-all duration-300 ease-in-out items-center h-10 rounded-lg font-semibold text-sm transition-colors cursor-pointer ${
-                    isSidebarExpanded ? "justify-start lg:justify-start px-3" : "justify-center px-3 "
+                    isSidebarExpanded
+                      ? "justify-start lg:justify-start px-3"
+                      : "justify-center px-3 "
                   } ${
                     isActive
                       ? "bg-zinc-900 text-white shadow-sm"
@@ -143,9 +181,13 @@ export default function DashboardLayout({ children, params }) {
                   title={item.label}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
-                 
-                    <span className={`lg:ml-3 truncate transition-all duration-300 ease-in
-                       ${isSidebarExpanded ? 'inline':'hidden'}`}>{item.label}</span>
+
+                  <span
+                    className={`lg:ml-3 truncate transition-all duration-300 ease-in
+                       ${isSidebarExpanded ? "inline" : "hidden"}`}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -157,9 +199,13 @@ export default function DashboardLayout({ children, params }) {
                 setIsSettingsOpen(!isSettingsOpen);
               }}
               className={`flex items-center h-10 w-full rounded-lg font-semibold text-sm transition-colors cursor-pointer ${
-                isSidebarExpanded ? "justify-center lg:justify-start lg:px-3" : "justify-center px-0"
+                isSidebarExpanded
+                  ? "justify-center lg:justify-start lg:px-3"
+                  : "justify-center px-0"
               } ${
-                activeTab === "settings" || activeTab === "profile" || activeTab === "Logo"
+                activeTab === "settings" ||
+                activeTab === "profile" ||
+                activeTab === "Logo"
                   ? "bg-zinc-900 text-white shadow-sm"
                   : "text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
               }`}
@@ -178,7 +224,9 @@ export default function DashboardLayout({ children, params }) {
                   href={`${basePath}/settings/profile`}
                   onClick={() => setActiveTab("profile")}
                   className={`flex items-center h-9 rounded-lg text-xs font-semibold transition-colors ${
-                    isSidebarExpanded ? "justify-center lg:justify-start lg:pl-8 lg:pr-3" : "justify-center px-0"
+                    isSidebarExpanded
+                      ? "justify-center lg:justify-start lg:pl-8 lg:pr-3"
+                      : "justify-center px-0"
                   } ${
                     activeTab === "profile"
                       ? "bg-blue-100 text-blue-700 font-bold"
@@ -188,7 +236,9 @@ export default function DashboardLayout({ children, params }) {
                 >
                   <User className="w-3.5 h-3.5 flex-shrink-0" />
                   {isSidebarExpanded && (
-                    <span className="hidden lg:inline ml-2 truncate">Edit Organization</span>
+                    <span className="hidden lg:inline ml-2 truncate">
+                      Edit Organization
+                    </span>
                   )}
                 </Link>
               </div>
@@ -201,7 +251,9 @@ export default function DashboardLayout({ children, params }) {
           <button
             onClick={handleLogout}
             className={`flex items-center h-10 w-full bg-red-50 hover:bg-red-600 text-red-600 hover:text-white font-semibold text-sm rounded-lg transition-all duration-200 cursor-pointer group shadow-sm ${
-              isSidebarExpanded ? "justify-center lg:justify-start lg:px-3" : "justify-center px-0"
+              isSidebarExpanded
+                ? "justify-center lg:justify-start lg:px-3"
+                : "justify-center px-0"
             }`}
             title="Log out"
           >

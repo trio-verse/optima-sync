@@ -300,7 +300,7 @@ export default function AllSalesConnectionsPage({
             Loading connections log...
           </p>
         </div>
-      ) : connections.length === 0 ? (
+      ) : connections?.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
             <Link2 className="w-6 h-6" />
