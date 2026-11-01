@@ -116,17 +116,6 @@ export interface ProjectAnalyticsData {
     charts: ProjectAnalyticsCharts;
 }
 
-export interface PaginationMeta {
-    current_page: number;
-    per_page: number;
-    total: number;
-    last_page: number;
-    from: number;
-    to: number;
-    next_page: string | null;
-    prev_page: string | null;
-    path: string;
-}
 
 export interface QueryResultsResponse {
     success: boolean;
