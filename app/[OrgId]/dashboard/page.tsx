@@ -289,18 +289,18 @@ export default function SalesDashboardPage({
   const totalConnections = SalesStats?.connections_count;
 
   const stageCounts = SalesStats?.connections_by_stage;
-  const wonCount = SalesStats?.win_rate;
+  const wonCount = SalesStats?.winRate;
 
   const totalCatalogProducts = SalesStats?.product_count;
   const topProducts = SalesStats?.top_products;
 
   const cityCounts = SalesStats?.cities_count;
-  const topCities = SalesStats?.clients_by_city;
+  const topCities = SalesStats?.clients_by_cities;
 
-  const industryCounts = SalesStats?.industry_count;
-  const topIndustries = SalesStats?.clients_by_industry;
+  const industryCounts = SalesStats?.industries_count;
+  const topIndustries = SalesStats?.clients_by_industries;
 
-  const recentConnections = SalesStats?.recentConnections;
+  const recentConnections = SalesStats?.recent_connections;
 
   if (loading) return <DashboardSkeleton />;
   if (error || !SalesStats) {
