@@ -1,7 +1,7 @@
 // types/project.ts
 
 import { Client } from "./crm";
-
+import { PaginationMeta } from "@/types";
 export type ProjectStatus =
   | "new"
   | "under_review"
