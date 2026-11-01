@@ -192,7 +192,7 @@ export default function ProjectsTable({ orgId }: ProjectsTableProps) {
 
   // Mutation لإضافة عميل جديد بكافة الحقول
   const addClientMutation = useMutation<any, Error, any>({
-    mutationFn: (clientPayload: any) => createClient(orgId, clientPayload),
+    mutationFn: (clientPayload: any) => createClient(clientPayload,orgId),
     onSuccess: (result: any) => {
       if (result?.success) {
         const createdClient = result.data || {};
