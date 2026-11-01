@@ -1,5 +1,5 @@
 //types/api.ts
-export interface PaginationMeta {
+interface PaginationMeta {
   current_page?: number;
   last_page?: number;
   total?: number;
