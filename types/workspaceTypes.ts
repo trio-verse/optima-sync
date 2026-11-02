@@ -24,7 +24,11 @@ export interface TaskType
     assigneeId:number;
 }
 
-export type WorkSpaceStatus = 'active' | 'completed' | 'archived';
+export enum WorkSpaceStatus{
+    active = 'active',
+    completed = 'completed',
+    archived = 'archived'   
+} 
 
 export interface WorkSpace{
     id:number;
