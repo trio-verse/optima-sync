@@ -6,9 +6,9 @@ export enum TaskPriority {
   High = "high",
 }
 export enum TaskStatus {
-  completed = "completed",
-  inProgress = "inProgress",
   pending = "pending",
+  inProgress = "inProgress",
+  completed = "completed"
 }
 export interface TaskType {
   id: number;
@@ -30,4 +30,12 @@ export interface WorkSpace {
   status: WorkSpaceStatus;
   members: OrgMember[];
   tasks: TaskType[];
+}
+export interface WorkSpaceMembers {
+  id: number;
+  userId: number;
+  workspaceId: number;
+  name: string;
+  email:string;
+  role: string;
 }
