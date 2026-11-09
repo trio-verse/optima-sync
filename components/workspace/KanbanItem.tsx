@@ -17,6 +17,8 @@ const KanbanItem = ({ title, status, badge, children }: KanbanItemsProps) => {
     colorVarients[status] || colorVarients[TaskStatus.pending];
   console.log(colorVarients);
   return (
+    <>
+    
     <div className="w-full min-w-75 bg-gray-100">
       <div
         className={`flex flex-row justify-start items-center ${selectedStatusColor} p-2`}
@@ -25,9 +27,10 @@ const KanbanItem = ({ title, status, badge, children }: KanbanItemsProps) => {
         <h3 className="mx-2 font-bold">{title}</h3>
       </div>
       <div className="p-3 flex flex-col gap-2 w-full  max-h-[65vh]  overflow-y-scroll">
-        {children}
+        {children} 
       </div>
     </div>
+    </>
   );
 };
 
