@@ -14,7 +14,10 @@ export default function ActivityList({ connectionId, orgId, clientId, connection
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState(null);
 
-    const fetchActivities = useCallback(async () => {
+    
+
+    useEffect(() => {
+       const fetchActivities = async () => {
         if (!connectionId || !orgId) return;
         setLoading(true);
         const res = await getActivities(connectionId, orgId);
@@ -22,11 +25,8 @@ export default function ActivityList({ connectionId, orgId, clientId, connection
             setActivities(res.data || []);
         }
         setLoading(false);
+    };
     }, [connectionId, orgId]);
-
-    useEffect(() => {
-        fetchActivities();
-    }, [fetchActivities]);
 
     const handleSaveActivity = async (content) => {
         setIsSubmitting(true);
@@ -40,7 +40,7 @@ export default function ActivityList({ connectionId, orgId, clientId, connection
 
         if (res?.success) {
             setToast({ type: "success", message: res.message || "Operation successful" });
-            await fetchActivities();
+           
             handleCloseModal();
         } else {
             setToast({ type: "error", message: res?.message || "Operation failed" });
