@@ -5,11 +5,16 @@ import TaskItem from "@/components/workspace/TaskItem";
 import { OrgMember } from "@/types/organization";
 import TaskTab from "@/components/workspace/TaskTab";
 import { use } from "react";
-const WorkspaceDetails = ({ params }) => {
-  const resolveId: any = params ? use(params) : null;
-  const orgId = resolveId?.OrgId;
-  const workSpaceId = resolveId?.id;
-  console.log(workSpaceId, orgId);
+import { getTasks } from "@/actions/taskActions";
+const WorkspaceDetails = async({ params }) => {
+
+    const { OrgId, id } = await params;
+
+  console.log(OrgId, id);
+
+const res = await getTasks(OrgId, id);
+  const tasks =  res.data ? res.data : [];
+
   const members: OrgMember[] = [
     {
       id: "1",
@@ -33,133 +38,133 @@ const WorkspaceDetails = ({ params }) => {
     },
   ];
   const orgMember = members[0];
-  const tasks: TaskType[] = [
-    {
-      id: 1,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 2,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 3,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 4,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 5,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 6,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 7,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 8,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 9,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 10,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 11,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-    {
-      id: 12,
-      title: "task 1",
-      description: "description",
-      priority: TaskPriority.Medium,
-      status: TaskStatus.pending,
-      workspaceId: 2,
-      assigneee: orgMember,
-      assigneeId: 1,
-    },
-  ];
+  // const tasks: TaskType[] = [
+  //   {
+  //     id: 1,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 2,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 3,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 4,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 5,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 6,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 7,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 8,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 9,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 10,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 11,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  //   {
+  //     id: 12,
+  //     title: "task 1",
+  //     description: "description",
+  //     priority: TaskPriority.Medium,
+  //     status: TaskStatus.pending,
+  //     workspaceId: 2,
+  //     assigneee: orgMember,
+  //     assigneeId: 1,
+  //   },
+  // ];
 
   return (
     <div className="h-screen">
       <div>
-        <TaskTab tasks={tasks} members={members} orgId={orgId} workSpaceId={workSpaceId}/>
+        <TaskTab tasks={tasks} members={members} orgId={OrgId} workSpaceId={id}/>
       </div>
     </div>
   );

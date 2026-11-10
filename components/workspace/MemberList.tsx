@@ -3,17 +3,44 @@ import React from "react";
 import { OrgMember } from "@/types/organization";
 import MemberItem from "./MemberItem";
 import MemberForm from "./MemberForm";
-import { useState } from "react";
-import { AlertTriangle, X } from "lucide-react";
+import { useState ,useEffect} from "react";
+import { AlertTriangle, Loader2, X } from "lucide-react";
+import { useParams } from "next/navigation";
+import { getMembers } from "@/actions/services/membersAction";
+import { createWorkspaceMember, deleteWorkspaceMember } from "@/actions/workspaceMember"
 interface MemberListProps {
   members: OrgMember[];
 }
 export const MemberList = ({ members: initialMembers }: MemberListProps) => {
+  const params = useParams();
+  const orgId = params.OrgId as string;
+  const workspaceId = params.id as string;
+  console.log(orgId,workspaceId)
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [members, setMembers] = useState<OrgMember[]>(initialMembers);
   const [selectedMember, setSelectedMember] = useState<OrgMember | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<OrgMember | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!orgId || !workspaceId) return;
+      
+      setIsLoading(true);
+      const res = await getMembers(orgId);
+      
+      if (res.success && res.data) {
+        setMembers(res.data);
+      } else {
+        console.error(res.message || "Failed to fetch workspace members");
+      }
+      setIsLoading(false);
+    };
+
+    fetchMembers();
+  }, [orgId, workspaceId]);
+
   const handleAddMember = () => {
     setSelectedMember(null);
     setIsMemberModalOpen(true);
@@ -23,19 +50,27 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async() => {
     if (memberToDelete) {
+      const res =await deleteWorkspaceMember(orgId,workspaceId,memberToDelete.id);
+      if(res.success){
       setMembers((prevMembers) =>
         prevMembers.filter((m) => m.id !== memberToDelete.id),
       );
+      }
+        else{
+          alert(res.message || "Failed to delete member")
+        }
       setIsDeleteModalOpen(false);
       setMemberToDelete(null);
     }
   };
-  const handleFormSubmit = (formData: OrgMember) => {
+  const handleFormSubmit =async (formData: OrgMember) => {
+    const res=await createWorkspaceMember(orgId,workspaceId,{ memberId: formData.id })
+    if(res.success){
     const newMember: OrgMember = {
-      id: Date.now().toString(),
-      organization_id: "1",
+      id: formData.id,
+      organization_id: orgId,
       user: {
         id: formData.user.id,
         name: formData.user.name,
@@ -43,11 +78,20 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
       },
       role: (formData.role || "employee") as OrgMember["role"],
     };
-
     console.log(newMember);
     setMembers((prev) => [newMember, ...prev]);
+    }
     setIsMemberModalOpen(false);
   };
+  if(isLoading)
+    return(
+
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+            <span className="ml-2 text-sm text-slate-500">Loading members...</span>
+          </div>
+    )
+  
   return (
     <>
       <div className="flex flex-row justify-between items-center ">
