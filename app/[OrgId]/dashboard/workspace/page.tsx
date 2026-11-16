@@ -1,70 +1,112 @@
+"use client";
 import ProgressBar from "@/components/ui/ProgressBar";
 import WorkspaceStateCard from "@/components/workspace/WorkspaceStateCard";
-import FileterItem from "@/components/workspace/FilterItem";
-import React from "react";
-import ItemCard from "@/components/workspace/ItemCard";
-import { WorkSpaceStatus } from "@/types/workspaceTypes";
+import FilterItem from "@/components/workspace/FilterItem";
+import WorkspaceItemCard from "@/components/workspace/WorkspaceItemCard";
+import {
+  WorkSpaceFilter,
+  WorkSpaceStatus,
+} from "@/types/workspaceTypes";
+import { Model } from "@/components/ui/Model";
+import WorkspaceForm from "@/components/workspace/WorkspaceForm";
+import { use } from "react";
+import useWorkspaceStore from "@/hooks/useWorkspaceStore";
+const workspaceFilters = Object.entries(WorkSpaceFilter).map(([key, value]) => {
+  return { key: key, value: value };
+});
+interface WorkspacePageProps {
+  params: Promise<{ OrgId: string }>;
+}
 
-const Workspace = () => {
+const Workspace = ({ params }: WorkspacePageProps) => {
+  const resolvedParams = params ? use(params) : null;
+  const orgId = resolvedParams?.OrgId;
+  const {
+    workspaces,
+    isLoading,
+    isError,
+    error,
+    workspaceStats,
+    percent,
+    selectedStatus,
+    setSelectedStatus,
+  } = useWorkspaceStore(orgId);
+
+  if (isLoading) return <div className="">Loading.....</div>;
+
+  if (isError) return <div className="">{error}</div>;
+
   return (
     <div className="w-full p-2">
       <div className="flex flex-row justify-between">
         <h2 className="text-2xl font-bold ">Workspace</h2>
-        <button
-          className="bg-blue-500 px-4 py-2 text-white rounded shadow-lg text-base cursor-pointer
-         hover:bg-blue-600 "
+        <Model
+          isbackDropClose={false}
+          title="Add New Workspace"
+          buttonText="Add New Workspace"
         >
-          Add new Workspace
-        </button>
+          {(closeModal) => (
+            <WorkspaceForm
+              OrgId={orgId}
+              onSuccessClose={closeModal} 
+            />
+          )}
+        </Model>
       </div>
       <hr className="my-5" />
       <div className="w-full flex flex-row justify-between gap-5">
         <WorkspaceStateCard
           color="blue"
           title="completed"
-          value={15}
-          percentage={15}
+          value={
+            workspaceStats?.workspace_per_status[WorkSpaceStatus.completed] ?? 0
+          }
         />
         <WorkspaceStateCard
           color="green"
           title="active"
-          value={15}
-          percentage={15}
+          value={
+            workspaceStats?.workspace_per_status[WorkSpaceStatus.active] ?? 0
+          }
         />
         <WorkspaceStateCard
           color="red"
           title="archived"
-          value={15}
-          percentage={15}
+          value={
+            workspaceStats?.workspace_per_status[WorkSpaceStatus.archived] ?? 0
+          }
         />
       </div>
-      <ProgressBar value={75} />
+      <ProgressBar value={percent} />
 
       <div className="flex flex-row justify-between gap-6">
-        <FileterItem title="All" name="filter" />
-        <FileterItem title="Active" name="filter" />
-        <FileterItem title="Completed" name="filter" />
-        <FileterItem title="Archived" name="filter" />
+        {workspaceFilters.map((value, index) => {
+          return (
+            <FilterItem
+              key={index}
+              title={value.value}
+              value={value.value}
+              name="filter"
+              selectedValue={selectedStatus}
+              onSelect={(val) => setSelectedStatus(val)}
+            />
+          );
+        })}
       </div>
       <div className="w-full space-y-4 mt-5">
-        <ItemCard
-          deadline={new Date()}
-          title="Workspace 1"
-          status={WorkSpaceStatus.completed}
-          description="This is a description for Workspace 1."
-        />
-        <ItemCard
-          deadline={new Date()}
-          title="Workspace 2"
-          status={WorkSpaceStatus.archived}
-          description="This is a description for Workspace 2."
-        />
-        <ItemCard
-          deadline={new Date()}
-          title="Workspace 3"
-          status={WorkSpaceStatus.active}
-          description="This is a description for Workspace 3."
-        />
+        {workspaces &&
+          workspaces.map((workspace, index) => {
+            return (
+              <WorkspaceItemCard
+                key={index}
+                link={`/workspace/${workspace.id}/tasktab`}
+                workspace={workspace}
+                limit={workspace.limit}
+                OrgId={orgId}
+                onSubmit={() => {}}
+              />
+            );
+          })}
       </div>
     </div>
   );
