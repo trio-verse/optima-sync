@@ -1,6 +1,6 @@
 "use client";
 
-import { useState ,useEffect} from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Model";
 import Select from "@/components/ui/Select";
 import { TaskPriority, TaskStatus, TaskType } from "@/types/workspaceTypes";
@@ -10,8 +10,7 @@ interface TaskFormProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   members: OrgMember[];
-  initialData?:TaskType | null ;
-
+  initialData?: TaskType | null;
 }
 export default function TaskForm({
   isOpen,
@@ -21,39 +20,14 @@ export default function TaskForm({
   initialData = null,
 }: TaskFormProps) {
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    priority: TaskPriority.Medium,
-    assignee: "",
-    status: TaskStatus.pending,
-    assigneeId: "",
-
+    id: initialData.id??null,
+    title: initialData.title ?? "",
+    description: initialData.description ?? "",
+    priority: initialData.priority ?? TaskPriority.Medium,
+    assignee: initialData.assigneee ?? "",
+    status: initialData.status ?? TaskStatus.pending,
+    assigneeId: initialData.assigneeId ?? "",
   });
-useEffect(() => {
-    if (isOpen) {
-      if(initialData){
-     setFormData({
-        title: initialData.title,
-        description: initialData.description,
-        priority: initialData.priority,
-        status: initialData.status,
-        assigneeId: initialData.assigneeId.toString(),
-        assignee: "",
-      });
-      }else{
-        setFormData({
-        title: "",
-        description: "",
-        priority: TaskPriority.Medium,
-        status: TaskStatus.pending,
-        assigneeId: "",
-        assignee: "",
-      });
-      }
- 
-    }
-  }, [isOpen,initialData]);
-
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -81,12 +55,16 @@ useEffect(() => {
     { label: "inProgress", value: TaskStatus.inProgress },
   ];
   const employeeOptions = members.map((m) => ({
-    label: `${m.user.name} (${m.user.email}) - (${m.role})`,
+    label: `${m.user?.name ?? "Undefined"} (${m.user?.email ?? "Undefined"}) - (${m.role ?? "Undefined"})`,
     value: m.id,
   }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={initialData?"Create Task ":"Add Task"}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialData ? "Create Task " : "Add Task"}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* عنوان المهمة */}
         <div className="flex flex-col gap-2">
@@ -148,7 +126,7 @@ useEffect(() => {
             type="submit"
             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
           >
-           {initialData ? "Save Changes" : "Create Task"}
+            {initialData ? "Save Changes" : "Create Task"}
           </button>
           <button
             type="button"

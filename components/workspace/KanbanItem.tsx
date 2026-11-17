@@ -4,7 +4,6 @@ import React, { ReactNode } from "react";
 interface KanbanItemsProps {
   title: string;
   status: TaskStatus;
-  badge: string;
   children: ReactNode;
 }
 const colorVarients: Record<TaskStatus, string> = {
@@ -12,7 +11,7 @@ const colorVarients: Record<TaskStatus, string> = {
   [TaskStatus.completed]: "bg-green-50 text-green-700",
   [TaskStatus.pending]: "bg-amber-50 text-amber-700",
 };
-const KanbanItem = ({ title, status, badge, children }: KanbanItemsProps) => {
+const KanbanItem = ({ title, status, children }: KanbanItemsProps) => {
   const selectedStatusColor =
     colorVarients[status] || colorVarients[TaskStatus.pending];
   console.log(colorVarients);
@@ -23,7 +22,7 @@ const KanbanItem = ({ title, status, badge, children }: KanbanItemsProps) => {
       <div
         className={`flex flex-row justify-start items-center ${selectedStatusColor} p-2`}
       >
-        <span>{badge}</span>
+        
         <h3 className="mx-2 font-bold">{title}</h3>
       </div>
       <div className="p-3 flex flex-col gap-2 w-full  max-h-[65vh]  overflow-y-scroll">

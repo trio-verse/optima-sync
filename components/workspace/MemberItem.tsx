@@ -19,8 +19,8 @@ export const MemberItem = ({
           <User className="w-5 h-5 " />
         </div>
         <div className="flex flex-col ml-2">
-          <h3 className="font-bold">{member.user.name}</h3>
-          <p>{member.user.email}</p>
+          <h3 className="font-bold">{member.user?.name??"Undefined"}</h3>
+          <p>{member.user?.email??"Undefined"}</p>
           <p>{member.role}</p>
         </div>
       </div>

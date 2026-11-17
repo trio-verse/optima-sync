@@ -11,13 +11,17 @@ const MemberForm = ({
   onSubmit,
 
 }: MemberFormProps) => {
-  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState<string>(members[0].id);
 
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (onSubmit && selectedMemberId) {
-      onSubmit(members.find((value)=>{return value.id===selectedMemberId}));
+      console.log(selectedMemberId)
+       
+       const selected = members.find((value)=>{return Number(value.id)===Number(selectedMemberId)});
+       console.log(selected)
+      onSubmit(selected);
     }
   };
 
@@ -30,7 +34,7 @@ const MemberForm = ({
         </label>
         <select
           value={selectedMemberId}
-          onChange={(e) => setSelectedMemberId(e.target.value)}
+          onChange={(e) => { setSelectedMemberId(e.target.value)}}
           required
           className=" w-full bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 text-slate-700"
         >

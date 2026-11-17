@@ -7,7 +7,7 @@ import { useState ,useEffect} from "react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { getMembers } from "@/actions/services/membersAction";
-import { createWorkspaceMember, deleteWorkspaceMember } from "@/actions/workspaceMember"
+import { createWorkspaceMember, deleteWorkspaceMember, getWorkspaceMembers } from "@/actions/workspaceMember"
 interface MemberListProps {
   members: OrgMember[];
 }
@@ -22,15 +22,24 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<OrgMember | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
+   const [orgMembers, setOrgMembers] = useState<OrgMember[]>();
   useEffect(() => {
+    const orgMembers=async()=>{
+     const res = await getMembers(orgId);
+      if (res.success && res.data) {
+        setOrgMembers(res.data);
+      } else {
+        console.error(res.message || "Failed to fetch workspace members");
+      }
+    }
     const fetchMembers = async () => {
       if (!orgId || !workspaceId) return;
       
       setIsLoading(true);
-      const res = await getMembers(orgId);
+      const res = await getWorkspaceMembers(orgId,workspaceId);
       
       if (res.success && res.data) {
+       
         setMembers(res.data);
       } else {
         console.error(res.message || "Failed to fetch workspace members");
@@ -39,6 +48,7 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
     };
 
     fetchMembers();
+    orgMembers();
   }, [orgId, workspaceId]);
 
   const handleAddMember = () => {
@@ -66,7 +76,8 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
     }
   };
   const handleFormSubmit =async (formData: OrgMember) => {
-    const res=await createWorkspaceMember(orgId,workspaceId,{ memberId: formData.id })
+    console.log(formData)
+    const res=await createWorkspaceMember(orgId,workspaceId,{ memberId: formData.user.id })
     if(res.success){
     const newMember: OrgMember = {
       id: formData.id,
@@ -130,7 +141,7 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
 
             <div>
               <MemberForm
-                members={members}
+                members={orgMembers}
                 initialData={selectedMember}
                 onSubmit={handleFormSubmit}
               />

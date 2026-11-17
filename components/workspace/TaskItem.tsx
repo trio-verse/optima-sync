@@ -10,7 +10,7 @@ interface TaskItemProps {
   onAssigneeChange: (taskId: number, newAssigneeId: string) => void;
   onEdit: (task: TaskType) => void;
   onDelete: (task: TaskType) => void;
-  onStatusChange: (taskid: number, status: TaskStatus) => void;
+  onStatusChange: (task: TaskType, status: TaskStatus) => void;
 }
 const priorityVarient: Record<TaskPriority, string> = {
   [TaskPriority.High]: "bg-red-50/50 text-red-700",
@@ -30,6 +30,7 @@ const TaskItem = ({
   onEdit,
   onDelete,
 }: TaskItemProps) => {
+  console.log(task.assigneee);
   const selectedPriorityTheme =
     priorityVarient[task.priority] || priorityVarient.low;
 
@@ -84,10 +85,10 @@ const TaskItem = ({
           {members.map((member) => (
             <option
               key={member.id}
-              value={member.id}
+              value={member.user?.id ?? member.id}
               className="text-slate-800"
             >
-              {member.user.name} ({member.role})
+              {member.user?.name ?? "undefined"} ({member.role ?? "N/A"})
             </option>
           ))}
         </select>

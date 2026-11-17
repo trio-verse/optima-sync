@@ -1,125 +1,52 @@
 "use client";
-import React from "react";
 import KanbanItem from "./KanbanItem";
 import TaskItem from "./TaskItem";
 import { TaskStatus, TaskType } from "@/types/workspaceTypes";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import TaskForm from "./TaskForm";
 import { OrgMember } from "@/types/organization";
 import { AlertTriangle } from "lucide-react";
-import {
-  CreateTask,
-  UpdateTask,
-  DeleteTask,
-  getTasks,
-  ChangeStatus,
-  ChangeAssignee,
-} from "@/actions/taskActions";
-import { from } from "node:stream/iter";
-import type { WorkSpaceStatus } from "@/types/workspaceTypes";
 import { Loader2 } from "lucide-react";
+import useTaskStore from "@/hooks/useTaskStore";
+
 interface TaskTabProps {
-  tasks: TaskType[];
   members?: OrgMember[];
   orgId: string;
   workSpaceId: number;
 }
-const TaskTab = ({
-  tasks: initialTasks,
-  members = [],
-  orgId,
-  workSpaceId,
-}: TaskTabProps) => {
+const TaskTab = ({ members = [], orgId, workSpaceId }: TaskTabProps) => {
   const [isModelOpoen, setIsModelOpen] = useState(false);
-  const [tasks, setTasks] = useState<TaskType[]>(initialTasks);
+  const {
+    tasks,
+    isloading,
+    isError,
+    createTask,
+    error,
+    updateTask,
+    isEdditing,
+    changeAsignee,
+    changeStatusTask,
+    deleteTask,
+  } = useTaskStore(String(workSpaceId), orgId);
   const [editingTask, setEditingTask] = useState<TaskType>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<TaskType | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!orgId || !workSpaceId) return;
-    const fetchTasks = async () => {
-    setLoading(true);
-    try {
-      const res = await getTasks(orgId, workSpaceId);
-      if(res.success&&res.data)
-      {
-        const taskList=res.data;
-         setTasks(taskList)
-      }
-     
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  }, [orgId, workSpaceId]);
 
   const handleFormSubmit = async (formData: any) => {
-    const selectedMember = members.find((m) => m.id === formData.assigneeId);
-
-    const res = editingTask
-      ? await UpdateTask(orgId, workSpaceId, formData, editingTask.id)
-      : await CreateTask(orgId, workSpaceId, formData);
-    if (res.success) {
-      setTasks((prev) => {
-        if (editingTask) {
-          return prev.map((t) =>
-            t.id === editingTask.id
-              ? {
-                  ...t,
-                  ...formData,
-                  assigneeId: Number(formData.assigneeId),
-                  assignee: selectedMember || t.assigneee,
-                }
-              : t,
-          );
-        }
-
-        return [...prev, res.data];
-      });
-    }
+    if (formData.id) {
+      updateTask({ data: formData, taskId: formData.id });
+    } else createTask(formData);
 
     setIsModelOpen(false);
     setEditingTask(null);
   };
 
   const handleAsigneeChange = async (taskId: number, memberId: string) => {
-    const res = await ChangeAssignee(orgId, workSpaceId, taskId, memberId);
-    if (res.success) {
-      const newMember = members.find((item) => item.id === memberId);
-      setTasks((prevTasks) =>
-        prevTasks.map((task) => {
-          if (task.id === taskId) {
-            return {
-              ...task,
-              assigneeId: Number(memberId),
-              assigneee: newMember,
-            };
-          }
-          return task;
-        }),
-      );
-    }
+    changeAsignee({ memberId, taskId });
   };
 
-  const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
-    const res = await ChangeStatus(orgId, workSpaceId, taskId, newStatus);
-    if (res.success) {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) => {
-          if (task.id === taskId) {
-            return {
-              ...task,
-              status: newStatus as TaskStatus,
-            };
-          }
-          return task;
-        }),
-      );
-    }
+  const handleStatusChange = async (task: TaskType, newStatus: TaskStatus) => {
+    changeStatusTask({ task, status: newStatus });
   };
   const statusLis = Object.entries(TaskStatus).map(([key, value]) => {
     return {
@@ -136,20 +63,14 @@ const TaskTab = ({
     setIsDeleteModalOpen(true);
   };
   const handleConfirmDelete = (task: TaskType) => {
-    if (taskToDelete) {
-      const res = DeleteTask(orgId, workSpaceId, task.id);
-      setTasks((prevTasks) =>
-        prevTasks.filter((t) => t.id !== taskToDelete.id),
-      );
-      setIsDeleteModalOpen(false);
-      setTaskToDelete(null);
-    }
+    deleteTask(task.id);
   };
-  if (loading)
+  if (isError) return <h1>{error}</h1>;
+  if (isloading)
     return (
       <div className="flex items-center justify-center py-10">
         <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-         <span className="ml-2 text-sm text-slate-500">Loading Tasks...</span>
+        <span className="ml-2 text-sm text-slate-500">Loading Tasks...</span>
       </div>
     );
   return (
@@ -224,36 +145,37 @@ const TaskTab = ({
           </div>
         </div>
       )}
-      <div className="flex flex-row justify-between gap-5 py-6 relative overflow-y-scroll ">
-        {statusLis.map((status) => {
-          return (
-            <KanbanItem
-              key={status.key}
-              title={status.value}
-              badge="50"
-              status={status.key as TaskStatus}
-            >
-              {tasks
-                .filter((task) => {
-                  return task.status === (status.key as TaskStatus);
-                })
-                .map((task, index) => {
-                  return (
-                    <TaskItem
-                      key={task.id || index}
-                      task={task}
-                      members={members}
-                      onAssigneeChange={handleAsigneeChange}
-                      onStatusChange={handleStatusChange}
-                      onEdit={handleOpenEditModal}
-                      onDelete={handleOpenDeleteModal}
-                    />
-                  );
-                })}
-            </KanbanItem>
-          );
-        })}
-      </div>
+      {tasks && tasks.length > 0 && (
+        <div className="flex flex-row justify-between gap-5 py-6 relative overflow-y-scroll ">
+          {statusLis.map((status) => {
+            return (
+              <KanbanItem
+                key={status.key}
+                title={status.value}
+                status={status.key as TaskStatus}
+              >
+                {tasks
+                  .filter((task) => {
+                    return task.status === (status.key as TaskStatus);
+                  })
+                  .map((task, index) => {
+                    return (
+                      <TaskItem
+                        key={task.id || index}
+                        task={task}
+                        members={members}
+                        onAssigneeChange={handleAsigneeChange}
+                        onStatusChange={handleStatusChange}
+                        onEdit={handleOpenEditModal}
+                        onDelete={handleOpenDeleteModal}
+                      />
+                    );
+                  })}
+              </KanbanItem>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 };
