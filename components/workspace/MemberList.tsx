@@ -3,53 +3,30 @@ import React from "react";
 import { OrgMember } from "@/types/organization";
 import MemberItem from "./MemberItem";
 import MemberForm from "./MemberForm";
-import { useState ,useEffect} from "react";
+import { useState, useEffect } from "react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { getMembers } from "@/actions/services/membersAction";
-import { createWorkspaceMember, deleteWorkspaceMember, getWorkspaceMembers } from "@/actions/workspaceMember"
-interface MemberListProps {
-  members: OrgMember[];
-}
-export const MemberList = ({ members: initialMembers }: MemberListProps) => {
+import {
+  createWorkspaceMember,
+  deleteWorkspaceMember,
+  getWorkspaceMembers,
+} from "@/actions/workspaceMember";
+import useMemberStore from "@/hooks/useMemberStore";
+
+export const MemberList = () => {
   const params = useParams();
   const orgId = params.OrgId as string;
   const workspaceId = params.id as string;
-  console.log(orgId,workspaceId)
+
+  const { createMember, deleteMember, members=[], isLoading, isError, error } =
+    useMemberStore(String(workspaceId), orgId);
+
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
-  const [members, setMembers] = useState<OrgMember[]>(initialMembers);
+
   const [selectedMember, setSelectedMember] = useState<OrgMember | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<OrgMember | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-   const [orgMembers, setOrgMembers] = useState<OrgMember[]>();
-  useEffect(() => {
-    const orgMembers=async()=>{
-     const res = await getMembers(orgId);
-      if (res.success && res.data) {
-        setOrgMembers(res.data);
-      } else {
-        console.error(res.message || "Failed to fetch workspace members");
-      }
-    }
-    const fetchMembers = async () => {
-      if (!orgId || !workspaceId) return;
-      
-      setIsLoading(true);
-      const res = await getWorkspaceMembers(orgId,workspaceId);
-      
-      if (res.success && res.data) {
-       
-        setMembers(res.data);
-      } else {
-        console.error(res.message || "Failed to fetch workspace members");
-      }
-      setIsLoading(false);
-    };
-
-    fetchMembers();
-    orgMembers();
-  }, [orgId, workspaceId]);
 
   const handleAddMember = () => {
     setSelectedMember(null);
@@ -60,49 +37,30 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = async() => {
-    if (memberToDelete) {
-      const res =await deleteWorkspaceMember(orgId,workspaceId,memberToDelete.id);
-      if(res.success){
-      setMembers((prevMembers) =>
-        prevMembers.filter((m) => m.id !== memberToDelete.id),
-      );
-      }
-        else{
-          alert(res.message || "Failed to delete member")
-        }
+  const handleConfirmDelete = async () => {
+ deleteMember(memberToDelete.id, {
+    onSuccess: () => {
       setIsDeleteModalOpen(false);
       setMemberToDelete(null);
-    }
+    },
+  });
   };
-  const handleFormSubmit =async (formData: OrgMember) => {
-    console.log(formData)
-    const res=await createWorkspaceMember(orgId,workspaceId,{ memberId: formData.user.id })
-    if(res.success){
-    const newMember: OrgMember = {
-      id: formData.id,
-      organization_id: orgId,
-      user: {
-        id: formData.user.id,
-        name: formData.user.name,
-        email: formData.user.email,
-      },
-      role: (formData.role || "employee") as OrgMember["role"],
-    };
-    console.log(newMember);
-    setMembers((prev) => [newMember, ...prev]);
-    }
-    setIsMemberModalOpen(false);
-  };
-  if(isLoading)
-    return(
-
+ const handleFormSubmit = (formData: any) => {
+  createMember(formData, {
+    onSuccess: () => {
+      setIsMemberModalOpen(false);
+    },
+  });
+}
+  if (isError) return <h1>{error}</h1>;
+  if (isLoading)
+    return (
       <div className="flex items-center justify-center py-10">
         <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-            <span className="ml-2 text-sm text-slate-500">Loading members...</span>
-          </div>
-    )
-  
+        <span className="ml-2 text-sm text-slate-500">Loading Tasks...</span>
+      </div>
+    );
+
   return (
     <>
       <div className="flex flex-row justify-between items-center ">
@@ -141,7 +99,7 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
 
             <div>
               <MemberForm
-                members={orgMembers}
+                members={members}
                 initialData={selectedMember}
                 onSubmit={handleFormSubmit}
               />
@@ -177,7 +135,7 @@ export const MemberList = ({ members: initialMembers }: MemberListProps) => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleConfirmDelete}
+                  onClick={ handleConfirmDelete}
                   className="w-1/2 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
                 >
                   Yes, Delete

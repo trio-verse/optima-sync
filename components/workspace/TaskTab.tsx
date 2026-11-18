@@ -8,13 +8,13 @@ import { OrgMember } from "@/types/organization";
 import { AlertTriangle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import useTaskStore from "@/hooks/useTaskStore";
-
+import useMemberStore from "@/hooks/useMemberStore";
 interface TaskTabProps {
-  members?: OrgMember[];
+
   orgId: string;
   workSpaceId: number;
 }
-const TaskTab = ({ members = [], orgId, workSpaceId }: TaskTabProps) => {
+const TaskTab = ({  orgId, workSpaceId }: TaskTabProps) => {
   const [isModelOpoen, setIsModelOpen] = useState(false);
   const {
     tasks,
@@ -23,11 +23,12 @@ const TaskTab = ({ members = [], orgId, workSpaceId }: TaskTabProps) => {
     createTask,
     error,
     updateTask,
-    isEdditing,
+  
     changeAsignee,
     changeStatusTask,
     deleteTask,
   } = useTaskStore(String(workSpaceId), orgId);
+  const { members = [] } = useMemberStore(String(workSpaceId), orgId);
   const [editingTask, setEditingTask] = useState<TaskType>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<TaskType | null>(null);
