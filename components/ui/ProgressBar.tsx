@@ -3,7 +3,7 @@ interface ProgressBarProps {
   value: number;
 }
 const ProgressBar = ({ value }: ProgressBarProps) => {
-  const clampedValue = Math.min(Math.max(value, 0), 100);
+  const clampedValue = Math.round(Math.max(value, 0));
   return (
     <div className="w-full my-5">
       <div className="mb-2 flex justify-start gap-6 text-sm font-medium text-gray-700 dark:text-gray-300">

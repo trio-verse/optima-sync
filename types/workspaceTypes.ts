@@ -1,34 +1,35 @@
 import { OrgMember } from "./organization";
 
 export enum TaskPriority {
-  Low = "low",
-  Medium = "medium",
-  High = "high",
+  low = "low",
+  medium = "medium",
+  high = "high",
 }
 export enum TaskStatus {
   pending = "pending",
-  inProgress = "inProgress",
+  in_progress = "in_progress",
   completed = "completed"
 }
 export interface TaskType {
   id: number;
   title: string;
   description: string;
-  priority: TaskPriority;
-  status: TaskStatus;
-  workspaceId: number;
-  assigneee: OrgMember;
-  assigneeId: number;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  workspaceId?: number;
+  assigneee?: OrgMember;
+  organization_member_id   ?: number;
 }
 
 export interface WorkSpace {
-  id: number;
-  title: string;
+  id?: number;
+  name: string;
   description: string;
-  deadline: Date;
-  status: WorkSpaceStatus;
-  members: OrgMember[];
-  tasks: TaskType[];
+  deadline?: string;
+  status?: WorkSpaceStatus;
+  members?: OrgMember[];
+  tasks?: TaskType[];
+  limit?:number;
 }
 export interface WorkSpaceMembers {
   id: number;

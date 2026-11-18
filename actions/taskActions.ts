@@ -6,7 +6,7 @@ import { TaskStatus, TaskType } from "@/types/workspaceTypes";
 export async function CreateTask(
   orgId: string,
   workspaceId: string | number,
-  formData: any,
+  formData: TaskType,
 ): Promise<{ success: boolean; message?: string; data?: TaskType }> {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
@@ -24,18 +24,12 @@ export async function CreateTask(
       message: "Workspace ID is missing.",
     };
   }
+
   try {
     const response = await api.post(
       `/workspaces/${workspaceId}/tasks`,
-      {
-        title: formData.title,
-        description: formData.description,
-        priority: formData.priority,
-        status: formData.status,
-        assignee_id: formData.assigneeId
-          ? Number(formData.assigneeId)
-          : undefined,
-      },
+      formData,
+
       {
         token,
         headers: {

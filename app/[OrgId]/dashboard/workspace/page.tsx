@@ -3,10 +3,7 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import WorkspaceStateCard from "@/components/workspace/WorkspaceStateCard";
 import FilterItem from "@/components/workspace/FilterItem";
 import WorkspaceItemCard from "@/components/workspace/WorkspaceItemCard";
-import {
-  WorkSpaceFilter,
-  WorkSpaceStatus,
-} from "@/types/workspaceTypes";
+import { WorkSpaceFilter, WorkSpaceStatus } from "@/types/workspaceTypes";
 import { Model } from "@/components/ui/Model";
 import WorkspaceForm from "@/components/workspace/WorkspaceForm";
 import { use } from "react";
@@ -46,10 +43,7 @@ const Workspace = ({ params }: WorkspacePageProps) => {
           buttonText="Add New Workspace"
         >
           {(closeModal) => (
-            <WorkspaceForm
-              OrgId={orgId}
-              onSuccessClose={closeModal} 
-            />
+            <WorkspaceForm OrgId={orgId} onSuccessClose={closeModal} />
           )}
         </Model>
       </div>
@@ -99,7 +93,7 @@ const Workspace = ({ params }: WorkspacePageProps) => {
             return (
               <WorkspaceItemCard
                 key={index}
-                link={`/workspace/${workspace.id}/tasktab`}
+                link={`/${orgId}/dashboard/workspace/${workspace.id}/tasks`}
                 workspace={workspace}
                 limit={workspace.limit}
                 OrgId={orgId}
