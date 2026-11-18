@@ -21,7 +21,6 @@ export interface TaskType {
   assigneeId: number;
 }
 
-export type WorkSpaceStatus = "active" | "completed" | "archived";
 export interface WorkSpace {
   id: number;
   title: string;
@@ -38,4 +37,23 @@ export interface WorkSpaceMembers {
   name: string;
   email:string;
   role: string;
+}
+export enum WorkSpaceFilter {
+  all = "all",
+  active = "active",
+  completed = "complete",
+  archived = "archived",
+}
+export enum WorkSpaceStatus {
+  active = "active",
+  completed = "complete",
+  archived = "archived",
+}
+
+
+export interface WorkspaseState {
+  all_tasks: number;//100
+  completed_tasks: number;//50
+  workspace_per_status: { status: WorkSpaceStatus; count: number }[];
+//   status:archived,count:100,
 }

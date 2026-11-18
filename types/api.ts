@@ -22,5 +22,5 @@ export interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   token?: string;
   orgId?: string;
   params?: Record<string, string | number | boolean | undefined>;
-  body?: unknown;
+  body?: any;
 }
