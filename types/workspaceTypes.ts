@@ -1,35 +1,35 @@
 import { OrgMember } from "./organization";
 
 export enum TaskPriority {
-  Low = "low",
-  Medium = "medium",
-  High = "high",
+  low = "low",
+  medium = "medium",
+  high = "high",
 }
 export enum TaskStatus {
   pending = "pending",
-  inProgress = "inProgress",
+  in_progress = "in_progress",
   completed = "completed"
 }
 export interface TaskType {
   id: number;
   title: string;
   description: string;
-  priority: TaskPriority;
-  status: TaskStatus;
-  workspaceId: number;
-  assigneee: OrgMember;
-  assigneeId: number;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  workspaceId?: number;
+  assigneee?: OrgMember;
+  organization_member_id   ?: number;
 }
 
-export type WorkSpaceStatus = "active" | "completed" | "archived";
 export interface WorkSpace {
-  id: number;
-  title: string;
+  id?: number;
+  name: string;
   description: string;
-  deadline: Date;
-  status: WorkSpaceStatus;
-  members: OrgMember[];
-  tasks: TaskType[];
+  deadline?: string;
+  status?: WorkSpaceStatus;
+  members?: OrgMember[];
+  tasks?: TaskType[];
+  limit?:number;
 }
 export interface WorkSpaceMembers {
   id: number;
@@ -38,4 +38,23 @@ export interface WorkSpaceMembers {
   name: string;
   email:string;
   role: string;
+}
+export enum WorkSpaceFilter {
+  all = "all",
+  active = "active",
+  completed = "complete",
+  archived = "archived",
+}
+export enum WorkSpaceStatus {
+  active = "active",
+  completed = "complete",
+  archived = "archived",
+}
+
+
+export interface WorkspaseState {
+  all_tasks: number;//100
+  completed_tasks: number;//50
+  workspace_per_status: { status: WorkSpaceStatus; count: number }[];
+//   status:archived,count:100,
 }

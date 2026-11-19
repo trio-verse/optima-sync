@@ -1,142 +1,131 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Modal from "@/components/ui/Model";
+import { Model } from "@/components/ui/Model";
 import Select from "@/components/ui/Select";
 import { TaskPriority, TaskStatus, TaskType } from "@/types/workspaceTypes";
 import { OrgMember } from "@/types/organization";
+import useTaskStore from "@/hooks/useTaskStore";
 interface TaskFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSuccessClose?: () => void;
   members: OrgMember[];
   initialData?: TaskType | null;
+  workSpaceId: string;
+  orgId: string;
 }
 export default function TaskForm({
-  isOpen,
-  onClose,
-  onSubmit,
+  onSuccessClose,
   members = [],
   initialData = null,
+  workSpaceId,
+  orgId,
 }: TaskFormProps) {
+  const { createTask, updateTask } = useTaskStore(String(workSpaceId), orgId);
   const [formData, setFormData] = useState({
-    id: initialData.id??null,
-    title: initialData.title ?? "",
-    description: initialData.description ?? "",
-    priority: initialData.priority ?? TaskPriority.Medium,
-    assignee: initialData.assigneee ?? "",
-    status: initialData.status ?? TaskStatus.pending,
-    assigneeId: initialData.assigneeId ?? "",
+    id: initialData?.id ?? null,
+    title: initialData?.title ?? "",
+    description: initialData?.description ?? "",
+    priority: initialData?.priority ?? TaskPriority.medium,
+    assignee: initialData?.assigneee ?? "",
+    status: initialData?.status ?? TaskStatus.pending,
+    organization_member_id: initialData?.organization_member_id ?? null,
+    workSpaceId: initialData?.workspaceId ?? workSpaceId,
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value } = e.target;
+  const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit?.(formData);
-    onClose();
+    if (formData.id) {
+      updateTask({ data: formData, taskId: formData.id });
+    } else createTask(formData);
+    onSuccessClose();
   };
 
   const priorityOptions = [
-    { label: "High", value: TaskPriority.High },
-    { label: "Medium", value: TaskPriority.Medium },
-    { label: "Low", value: TaskPriority.Low },
+    { key: "high", value: TaskPriority.high },
+    { key: "low", value: TaskPriority.low },
+    { key: "medium", value: TaskPriority.medium },
   ];
   const statusOptions = [
-    { label: "completed", value: TaskStatus.completed },
-    { label: "pending", value: TaskStatus.pending },
-    { label: "inProgress", value: TaskStatus.inProgress },
+    { key: "completed", value: TaskStatus.completed },
+    { key: "pending", value: TaskStatus.pending },
+    { key: "in_progress", value: TaskStatus.in_progress },
   ];
   const employeeOptions = members.map((m) => ({
-    label: `${m.user?.name ?? "Undefined"} (${m.user?.email ?? "Undefined"}) - (${m.role ?? "Undefined"})`,
-    value: m.id,
+    value: `${m.user?.name ?? "Undefined"}`,
+    key: m.id,
   }));
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={initialData ? "Create Task " : "Add Task"}
-    >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* عنوان المهمة */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-bold text-slate-700">Task Title</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="e.g. Review contract..."
-            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500"
-            required
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-bold text-slate-700">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Enter task description..."
-            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Select
-            label="Priority"
-            name="priority"
-            value={formData.priority}
-            onChange={handleChange}
-            placeholder="Select priority..."
-            options={priorityOptions}
-          />
-          <Select
-            label="Status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            placeholder="Select status..."
-            options={statusOptions}
-          />
-        </div>
-
-        <Select
-          label="Assigned Employee"
-          name="assigneeId"
-          value={formData.assigneeId}
-          onChange={handleChange}
-          placeholder="Select employee..."
-          options={employeeOptions}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* عنوان المهمة */}
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-bold text-slate-700">Task Title</label>
+        <input
+          type="text"
+          name="title"
+          value={formData.title}
+          onChange={(e) => handleChange("title", e.target.value)}
+          placeholder="e.g. Review contract..."
+          className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+          required
         />
+      </div>
 
-        <div className="flex items-center gap-3 pt-4 border-t border-slate-100 mt-2">
-          <button
-            type="submit"
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
-          >
-            {initialData ? "Save Changes" : "Create Task"}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-bold rounded-lg transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </Modal>
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-bold text-slate-700">Description</label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={(e) => handleChange("description", e.target.value)}
+          placeholder="Enter task description..."
+          className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Select
+          label="Priority"
+          selectedValue={formData.priority}
+          onChange={(value) => handleChange("priority", value)}
+          placeholder="Select priority..."
+          options={priorityOptions}
+        />
+        <Select
+          label="Status"
+          selectedValue={formData.status}
+          onChange={(value) => handleChange("status", value)}
+          placeholder="Select status..."
+          options={statusOptions}
+        />
+      </div>
+
+      <Select
+        label="Assigned Employee"
+        selectedValue={String(formData.organization_member_id)}
+        onChange={(value) => handleChange("organization_member_id", value)}
+        placeholder="Select employee..."
+        options={employeeOptions}
+      />
+
+      <div className="flex items-center gap-3 pt-4 border-t border-slate-100 mt-2">
+        <button
+          type="submit"
+          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer shadow-sm"
+        >
+          {initialData ? "Save Changes" : "Create Task"}
+        </button>
+        <button
+          type="button"
+          onClick={onSuccessClose}
+          className="px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-bold rounded-lg transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

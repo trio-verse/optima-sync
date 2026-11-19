@@ -7,7 +7,7 @@ interface KanbanItemsProps {
   children: ReactNode;
 }
 const colorVarients: Record<TaskStatus, string> = {
-  [TaskStatus.inProgress]: "bg-blue-50 text-blue-700",
+  [TaskStatus.in_progress]: "bg-blue-50 text-blue-700",
   [TaskStatus.completed]: "bg-green-50 text-green-700",
   [TaskStatus.pending]: "bg-amber-50 text-amber-700",
 };

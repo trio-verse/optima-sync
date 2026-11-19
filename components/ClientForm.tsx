@@ -3,10 +3,18 @@
 import { FormEvent, SyntheticEvent, useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useClientLookups } from "@/hooks/useClientLookups";
-import { Loader2, Plus, UserCheck, X, MapPin, Palette, Building2 } from "lucide-react";
-import { clientSchema } from "@/lib/validations/clientSchema"; 
-import { createCity } from "@/actions/services/cityService"; 
-import { createIndustry } from "@/actions/services/industryService"; 
+import {
+  Loader2,
+  Plus,
+  UserCheck,
+  X,
+  MapPin,
+  Palette,
+  Building2,
+} from "lucide-react";
+import { clientSchema } from "@/lib/validations/clientSchema";
+import { createCity } from "@/actions/services/cityService";
+import { createIndustry } from "@/actions/services/industryService";
 import { Client } from "@/types";
 
 const CLIENT_TYPES = [
@@ -54,27 +62,26 @@ export default function ClientForm({
   onClose,
   isSubmitting,
   orgId,
-}:ClientFormProps) {
+}: ClientFormProps) {
   const { cities, industries, loadingLookups } = useClientLookups(orgId);
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Client>({
-    id:0,
+    id: initialData?.id || 0,
     name: initialData?.name || "",
     client_type: initialData?.client_type || "individual",
-    city_id:  initialData?.city_id ,
-    industry_id:  initialData?.industry_id ,
-    phone:  initialData?.phone || "",
-    email:  initialData?.email || "",
+    city_id: initialData?.city_id,
+    industry_id: initialData?.industry_id,
+    phone: initialData?.phone || "",
+    email: initialData?.email || "",
     whatsapp: initialData?.whatsapp || "",
     facebook: initialData?.facebook || "",
     instagram: initialData?.instagram || "",
-    website:  initialData?.website || "",
-    address:  initialData?.address || "",
+    website: initialData?.website || "",
+    address: initialData?.address || "",
     notes: initialData?.notes || "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-
 
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [newCityName, setNewCityName] = useState("");
@@ -85,10 +92,8 @@ export default function ClientForm({
     mutationFn: () => createCity(newCityName.trim(), newCityColor, orgId),
     onSuccess: (result) => {
       if (result?.success) {
-
         queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
         queryClient.invalidateQueries({ queryKey: ["cities", orgId] });
-
 
         if (result.id) {
           setFormData((prev) => ({ ...prev, city_id: Number(result.id) }));
@@ -100,7 +105,7 @@ export default function ClientForm({
         setIsCityModalOpen(false);
       } else {
         setCityModalError(
-          result?.message || "Could not save city, please try again."
+          result?.message || "Could not save city, please try again.",
         );
       }
     },
@@ -130,7 +135,6 @@ export default function ClientForm({
     setCityModalError("");
   };
 
-
   const [isIndustryModalOpen, setIsIndustryModalOpen] = useState(false);
   const [newIndustryName, setNewIndustryName] = useState("");
   const [newIndustryColor, setNewIndustryColor] = useState("#2563eb");
@@ -141,10 +145,8 @@ export default function ClientForm({
       createIndustry(newIndustryName.trim(), newIndustryColor, orgId),
     onSuccess: (result) => {
       if (result?.success) {
-
         queryClient.invalidateQueries({ queryKey: ["clientLookups", orgId] });
         queryClient.invalidateQueries({ queryKey: ["industries", orgId] });
-
 
         if (result.id) {
           setFormData((prev) => ({ ...prev, industry_id: Number(result.id) }));
@@ -156,7 +158,7 @@ export default function ClientForm({
         setIsIndustryModalOpen(false);
       } else {
         setIndustryModalError(
-          result?.message || "Could not save industry, please try again."
+          result?.message || "Could not save industry, please try again.",
         );
       }
     },
@@ -193,7 +195,7 @@ export default function ClientForm({
       | React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-console.log(name, value);
+    console.log(name, value);
     if (name === "city_id" && value === "__add_city__") {
       setIsCityModalOpen(true);
       return;
@@ -218,22 +220,20 @@ console.log(name, value);
   //    console.log("##########");
   //  };
 
-  const handelSubmit = ( actionType = "redirect") => {
+  const handelSubmit = (actionType = "redirect") => {
     // e.preventDefault();
-   console.log(formData);
+    console.log(formData);
     const result = clientSchema.safeParse(formData);
 
     if (!result.success) {
-
       const fieldErrors = {};
-
 
       result.error.issues.forEach((issue) => {
         if (issue.path[0]) {
           fieldErrors[issue.path[0]] = issue.message;
         }
       });
-console.log(fieldErrors);
+      console.log(fieldErrors);
       setErrors(fieldErrors);
       return;
     }
@@ -316,7 +316,9 @@ console.log(fieldErrors);
                 ))}
               </select>
               {errors.client_type && (
-                <p className="text-red-500 text-xs mt-1">{errors.client_type}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.client_type}
+                </p>
               )}
             </div>
 
@@ -342,7 +344,10 @@ console.log(fieldErrors);
                     {city.name}
                   </option>
                 ))}
-                <option value="__add_city__" className="font-semibold text-blue-600">
+                <option
+                  value="__add_city__"
+                  className="font-semibold text-blue-600"
+                >
                   + Add New City
                 </option>
               </select>
@@ -451,9 +456,7 @@ console.log(fieldErrors);
                 }`}
               />
               {errors.whatsapp && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.whatsapp}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{errors.whatsapp}</p>
               )}
             </div>
 
@@ -543,7 +546,7 @@ console.log(fieldErrors);
               <button
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => handelSubmit( "add_another")}
+                onClick={() => handelSubmit("add_another")}
                 className="w-full sm:w-1/2 bg-white text-gray-700 border border-gray-200 py-2.5 px-4 rounded-xl font-medium text-sm hover:bg-gray-100 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-xs"
               >
                 {isSubmitting ? (
@@ -557,7 +560,7 @@ console.log(fieldErrors);
               <button
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => handelSubmit( "redirect")}
+                onClick={() => handelSubmit("redirect")}
                 className="w-full sm:w-1/2 bg-blue-600 text-white py-2.5 px-4 rounded-xl font-medium text-sm hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
               >
                 {isSubmitting ? (

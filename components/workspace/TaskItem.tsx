@@ -4,30 +4,35 @@ import { TaskPriority, TaskType } from "@/types/workspaceTypes";
 import { MoreVertical, Flag, User, Trash2 } from "lucide-react";
 import { AlertTriangle } from "lucide-react";
 import { TaskStatus } from "@/types/workspaceTypes";
+import { Model } from "../ui/Model";
+import TaskForm from "./TaskForm";
+import { Pencil } from "lucide-react";
 interface TaskItemProps {
   task: TaskType;
+  orgId: string;
+  workspaceId: string;
   members: OrgMember[];
   onAssigneeChange: (taskId: number, newAssigneeId: string) => void;
-  onEdit: (task: TaskType) => void;
   onDelete: (task: TaskType) => void;
   onStatusChange: (task: TaskType, status: TaskStatus) => void;
 }
 const priorityVarient: Record<TaskPriority, string> = {
-  [TaskPriority.High]: "bg-red-50/50 text-red-700",
-  [TaskPriority.Medium]: "bg-yellow-50/50 border-yellow-200 text-yellow-700",
-  [TaskPriority.Low]: "bg-blue-50/50 text-blue-700",
+  [TaskPriority.high]: "bg-red-50/50 text-red-700",
+  [TaskPriority.medium]: "bg-yellow-50/50 border-yellow-200 text-yellow-700",
+  [TaskPriority.low]: "bg-blue-50/50 text-blue-700",
 };
 const priorityIconVarient: Record<TaskPriority, string> = {
-  [TaskPriority.High]: "text-red-700",
-  [TaskPriority.Medium]: "text-yellow-700",
-  [TaskPriority.Low]: "text-blue-700",
+  [TaskPriority.high]: "text-red-700",
+  [TaskPriority.medium]: "text-yellow-700",
+  [TaskPriority.low]: "text-blue-700",
 };
 const TaskItem = ({
   task,
   members,
   onAssigneeChange,
   onStatusChange,
-  onEdit,
+  orgId,
+  workspaceId,
   onDelete,
 }: TaskItemProps) => {
   console.log(task.assigneee);
@@ -49,13 +54,26 @@ const TaskItem = ({
           >
             <Trash2 className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => onEdit(task)}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded cursor-pointer"
-            title="Edit Task"
+          <Model
+            isbackDropClose={true}
+            buttonText={"Edit Task"}
+            title={"Edit Task"}
+            triggerButton={
+              <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                <Pencil className="w-5 h-5" />
+              </button>
+            }
           >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+            {(closeModal) => (
+              <TaskForm
+                orgId={orgId}
+                workSpaceId={workspaceId}
+                onSuccessClose={closeModal}
+                members={members}
+                initialData={task}
+              />
+            )}
+          </Model>
         </div>
       </div>
       <div className="flex flex-row justify-between ">
@@ -75,7 +93,7 @@ const TaskItem = ({
       <div className="flex flex-row items-center gap-2 bg-blue-50 text-blue-700 rounded p-1.5 mt-2">
         <User className="w-4 h-4 shrink-0" />
         <select
-          value={task.assigneeId || ""}
+          value={task.organization_member_id || ""}
           onChange={(e) => onAssigneeChange(task.id, e.target.value)}
           className="bg-transparent text-xs font-medium text-blue-700 outline-none w-full cursor-pointer"
         >

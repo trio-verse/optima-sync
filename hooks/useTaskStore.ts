@@ -19,7 +19,7 @@ export default function useTaskStore(workspaceId: string, orgId: string) {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: async (data: any) =>
+    mutationFn: async (data:TaskType) =>
       (await CreateTask(orgId, workspaceId, data)).data,
     onSuccess: (createdTask: TaskType) => {
       queryClient.setQueryData<TaskType[]>(queryKey, (tasks = []) => [
@@ -94,7 +94,7 @@ const deleteTaskMutation =useMutation({
     tasks: taskQuery.data,
     isloading: taskQuery.isLoading,
     isError: taskQuery.isError,
-    error: taskQuery.error.message,
+    error: taskQuery.error?.message,
     createTask: createTaskMutation.mutate,
     submitting: createTaskMutation.isPending,
     updateTask: updateTaskMutation.mutate,

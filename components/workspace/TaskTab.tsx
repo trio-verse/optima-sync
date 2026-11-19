@@ -9,6 +9,8 @@ import { AlertTriangle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import useTaskStore from "@/hooks/useTaskStore";
 import useMemberStore from "@/hooks/useMemberStore";
+import { Model } from "../ui/Model";
+
 interface TaskTabProps {
 
   orgId: string;
@@ -85,32 +87,24 @@ const TaskTab = ({  orgId, workSpaceId }: TaskTabProps) => {
             {/* <p className="text-gray-900 font-bold text-base ">11-12-2026</p> */}
           </div>
 
-          <p className="text-gray-500 text-sm text-wrap ">
-            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Voluptatum
-            cupiditate officia eos veritatis? Facilis libero soluta dolore a,
-            iusto asperiores suscipit incidunt, repellendus aliquid magnam sit
-            voluptatem illo recusandae quaerat?
-          </p>
         </div>
-
-        <button
-          className="bg-blue-500 text-white px-5 py-2 rounded-md text-base hover:bg-blue-600"
-          onClick={() => setIsModelOpen(true)}
+        <Model
+          isbackDropClose={true}
+          buttonText={"Add Task"}
+          title={"Add Task"}
         >
-          Add Task
-        </button>
+          {(closeModal) => (
+            <TaskForm
+              workSpaceId={String(workSpaceId)}
+              orgId={orgId}
+              onSuccessClose={closeModal}
+              members={members}
+              initialData={editingTask}
+            />
+          )}
+        </Model>
       </div>
 
-      <TaskForm
-        isOpen={isModelOpoen}
-        onClose={() => {
-          setIsModelOpen(false);
-          setEditingTask(null);
-        }}
-        onSubmit={handleFormSubmit}
-        members={members}
-        initialData={editingTask}
-      />
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in duration-200">
@@ -146,6 +140,10 @@ const TaskTab = ({  orgId, workSpaceId }: TaskTabProps) => {
           </div>
         </div>
       )}
+      {!tasks ||
+        (tasks.length === 0 && (
+          <h1>No Tasks Yet Click add to start manage your tasks </h1>
+        ))}
       {tasks && tasks.length > 0 && (
         <div className="flex flex-row justify-between gap-5 py-6 relative overflow-y-scroll ">
           {statusLis.map((status) => {
@@ -157,7 +155,7 @@ const TaskTab = ({  orgId, workSpaceId }: TaskTabProps) => {
               >
                 {tasks
                   .filter((task) => {
-                    return task.status === (status.key as TaskStatus);
+                    return task?.status === (status.key as TaskStatus);
                   })
                   .map((task, index) => {
                     return (
@@ -167,7 +165,8 @@ const TaskTab = ({  orgId, workSpaceId }: TaskTabProps) => {
                         members={members}
                         onAssigneeChange={handleAsigneeChange}
                         onStatusChange={handleStatusChange}
-                        onEdit={handleOpenEditModal}
+                        workspaceId={String(workSpaceId)}
+                        orgId={orgId}
                         onDelete={handleOpenDeleteModal}
                       />
                     );
