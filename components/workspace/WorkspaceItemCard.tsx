@@ -61,7 +61,7 @@ const WorkspaceItemCard = (props: WorkspaceItemCardProps) => {
           <Link href={props.link}>
             <h2 className="font-bold text-nowrap">{props.workspace.name}</h2>
           </Link>
-          <p>{props.workspace.deadline}</p>
+          <p>{new Date(props.workspace.deadline).toLocaleDateString()}</p>
           <div className="">
             {" "}
             <Select

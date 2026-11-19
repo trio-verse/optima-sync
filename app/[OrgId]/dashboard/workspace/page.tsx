@@ -3,14 +3,13 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import WorkspaceStateCard from "@/components/workspace/WorkspaceStateCard";
 import FilterItem from "@/components/workspace/FilterItem";
 import WorkspaceItemCard from "@/components/workspace/WorkspaceItemCard";
-import {
-  WorkSpaceFilter,
-  WorkSpaceStatus,
-} from "@/types/workspaceTypes";
+import { WorkSpaceFilter, WorkSpaceStatus } from "@/types/workspaceTypes";
 import { Model } from "@/components/ui/Model";
 import WorkspaceForm from "@/components/workspace/WorkspaceForm";
 import { use } from "react";
 import useWorkspaceStore from "@/hooks/useWorkspaceStore";
+import LoadingCard from "@/components/ui/LoadingCard";
+
 const workspaceFilters = Object.entries(WorkSpaceFilter).map(([key, value]) => {
   return { key: key, value: value };
 });
@@ -32,7 +31,7 @@ const Workspace = ({ params }: WorkspacePageProps) => {
     setSelectedStatus,
   } = useWorkspaceStore(orgId);
 
-  if (isLoading) return <div className="">Loading.....</div>;
+  
 
   if (isError) return <div className="">{error}</div>;
 
@@ -46,10 +45,7 @@ const Workspace = ({ params }: WorkspacePageProps) => {
           buttonText="Add New Workspace"
         >
           {(closeModal) => (
-            <WorkspaceForm
-              OrgId={orgId}
-              onSuccessClose={closeModal} 
-            />
+            <WorkspaceForm OrgId={orgId} onSuccessClose={closeModal} />
           )}
         </Model>
       </div>
@@ -78,7 +74,7 @@ const Workspace = ({ params }: WorkspacePageProps) => {
         />
       </div>
       <ProgressBar value={percent} />
-
+          
       <div className="flex flex-row justify-between gap-6">
         {workspaceFilters.map((value, index) => {
           return (
@@ -93,13 +89,15 @@ const Workspace = ({ params }: WorkspacePageProps) => {
           );
         })}
       </div>
+      
       <div className="w-full space-y-4 mt-5">
+        {isLoading &&<LoadingCard title="workspaces"/>}
         {workspaces &&
           workspaces.map((workspace, index) => {
             return (
               <WorkspaceItemCard
                 key={index}
-                link={`/workspace/${workspace.id}/tasktab`}
+                link={`/${orgId}/dashboard/workspace/${workspace.id}/tasks`}
                 workspace={workspace}
                 limit={workspace.limit}
                 OrgId={orgId}

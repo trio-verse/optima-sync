@@ -18,9 +18,7 @@ html, body {
     height: auto !important;
   }
 }
-* {
-    overflow: visible !important;
-  }
+
 @page {
     margin: 15mm;
     size: A4;

@@ -1,24 +1,43 @@
 import { OrgMember } from "./organization";
 
 export enum TaskPriority {
-  Low = "low",
-  Medium = "medium",
-  High = "high",
+  low = "low",
+  medium = "medium",
+  high = "high",
 }
 export enum TaskStatus {
-  completed = "completed",
-  inProgress = "inProgress",
   pending = "pending",
+  in_progress = "in_progress",
+  completed = "completed"
 }
 export interface TaskType {
   id: number;
   title: string;
   description: string;
-  priority: TaskPriority;
-  status: TaskStatus;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  workspaceId?: number;
+  assigneee?: OrgMember;
+  organization_member_id   ?: number;
+}
+
+export interface WorkSpace {
+  id?: number;
+  name: string;
+  description: string;
+  deadline?: string;
+  status?: WorkSpaceStatus;
+  members?: OrgMember[];
+  tasks?: TaskType[];
+  limit?:number;
+}
+export interface WorkSpaceMembers {
+  id: number;
+  userId: number;
   workspaceId: number;
-  assigneee: OrgMember;
-  assigneeId: number;
+  name: string;
+  email:string;
+  role: string;
 }
 export enum WorkSpaceFilter {
   all = "all",
@@ -32,16 +51,6 @@ export enum WorkSpaceStatus {
   archived = "archived",
 }
 
-export interface WorkSpace {
-  id?: number;
-  name: string;
-  description: string;
-  limit?: number;
-  deadline: string;
-  status?: WorkSpaceStatus;
-  members?: OrgMember[];
-  tasks?: TaskType[];
-}
 
 export interface WorkspaseState {
   all_tasks: number;//100
@@ -49,5 +58,14 @@ export interface WorkspaseState {
   workspace_per_status: { status: WorkSpaceStatus; count: number }[];
 //   status:archived,count:100,
 }
+  export const priorityOptions = [
+    { key: "high", value: TaskPriority.high },
+    { key: "low", value: TaskPriority.low },
+    { key: "medium", value: TaskPriority.medium },
+  ];
 
-
+  export const statusOptions =[
+    {key:"completed" , value:TaskStatus.completed},
+    {key:"in_progress" , value:TaskStatus.in_progress},
+    {key:"pending" , value:TaskStatus.pending}
+  ];

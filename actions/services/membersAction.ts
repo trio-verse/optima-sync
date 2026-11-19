@@ -22,12 +22,12 @@ export async function getMembers(orgId:string): Promise<{ success: boolean; mess
         data: [],
       };
     }
-
     const resdata = await api.get(`/organizations/${orgId}/members`, {
       token,
       headers: { "X-Organization-ID": orgId },
       cache: "no-store",
     });
+     console.log(resdata)
      return {
             success: true,
             data: resdata?.data?.data || [],
