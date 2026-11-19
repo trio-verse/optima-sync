@@ -16,9 +16,10 @@ export default function useMemberStore(workspaceId: string, orgId: string) {
     queryFn: async () => (await getWorkspaceMembers(orgId,workspaceId)).data,
   });
   const createMemberMutation = useMutation({
-    mutationFn: async (formData: any) =>
+    mutationFn: async (formData: OrgMember) =>
       (await createWorkspaceMember(orgId, workspaceId, formData)).data,
     onSuccess: (createdMember) => {
+      if (!createdMember) return; 
       queryClient.setQueryData<OrgMember[]>(queryKey, (members = []) => [
         createdMember,
         ...members,
@@ -42,7 +43,7 @@ export default function useMemberStore(workspaceId: string, orgId: string) {
     members: membersQuery.data ?? [],
     isLoading: membersQuery.isLoading,
     isError: membersQuery.isError,
-    error: membersQuery.error.message,
+    error: membersQuery.error?.message,
     isSubmiting: createMemberMutation.isPending,
     createMember: createMemberMutation.mutate,
     deleteMember: deleteWorkspaceMemberMutation.mutate,

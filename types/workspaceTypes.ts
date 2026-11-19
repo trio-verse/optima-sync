@@ -58,3 +58,14 @@ export interface WorkspaseState {
   workspace_per_status: { status: WorkSpaceStatus; count: number }[];
 //   status:archived,count:100,
 }
+  export const priorityOptions = [
+    { key: "high", value: TaskPriority.high },
+    { key: "low", value: TaskPriority.low },
+    { key: "medium", value: TaskPriority.medium },
+  ];
+
+  export const statusOptions =[
+    {key:"completed" , value:TaskStatus.completed},
+    {key:"in_progress" , value:TaskStatus.in_progress},
+    {key:"pending" , value:TaskStatus.pending}
+  ];

@@ -8,7 +8,7 @@ import { OrgMember } from "@/types";
 export async function createWorkspaceMember(
   orgId: string,
   workspaceId: string | number,
-  formData: { memberId: string | number },
+  formData: OrgMember,
 ): Promise<{
   success: boolean;
   message?: string;
@@ -18,7 +18,7 @@ export async function createWorkspaceMember(
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-console.log(
+    console.log(
       "ADD WORKSPACE MEMBER - orgId:",
       orgId,
       "workspaceId:",
@@ -40,10 +40,9 @@ console.log(
     }
 
     const payload = {
-      member_id: Number(formData.memberId),
+      organization_member_id: Number(formData.id),
     };
 
-    
     const resdata = await api.post(
       `/workspaces/${workspaceId}/members`,
       payload,
@@ -52,6 +51,7 @@ console.log(
         headers: { "X-Organization-ID": orgId },
       },
     );
+    console.log(resdata);
 
     revalidatePath(`/dashboard/workspace/${workspaceId}`);
 

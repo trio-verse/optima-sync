@@ -19,7 +19,7 @@ export const MemberList = () => {
   const orgId = params.OrgId as string;
   const workspaceId = params.id as string;
 
-  const { createMember, deleteMember, members=[], isLoading, isError, error } =
+  const { createMember, deleteMember, members, isLoading, isError, error } =
     useMemberStore(String(workspaceId), orgId);
 
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
@@ -38,20 +38,21 @@ export const MemberList = () => {
   };
 
   const handleConfirmDelete = async () => {
- deleteMember(memberToDelete.id, {
-    onSuccess: () => {
-      setIsDeleteModalOpen(false);
-      setMemberToDelete(null);
-    },
-  });
+    if (memberToDelete)
+      deleteMember(memberToDelete.id, {
+        onSuccess: () => {
+          setIsDeleteModalOpen(false);
+          setMemberToDelete(null);
+        },
+      });
   };
- const handleFormSubmit = (formData: any) => {
-  createMember(formData, {
-    onSuccess: () => {
-      setIsMemberModalOpen(false);
-    },
-  });
-}
+  const handleFormSubmit = (formData: any) => {
+    createMember(formData, {
+      onSuccess: () => {
+        setIsMemberModalOpen(false);
+      },
+    });
+  };
   if (isError) return <h1>{error}</h1>;
   if (isLoading)
     return (
@@ -99,7 +100,7 @@ export const MemberList = () => {
 
             <div>
               <MemberForm
-                members={members}
+                orgId={orgId}
                 initialData={selectedMember}
                 onSubmit={handleFormSubmit}
               />
@@ -135,7 +136,7 @@ export const MemberList = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={ handleConfirmDelete}
+                  onClick={handleConfirmDelete}
                   className="w-1/2 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
                 >
                   Yes, Delete
@@ -144,13 +145,20 @@ export const MemberList = () => {
             </div>
           </div>
         )}
-        {members.map((member) => (
-          <MemberItem
-            key={member.id}
-            member={member}
-            handleDelete={() => handleOpenDeleteModal(member)}
-          />
-        ))}
+
+        <div>
+          {members && members.length > 0 ? (
+            members.map((member) => (
+              <MemberItem
+                key={member.id}
+                member={member}
+                handleDelete={() => handleOpenDeleteModal(member)}
+              />
+            ))
+          ) : (
+            <h1>No Data</h1>
+          )}
+        </div>
       </div>
     </>
   );

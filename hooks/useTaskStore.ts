@@ -4,10 +4,11 @@ import {
   getTasks,
   UpdateTask,
   ChangeStatus,
-  DeleteTask
+  DeleteTask,
+  ChangePriority,
 } from "@/actions/taskActions";
 import { OrgMember } from "@/types";
-import { TaskType ,TaskStatus } from "@/types/workspaceTypes";
+import { TaskType, TaskStatus, TaskPriority } from "@/types/workspaceTypes";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 
 export default function useTaskStore(workspaceId: string, orgId: string) {
@@ -19,7 +20,7 @@ export default function useTaskStore(workspaceId: string, orgId: string) {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: async (data:TaskType) =>
+    mutationFn: async (data: TaskType) =>
       (await CreateTask(orgId, workspaceId, data)).data,
     onSuccess: (createdTask: TaskType) => {
       queryClient.setQueryData<TaskType[]>(queryKey, (tasks = []) => [
@@ -63,33 +64,72 @@ export default function useTaskStore(workspaceId: string, orgId: string) {
   });
 
   const changeStatusTask = useMutation({
-    mutationFn:async({task,status}:{task:TaskType,status:TaskStatus})=>{
-        await ChangeStatus(orgId,workspaceId,task.id,status)
-        task.status=status
-        return task
+    mutationFn: async ({
+      task,
+      status,
+    }: {
+      task: TaskType;
+      status: TaskStatus;
+    }) => {
+      await ChangeStatus(orgId, workspaceId, task.id, status);
+      return { ...task, status };
     },
-    onSuccess:(updatedtask)=>{
-        queryClient.setQueryData<TaskType []>(queryKey,(tasks)=>{
-            return tasks.map((task)=>{
-              return task.id===updatedtask.id ? updatedtask : task;
-            })
-        })
+    onSuccess: (updatedtask) => {
+      queryClient.setQueryData<TaskType[]>(queryKey, (tasks) => {
+        return tasks.map((task) => {
+          return task.id === updatedtask.id ? updatedtask : task;
+        });
+      });
+      console.log(taskQuery.data, "lkllll");
+    },
+  });
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await DeleteTask(orgId, workspaceId, taskId);
+      return taskId;
+    },
+    onSuccess: (taskId) => {
+      queryClient.setQueryData<TaskType[]>(queryKey, (tasks) => {
+        return tasks.filter((task) => {
+          return task.id !== taskId;
+        });
+      });
+    },
+  });
+  const changeTaskPriorityMutation = useMutation({
+    mutationFn: async ({
+      task,
+      priority,
+    }: {
+      task: TaskType;
+      priority: TaskPriority;
+    }) => {
+      await (
+        await ChangePriority(orgId, workspaceId, task.id, priority)
+      ).data;
+      return { taskId: task.id, priority };
+    },
 
-        }
-  })
-const deleteTaskMutation =useMutation({
-    mutationFn:async(taskId:number)=>{
-        await DeleteTask(orgId,workspaceId,taskId);
-        return taskId
+    onSuccess: ({
+      priority,
+      taskId,
+    }: {
+      priority: TaskPriority;
+      taskId: number;
+    }) => {
+      queryClient.setQueryData<TaskType[]>(queryKey, (tasks = []) => {
+        return tasks.map((task) => {
+          if (task.id === taskId) {
+            return {
+              ...task,
+              priority,
+            };
+          }
+          return task;
+        });
+      });
     },
-    onSuccess:(taskId)=>{
-        queryClient.setQueryData<TaskType []>(queryKey,(tasks)=>{
-            return tasks.filter((task)=>{
-                return task.id !==taskId 
-            })
-        })
-    }
-})
+  });
   return {
     tasks: taskQuery.data,
     isloading: taskQuery.isLoading,
@@ -99,8 +139,9 @@ const deleteTaskMutation =useMutation({
     submitting: createTaskMutation.isPending,
     updateTask: updateTaskMutation.mutate,
     isEdditing: updateTaskMutation.isPending,
-    changeAsignee:changeAssigneeMutation.mutate,
-    changeStatusTask:changeStatusTask.mutate,
-    deleteTask:deleteTaskMutation.mutate
+    changeAsignee: changeAssigneeMutation.mutate,
+    changeStatusTask: changeStatusTask.mutate,
+    deleteTask: deleteTaskMutation.mutate,
+    changePriorty: changeTaskPriorityMutation.mutate,
   };
 }

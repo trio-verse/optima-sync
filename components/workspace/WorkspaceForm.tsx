@@ -17,6 +17,7 @@ const WorkspaceForm = ({
   OrgId,
   onSuccessClose,
 }: WorkSpaceFormProps) => {
+  console.log(initialData);
   const isEditMode = initialData ? true : false;
   const { addWorkspace, isAdding, updateWorkspace, isUpdate, updateError } =
     useWorkspaceStore(OrgId);
@@ -29,7 +30,8 @@ const WorkspaceForm = ({
     defaultValues: {
       name: initialData?.name ?? "",
       description: initialData?.description ?? "",
-      deadline: initialData?.deadline ?? "",
+      deadline: 
+        new Date(initialData.deadline).toISOString().split("T")[0] ?? "",
     },
   });
 

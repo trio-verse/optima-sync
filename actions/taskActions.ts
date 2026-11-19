@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { api } from "@/lib/api/client";
 import { ApiResponse } from "@/types";
-import { TaskStatus, TaskType } from "@/types/workspaceTypes";
+import { TaskStatus, TaskType, TaskPriority } from "@/types/workspaceTypes";
 export async function CreateTask(
   orgId: string,
   workspaceId: string | number,
@@ -223,7 +223,7 @@ export async function ChangeStatus(
     };
   }
   try {
-    const response = await api.patch(
+    const response = await api.post(
       `/workspaces/${workspaceId}/tasks/${taskId}/change-status`,
       {
         status,
@@ -287,6 +287,58 @@ export async function ChangeAssignee(
       },
     );
     console.log(response, "fffffff");
+    return {
+      success: true,
+      data: response.data.data,
+    };
+  } catch (error: any) {
+    console.error("updateTask error:", error.response?.data);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        error.data?.message ||
+        "Failed to change status",
+    };
+  }
+}
+
+export async function ChangePriority(
+  orgId: string,
+  workspaceId: string | number,
+  taskId: number,
+  priority: TaskPriority,
+) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  if (!orgId) {
+    return { success: false, message: "Organization ID is missing." };
+  }
+  if (!workspaceId) {
+    return {
+      success: false,
+      message: "Workspace ID is missing.",
+    };
+  }
+  try {
+    const response = await api.post(
+      `/workspaces/${workspaceId}/tasks/${taskId}/change-priority`,
+      {
+        priority,
+      },
+      {
+        token,
+        headers: {
+          "X-Organization-ID": orgId,
+        },
+      },
+    );
+    console.log(response, "uuuuuuuuu");
     return {
       success: true,
       data: response.data.data,
